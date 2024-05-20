@@ -1,16 +1,22 @@
 package main
 
 import (
-	"fmt"
-	"os"
+	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
+	"github.com/k10wl/hermes/internal/cli"
+	"github.com/k10wl/hermes/internal/core"
+	"github.com/k10wl/hermes/internal/runtime"
+	client "github.com/k10wl/openai-client"
 )
 
-var appName = "hermes" // name after go install ...
-
 func main() {
-	name, ok := os.LookupEnv("APP_NAME")
-	if !ok {
-		name = appName
+	config := runtime.GetConfig()
+	openai := ai_clients.NewOpenAIAdapter(
+		client.NewOpenAIClient(*config.OpenAIKey),
+	)
+	openai, err := openai.SetModel(*config.Model)
+	if err != nil {
+		panic(err)
 	}
-	fmt.Printf("name: %v\n", name)
+	aiclient := core.NewCore().SetAIClient(openai)
+	cli.CLI(*aiclient)
 }
