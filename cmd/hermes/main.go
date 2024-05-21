@@ -18,5 +18,5 @@ func main() {
 		panic(err)
 	}
 	aiclient := core.NewCore().SetAIClient(openai)
-	cli.CLI(*aiclient)
+	cli.CLI(aiclient, config)
 }

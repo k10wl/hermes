@@ -7,9 +7,8 @@ import (
 	"github.com/k10wl/hermes/internal/runtime"
 )
 
-func CLI(core core.Core) {
-	c := runtime.GetConfig()
-	res, err := core.SendMessage(*c.Prompt)
+func CLI(core *core.Core, config *runtime.Config) {
+	res, err := core.SendMessage(*config.Prompt)
 	if err != nil {
 		panic(err)
 	}
