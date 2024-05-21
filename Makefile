@@ -13,6 +13,10 @@ run:
 	@echo "Running prod version..."
 	@APP_NAME=$(APP_NAME) ./bin/$(APP_NAME)
 
+install:
+	@echo "Running binary instalation..."
+	@go install ./cmd/hermes/
+
 all: build run
 
 dev-build:
