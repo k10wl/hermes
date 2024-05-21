@@ -36,8 +36,18 @@ func loadConfig() *Config {
 
 func loadFlags(c *Config) {
 	model := flag.String("model", client.GPT3_5Turbo, "ai model name")
-	prompt := flag.String("prompt", "", "prompt for instant completion")
-	sufix := flag.String("sufix", "", "sufix for prompt (useful with vim)")
+	prompt := flagStringWithShorthand(
+		"prompt",
+		"p",
+		"",
+		"prompt for instant completion",
+	)
+	message := flagStringWithShorthand(
+		"message",
+		"m",
+		"",
+		"message attached to the end of the prompt (useful with vim)",
+	)
 	flag.Parse()
 	c.Model = model
 	c.Prompt = prompt
@@ -48,7 +58,24 @@ func loadFlags(c *Config) {
 		}
 		*c.Prompt = string(p)
 	}
-	*c.Prompt = fmt.Sprintf("%s\n\n%s", *c.Prompt, *sufix)
+	if *message != "" {
+		*c.Prompt = fmt.Sprintf("%s\n\n%s", *c.Prompt, *message)
+	}
+}
+
+func flagStringWithShorthand(
+	name string,
+	shorthand string,
+	value string,
+	usage string,
+) *string {
+	var val string
+	flag.StringVar(&val, name, value, usage)
+	if val != "" {
+		return &val
+	}
+	flag.StringVar(&val, shorthand, value, usage)
+	return &val
 }
 
 var appName = "hermes" // fallback name
