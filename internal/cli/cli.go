@@ -27,9 +27,10 @@ func CLI(core *core.Core, config *runtime.Config) {
 		fmt.Println(help)
 		return
 	}
-	res, err := core.SendMessage(config.Prompt)
+	sendMessage := core.NewSendMessageCommand(config.Prompt)
+	err := sendMessage.Execute()
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(res)
+	fmt.Println(sendMessage.Result)
 }
