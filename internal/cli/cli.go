@@ -7,8 +7,26 @@ import (
 	"github.com/k10wl/hermes/internal/runtime"
 )
 
+const help = `Hermes - Host-based Extensible Response Management System
+
+Usage:  hermes -m "Hello world!"
+        cat logs.txt | hermes -m "show errors"
+
+Hermes is a tool for communication and management of AI chats by 
+accessing underlying API via terminal
+
+Example:
+
+        $ echo "Who are you?" | hermes
+        I am a language model AI designed to assist with answering 
+        questions and providing information to the best of my
+        knowledge and abilities.`
+
 func CLI(core *core.Core, config *runtime.Config) {
-	// FIXME check if prompt is empty and print out help info if so
+	if config.Prompt == "" {
+		fmt.Println(help)
+		return
+	}
 	res, err := core.SendMessage(config.Prompt)
 	if err != nil {
 		panic(err)
