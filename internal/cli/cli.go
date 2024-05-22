@@ -22,12 +22,12 @@ Example:
         questions and providing information to the best of my
         knowledge and abilities.`
 
-func CLI(core *core.Core, config *runtime.Config) {
+func CLI(c *core.Core, config *runtime.Config) {
 	if config.Prompt == "" {
 		fmt.Println(help)
 		return
 	}
-	sendMessage := core.NewSendMessageCommand(config.Prompt)
+	sendMessage := core.SendMessageCommand{Core: c, Message: config.Prompt}
 	err := sendMessage.Execute()
 	if err != nil {
 		panic(err)
