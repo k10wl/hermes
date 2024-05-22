@@ -8,7 +8,8 @@ import (
 )
 
 func CLI(core *core.Core, config *runtime.Config) {
-	res, err := core.SendMessage(*config.Prompt)
+	// FIXME check if prompt is empty and print out help info if so
+	res, err := core.SendMessage(config.Prompt)
 	if err != nil {
 		panic(err)
 	}

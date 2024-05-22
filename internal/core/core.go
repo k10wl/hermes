@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
+	"github.com/k10wl/hermes/internal/db"
 )
 
 const (
@@ -14,22 +15,17 @@ const (
 
 type Core struct {
 	ai_client ai_clients.AIClient
+	db        db.Client
 }
 
-// core should know how to connect database with ai clients
-// I don't want to have API keys burned down into binary, they should be passed
-// as ENV variables. The application will only take the name of the ENV that
-// holds value for the actual API keys
-
-func NewCore() *Core {
-	return &Core{}
+func NewCore(ai ai_clients.AIClient, db db.Client) *Core {
+	return &Core{
+		ai_client: ai,
+		db:        db,
+	}
 }
 
-func (c *Core) SetAIClient(a ai_clients.AIClient) *Core {
-	c.ai_client = a
-	return c
-}
-
+// move to core/actions
 func (c *Core) SendMessage(message string) (string, error) {
 	if c.ai_client == nil {
 		return "", errors.New("ai client not set")
