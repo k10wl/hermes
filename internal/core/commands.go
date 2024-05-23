@@ -45,3 +45,38 @@ func (c *CreateChatAndCompletionCommand) Execute(ctx context.Context) error {
 	c.Result = res.Content
 	return nil
 }
+
+type CreateCompletionCommand struct {
+	Core    *Core
+	Message string
+	ChatID  int64
+	Result  string
+}
+
+func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
+	if c.Core == nil || c.Core.ai_client == nil {
+		return fmt.Errorf("ai client not set")
+	}
+	_, err := c.Core.db.CreateMessage(
+		ctx,
+		sqlc.CreateMessageParams{ChatID: c.ChatID, Content: c.Message, RoleID: 1},
+	)
+	if err != nil {
+		return err
+	}
+	res, err := c.Core.ai_client.ChatCompletion(
+		[]ai_clients.Message{{Content: c.Message, Role: UserRole}},
+	)
+	if err != nil {
+		return err
+	}
+	_, err = c.Core.db.CreateMessage(
+		ctx,
+		sqlc.CreateMessageParams{ChatID: c.ChatID, Content: res.Content, RoleID: 2},
+	)
+	if err != nil {
+		return err
+	}
+	c.Result = res.Content
+	return nil
+}
