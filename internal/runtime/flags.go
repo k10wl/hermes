@@ -49,6 +49,6 @@ func flagStringWithShorthand(
 	if val != "" {
 		return &val
 	}
-	flag.StringVar(&val, shorthand, value, usage)
+	flag.StringVar(&val, shorthand, value, fmt.Sprintf("shorthand for %q", name))
 	return &val
 }
