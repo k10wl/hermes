@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/k10wl/hermes/internal/core"
@@ -27,8 +28,9 @@ func CLI(c *core.Core, config *runtime.Config) {
 		fmt.Println(help)
 		return
 	}
-	sendMessage := core.SendMessageCommand{Core: c, Message: config.Prompt}
-	err := sendMessage.Execute()
+	sendMessage := core.CreateChatAndCompletionCommand{Core: c, Message: config.Prompt}
+	ctx := context.Background()
+	err := sendMessage.Execute(ctx)
 	if err != nil {
 		panic(err)
 	}

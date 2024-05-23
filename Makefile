@@ -3,11 +3,12 @@ DEV_APP_NAME=hermes-dev
 
 SRC_DIR=./cmd/hermes
 
-.PHONY: build run all dev-build dev-run dev-watch dev-all clean
+.PHONY: build run all dev-build dev-run dev-watch dev-all clean sqlc
 
 build:
 	@echo "Building prod version..."
 	@go build -ldflags "-X 'main.appName=$(APP_NAME)'" -o ./bin/$(APP_NAME) $(SRC_DIR)
+	@echo "Done"
 
 run:
 	@echo "Running prod version..."
@@ -16,12 +17,14 @@ run:
 install:
 	@echo "Running binary instalation..."
 	@go install ./cmd/hermes/
+	@echo "Done"
 
 all: build run
 
 dev-build:
 	@echo "Building dev version..."
 	@go build -ldflags "-X 'main.appName=$(APP_NAME)'" -o ./bin/$(DEV_APP_NAME) $(SRC_DIR)
+	@echo "Done"
 
 dev-run:
 	@echo "Running dev version..."
@@ -33,7 +36,12 @@ dev-watch:
 
 dev-all: dev-build dev-run
 
+sqlc:
+	@echo "Creating sqlc files..."
+	@sqlc generate
+	@echo "Done"
 
 clean:
 	@echo "Cleaning up..."
 	@rm -f ./bin/$(APP_NAME) ./bin/$(DEV_APP_NAME)
+	@echo "Done"

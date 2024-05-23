@@ -21,10 +21,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	// TODO skip sqlite setup when user selectes -non-persistent
 	sqlite, err := sqlite3.NewSQLite3(config)
 	if err != nil {
 		panic(err)
 	}
+	defer sqlite.Close()
 	hermesCore := core.NewCore(openai, sqlite)
 	cli.CLI(hermesCore, config)
 }

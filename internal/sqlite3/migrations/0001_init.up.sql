@@ -1,6 +1,7 @@
 -- Table for storing chats
 CREATE TABLE chats (
-    id INT PRIMARY KEY, -- Primary key
+    id INTEGER PRIMARY KEY AUTOINCREMENT, -- Primary key
+    name TEXT DEFAULT "unset",
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP
@@ -8,10 +9,10 @@ CREATE TABLE chats (
 
 -- Table for storing messages
 CREATE TABLE messages (
-    id INT PRIMARY KEY, -- Primary key
-    chat_id INT, -- Foreign key to chats table
+    id INTEGER PRIMARY KEY AUTOINCREMENT, -- Primary key
+    chat_id INTEGER NOT NULL, -- Foreign key to chats table
     content TEXT NOT NULL,
-    role_id INT, -- Foreign key to roles table
+    role_id INTEGER NOT NULL, -- Foreign key to roles table
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP,
