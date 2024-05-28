@@ -1,0 +1,90 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-size: 100%;
+}
+
+main {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 250px 1fr;
+}
+
+#chats-list {
+  max-height: 100vh;
+  overflow: scroll;
+  display: grid;
+  border-right: 1px solid lightgray;
+  grid-auto-rows: max-content;
+}
+
+.chat-link {
+  padding: 4px 8px;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#chat-content {
+  max-height: 100vh;
+  overflow: scroll;
+  display: grid;
+  grid-template-rows: 1fr auto;
+}
+
+#messages-list-wrapper {
+  max-height: 100%;
+  overflow: scroll;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+#messages-list,
+#message-form {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 120ch;
+}
+
+#message-form {
+  padding: 8px;
+  display: grid;
+  grid-template-columns: 1fr max-content;
+}
+
+#message-input {
+  width: 100%;
+  resize: none;
+}
+
+.message {
+  padding: 4px 8px;
+  margin: 4px 12px;
+  width: fit-content;
+  max-width: 80%;
+  border-radius: 10px;
+
+  pre {
+    margin: 0;
+    text-wrap: wrap;
+  }
+}
+
+.role-assistant {
+  background: lightgray;
+  border-bottom-left-radius: 0;
+}
+
+.role-user {
+  border-bottom-right-radius: 0;
+  margin-left: auto;
+  background: lightblue;
+}

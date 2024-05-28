@@ -40,7 +40,7 @@ func (s *SQLite3) CreateMessage(
 	return s.queries.CreateMessage(ctx, params)
 }
 
-func (s *SQLite3) CreateChat(ctx context.Context, name sql.NullString) (sqlc.Chat, error) {
+func (s *SQLite3) CreateChat(ctx context.Context, name string) (sqlc.Chat, error) {
 	return s.queries.CreateChat(ctx, name)
 }
 
@@ -54,7 +54,7 @@ func (s *SQLite3) CreateChatAndMessage(
 	}
 	defer tx.Rollback()
 	qtx := s.queries.WithTx(tx)
-	chat, err := qtx.CreateChat(ctx, sql.NullString{String: params.Content})
+	chat, err := qtx.CreateChat(ctx, params.Content)
 	if err != nil {
 		return sqlc.Chat{}, sqlc.Message{}, err
 	}
@@ -65,4 +65,15 @@ func (s *SQLite3) CreateChatAndMessage(
 	}
 	err = tx.Commit()
 	return chat, msg, err
+}
+
+func (s *SQLite3) GetChats(ctx context.Context) ([]sqlc.Chat, error) {
+	return s.queries.GetChats(ctx)
+}
+
+func (s *SQLite3) GetChatMessages(
+	ctx context.Context,
+	chatID int64,
+) ([]sqlc.GetChatMessagesRow, error) {
+	return s.queries.GetChatMessages(ctx, chatID)
 }

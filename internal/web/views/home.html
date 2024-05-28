@@ -1,0 +1,64 @@
+{{define "/home"}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hermes</title>
+    <script src="/assets/scripts.js"></script>
+    <link rel="stylesheet" href="/assets/stylesheet.css">
+</head>
+
+<body>
+    <main>
+        {{template "chats-list" . }}
+        {{template "chat-content" .}}
+        <div style="hidden; display: none;">
+            <template id="template-message">{{template "message"}}</template>
+        </div>
+    </main>
+</body>
+
+</html>
+{{end}}
+
+{{define "chats-list"}}
+<div id="chats-list">
+    <a href="/" class="chat-link">New chat</a>
+    {{range .Chats}}{{template "chat-link" .}}{{end}}
+</div>
+{{end}}
+
+{{define "chat-link"}}
+<a href="/chats/{{.ID}}" id="chat-{{.ID}}" class="chat-link">
+    {{if .Name}}{{.Name}}{{else}}unnamed{{end}}
+</a>
+{{end}}
+
+{{define "chat-content"}}
+<div id="chat-content">
+    {{template "messages-list" .}}
+    {{template "form"}}
+</div>
+{{end}}
+
+{{define "messages-list"}}
+<div id="messages-list-wrapper">
+    <div id="messages-list">{{range .Messages}}{{template "message" .}}{{end}}</div>
+</div>
+{{end}}
+
+{{define "message"}}
+<div class="message {{if .Role}}role-{{.Role}}{{end}}" id="message-{{.ID}}">
+    <pre>{{.Content}}</pre>
+</div>
+{{end}}
+
+{{define "form"}}
+<form id="message-form">
+    <textarea id="message-input" name="content" placeholder="What are the best use cases for AI?" autofocus></textarea>
+    <button id="message-submit-button" type="submit">send</button>
+</form>
+{{end}}

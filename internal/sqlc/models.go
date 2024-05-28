@@ -11,7 +11,7 @@ import (
 
 type Chat struct {
 	ID        int64
-	Name      sql.NullString
+	Name      interface{}
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt sql.NullTime

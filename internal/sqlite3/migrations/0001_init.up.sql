@@ -1,7 +1,7 @@
 -- Table for storing chats
 CREATE TABLE chats (
     id INTEGER PRIMARY KEY AUTOINCREMENT, -- Primary key
-    name TEXT DEFAULT "unset",
+    name TEXT DEFAULT "unnamed",
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP

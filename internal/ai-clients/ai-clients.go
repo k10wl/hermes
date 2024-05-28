@@ -6,7 +6,13 @@ type Message struct {
 }
 
 type AIClient interface {
-	ChatCompletion([]Message) (Message, error)
+	/*
+		Returns:
+		 - result message
+		 - amount of messages used for the completion due to token limit
+		 - error
+	*/
+	ChatCompletion([]Message) (Message, int, error)
 }
 
 type Client struct{}

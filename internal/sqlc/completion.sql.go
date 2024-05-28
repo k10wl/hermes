@@ -8,6 +8,7 @@ package sqlc
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const createChat = `-- name: CreateChat :one
@@ -16,7 +17,7 @@ VALUES (?)
 RETURNING id, name, created_at, updated_at, deleted_at
 `
 
-func (q *Queries) CreateChat(ctx context.Context, name sql.NullString) (Chat, error) {
+func (q *Queries) CreateChat(ctx context.Context, name interface{}) (Chat, error) {
 	row := q.db.QueryRowContext(ctx, createChat, name)
 	var i Chat
 	err := row.Scan(
@@ -54,4 +55,90 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 		&i.DeletedAt,
 	)
 	return i, err
+}
+
+const getChatMessages = `-- name: GetChatMessages :many
+SELECT
+    m.id,
+    m.content,
+    r.name AS role,  -- Replacing role_id with role name
+    m.created_at,
+    m.updated_at,
+    m.deleted_at
+FROM messages m
+JOIN roles r ON m.role_id = r.id  -- Join messages with roles based on role_id
+WHERE m.chat_id = ?
+`
+
+type GetChatMessagesRow struct {
+	ID        int64
+	Content   string
+	Role      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt sql.NullTime
+}
+
+func (q *Queries) GetChatMessages(ctx context.Context, chatID int64) ([]GetChatMessagesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getChatMessages, chatID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetChatMessagesRow
+	for rows.Next() {
+		var i GetChatMessagesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Content,
+			&i.Role,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getChats = `-- name: GetChats :many
+SELECT id, name, created_at, updated_at, deleted_at FROM chats 
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetChats(ctx context.Context) ([]Chat, error) {
+	rows, err := q.db.QueryContext(ctx, getChats)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Chat
+	for rows.Next() {
+		var i Chat
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

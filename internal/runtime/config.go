@@ -6,12 +6,20 @@ import (
 	"sync"
 )
 
+const (
+	host = "127.0.0.1"
+	port = "8123"
+)
+
 type Config struct {
 	AppName   string
 	Model     string
 	Prompt    string
 	OpenAIKey string
 	ConfigDir string
+	Web       bool
+	Host      string
+	Port      string
 }
 
 var config *Config

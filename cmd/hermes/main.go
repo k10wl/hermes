@@ -6,6 +6,7 @@ import (
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/runtime"
 	"github.com/k10wl/hermes/internal/sqlite3"
+	"github.com/k10wl/hermes/internal/web"
 	client "github.com/k10wl/openai-client"
 )
 
@@ -28,5 +29,11 @@ func main() {
 	}
 	defer sqlite.Close()
 	hermesCore := core.NewCore(openai, sqlite)
+	if config.Web {
+		if err := web.Serve(hermesCore, config); err != nil {
+			panic(err)
+		}
+		return
+	}
 	cli.CLI(hermesCore, config)
 }
