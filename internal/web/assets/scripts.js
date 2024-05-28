@@ -115,7 +115,7 @@ class Templates {
  * @template T
  * @returns {T}
  * @param {unknown} obj
- * @param {new () => T} type
+ * @param {new (data: any) => T} type
  */
 function assertInstance(obj, type) {
   if (obj instanceof type) {
