@@ -10,27 +10,32 @@ import (
 )
 
 type Chat struct {
-	ID        int64
-	Name      interface{}
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt sql.NullTime
+	ID        int64        `json:"id"`
+	Name      interface{}  `json:"name"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt time.Time    `json:"updated_at"`
+	DeletedAt sql.NullTime `json:"deleted_at"`
 }
 
 type Message struct {
-	ID        int64
-	ChatID    int64
-	Content   string
-	RoleID    int64
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt sql.NullTime
+	ID        int64        `json:"id"`
+	ChatID    int64        `json:"chat_id"`
+	Content   string       `json:"content"`
+	RoleID    int64        `json:"role_id"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt time.Time    `json:"updated_at"`
+	DeletedAt sql.NullTime `json:"deleted_at"`
 }
 
 type Role struct {
-	ID        int64
-	Name      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt sql.NullTime
+	ID        int64        `json:"id"`
+	Name      string       `json:"name"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt time.Time    `json:"updated_at"`
+	DeletedAt sql.NullTime `json:"deleted_at"`
+}
+
+type WebSetting struct {
+	DarkMode bool `json:"dark_mode"`
+	Initted  bool `json:"initted"`
 }

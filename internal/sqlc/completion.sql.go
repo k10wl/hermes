@@ -37,9 +37,9 @@ RETURNING id, chat_id, content, role_id, created_at, updated_at, deleted_at
 `
 
 type CreateMessageParams struct {
-	ChatID  int64
-	Content string
-	RoleID  int64
+	ChatID  int64  `json:"chat_id"`
+	Content string `json:"content"`
+	RoleID  int64  `json:"role_id"`
 }
 
 func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error) {
@@ -71,12 +71,12 @@ WHERE m.chat_id = ?
 `
 
 type GetChatMessagesRow struct {
-	ID        int64
-	Content   string
-	Role      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt sql.NullTime
+	ID        int64        `json:"id"`
+	Content   string       `json:"content"`
+	Role      string       `json:"role"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt time.Time    `json:"updated_at"`
+	DeletedAt sql.NullTime `json:"deleted_at"`
 }
 
 func (q *Queries) GetChatMessages(ctx context.Context, chatID int64) ([]GetChatMessagesRow, error) {

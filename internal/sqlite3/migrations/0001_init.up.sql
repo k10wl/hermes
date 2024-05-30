@@ -29,8 +29,14 @@ CREATE TABLE roles (
     deleted_at TIMESTAMP
 );
 
+CREATE TABLE web_settings (
+    dark_mode BOOLEAN NOT NULL,
+    initted BOOLEAN NOT NULL
+);
+
 -- Inserting values into roles table
 INSERT INTO roles (name) VALUES ('user');
 INSERT INTO roles (name) VALUES ('assistant');
 INSERT INTO roles (name) VALUES ('system');
 
+INSERT INTO web_settings (dark_mode, initted) VALUES (false, false);

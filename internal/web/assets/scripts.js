@@ -16,6 +16,10 @@ document.addEventListener("DOMContentLoaded", () => {
     HTMLButtonElement,
   );
 
+  // @ts-ignore defined on html
+  const theme = new Theme(settings);
+  theme.load();
+
   document.addEventListener("keydown", (e) => {
     if (
       [document.body, null].find((el) => el === document.activeElement) &&

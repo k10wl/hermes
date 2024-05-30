@@ -88,3 +88,15 @@ func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
 	c.Result = message
 	return nil
 }
+
+type UpdateWebSettingsCommand struct {
+	Core        *Core
+	WebSettings sqlc.WebSetting
+}
+
+func (c *UpdateWebSettingsCommand) Execute(ctx context.Context) error {
+	return c.Core.db.UpdateWebSettings(ctx, sqlc.UpdateWebSettingsParams{
+		DarkMode: c.WebSettings.DarkMode,
+		Initted:  c.WebSettings.Initted,
+	})
+}

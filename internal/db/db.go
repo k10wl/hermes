@@ -12,4 +12,7 @@ type Client interface {
 	CreateChatAndMessage(context.Context, sqlc.CreateMessageParams) (sqlc.Chat, sqlc.Message, error)
 	GetChats(context.Context) ([]sqlc.Chat, error)
 	GetChatMessages(context.Context, int64) ([]sqlc.GetChatMessagesRow, error)
+
+	GetWebSettings(context.Context) (sqlc.WebSetting, error)
+	UpdateWebSettings(context.Context, sqlc.UpdateWebSettingsParams) error
 }

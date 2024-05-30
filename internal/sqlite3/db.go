@@ -77,3 +77,14 @@ func (s *SQLite3) GetChatMessages(
 ) ([]sqlc.GetChatMessagesRow, error) {
 	return s.queries.GetChatMessages(ctx, chatID)
 }
+
+func (s *SQLite3) GetWebSettings(ctx context.Context) (sqlc.WebSetting, error) {
+	return s.queries.GetWebSettings(ctx)
+}
+
+func (s *SQLite3) UpdateWebSettings(
+	ctx context.Context,
+	params sqlc.UpdateWebSettingsParams,
+) error {
+	return s.queries.UpdateWebSettings(ctx, params)
+}

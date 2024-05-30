@@ -1,3 +1,17 @@
+:root {
+  --primary: #00a3ff;
+
+  --light-bg-1: #f5f5f5;
+  --light-bg-0: #ffffff;
+  --light-bg-2: #ffffff;
+  --light-text-0: #010101;
+
+  --dark-bg-0: #121212;
+  --dark-bg-1: #181818;
+  --dark-bg-2: #292929;
+  --dark-text-0: #ffffff;
+}
+
 *,
 *::before,
 *::after {
@@ -9,6 +23,8 @@ body {
   padding: 0;
   min-height: 100vh;
   font-size: 100%;
+  color: var(--text-0);
+  background: var(--bg-0);
 }
 
 main {
@@ -21,16 +37,27 @@ main {
   max-height: 100vh;
   overflow: scroll;
   display: grid;
-  border-right: 1px solid lightgray;
+  border-right: 1px solid var(--bg-1);
   grid-auto-rows: max-content;
 }
 
 .chat-link {
+  --_margin-x: 6px;
+  color: var(--text-0);
+  text-decoration: none;
   padding: 4px 8px;
+  margin-left: var(--_margin-x);
+  margin-right: var(--_margin-x);
   display: block;
+  border-radius: 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.chat-link:is(:first-child, :last-child) {
+  --_margin-y: 6px;
+  margin-top: var(--_margin-y);
+  margin-bottom: var(--_margin-y);
 }
 
 #chat-content {
@@ -42,6 +69,7 @@ main {
 
 #messages-list-wrapper {
   max-height: 100%;
+  background: var(--bg-1);
   overflow: scroll;
   display: flex;
   flex-direction: column-reverse;
@@ -54,6 +82,12 @@ main {
   max-width: 120ch;
 }
 
+#message-form,
+#message-input {
+  background: var(--bg-0);
+  color: var(--text-0);
+}
+
 #message-form {
   padding: 8px;
   display: grid;
@@ -63,11 +97,27 @@ main {
 #message-input {
   width: 100%;
   resize: none;
+  outline: none;
+  border: none;
+}
+
+#message-submit-button {
+  border-radius: 8px;
+  cursor: pointer;
+  background: var(--primary);
+  outline: none;
+  color: var(--text-0);
+  border: none;
+}
+
+.primary-bg {
+  background: var(--primary);
 }
 
 .message {
+  border: 1px solid var(--bg-2);
   padding: 4px 8px;
-  margin: 4px 12px;
+  margin: 12px;
   width: fit-content;
   max-width: 80%;
   border-radius: 10px;
@@ -79,12 +129,14 @@ main {
 }
 
 .role-assistant {
-  background: lightgray;
+  background: var(--bg-2);
+  color: var(--text-0);
   border-bottom-left-radius: 0;
 }
 
 .role-user {
   border-bottom-right-radius: 0;
   margin-left: auto;
-  background: lightblue;
+  color: var(--light-bg-0);
+  background: var(--primary);
 }

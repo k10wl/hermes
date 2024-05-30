@@ -34,5 +34,5 @@ func CLI(c *core.Core, config *runtime.Config) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(sendMessage.Result)
+	fmt.Println(sendMessage.Result.Content)
 }

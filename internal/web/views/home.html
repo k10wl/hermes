@@ -7,8 +7,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Hermes</title>
-    <script src="/assets/scripts.js"></script>
     <link rel="stylesheet" href="/assets/stylesheet.css">
+    <script src="/assets/settings.js"></script>
+    <script>const settings = new Settings(JSON.parse({{.WebSettings}}));</script>
+    <script src="/assets/theme.js"></script>
+    <script src="/assets/scripts.js"></script>
 </head>
 
 <body>
@@ -26,7 +29,7 @@
 
 {{define "chats-list"}}
 <div id="chats-list">
-    <a href="/" class="chat-link">New chat</a>
+    <a href="/" class="chat-link primary-bg">New chat</a>
     {{range .Chats}}{{template "chat-link" .}}{{end}}
 </div>
 {{end}}

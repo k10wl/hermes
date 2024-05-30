@@ -15,15 +15,15 @@ type GetChatsQuery struct {
 	Result []sqlc.Chat
 }
 
-func (c *GetChatsQuery) Execute(ctx context.Context) error {
-	if err := c.Core.assertAI(); err != nil {
+func (q *GetChatsQuery) Execute(ctx context.Context) error {
+	if err := q.Core.assertAI(); err != nil {
 		return err
 	}
-	chats, err := c.Core.db.GetChats(ctx)
+	chats, err := q.Core.db.GetChats(ctx)
 	if err != nil {
 		return err
 	}
-	c.Result = chats
+	q.Result = chats
 	return nil
 }
 
@@ -33,14 +33,28 @@ type GetChatMessagesQuery struct {
 	Result []sqlc.GetChatMessagesRow
 }
 
-func (c *GetChatMessagesQuery) Execute(ctx context.Context) error {
-	if err := c.Core.assertAI(); err != nil {
+func (q *GetChatMessagesQuery) Execute(ctx context.Context) error {
+	if err := q.Core.assertAI(); err != nil {
 		return err
 	}
-	messages, err := c.Core.db.GetChatMessages(ctx, c.ChatID)
+	messages, err := q.Core.db.GetChatMessages(ctx, q.ChatID)
 	if err != nil {
 		return err
 	}
-	c.Result = messages
+	q.Result = messages
 	return nil
+}
+
+type WebSettingsQuery struct {
+	Core   *Core
+	Result sqlc.WebSetting
+}
+
+func (q *WebSettingsQuery) Execute(ctx context.Context) error {
+	if err := q.Core.assertAI(); err != nil {
+		return err
+	}
+	setting, err := q.Core.db.GetWebSettings(ctx)
+	q.Result = setting
+	return err
 }
