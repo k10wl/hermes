@@ -43,12 +43,10 @@ main {
 }
 
 .chat-link {
-  --_margin-x: 6px;
   color: var(--text-0);
   text-decoration: none;
   padding: 4px 8px;
-  margin-left: var(--_margin-x);
-  margin-right: var(--_margin-x);
+  margin: 1px 6px;
   display: block;
   border-radius: 8px;
   white-space: nowrap;
@@ -56,12 +54,10 @@ main {
   text-overflow: ellipsis;
 }
 .chat-link:first-child {
-  --_margin-y: 6px;
-  margin-top: var(--_margin-y);
+  margin-top: 6px;
 }
 .chat-link:last-child {
-  --_margin-y: 6px;
-  margin-bottom: var(--_margin-y);
+  margin-bottom: 6px;
 }
 .chat-link:hover {
   background-color: var(--primary);
