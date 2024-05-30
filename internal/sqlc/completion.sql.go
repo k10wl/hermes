@@ -142,3 +142,19 @@ func (q *Queries) GetChats(ctx context.Context) ([]Chat, error) {
 	}
 	return items, nil
 }
+
+const getLatestChat = `-- name: GetLatestChat :one
+
+SELECT chat_id
+FROM messages
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+// Replace '?' with the specific chat_id you are interested in
+func (q *Queries) GetLatestChat(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getLatestChat)
+	var chat_id int64
+	err := row.Scan(&chat_id)
+	return chat_id, err
+}

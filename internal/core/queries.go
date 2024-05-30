@@ -58,3 +58,14 @@ func (q *WebSettingsQuery) Execute(ctx context.Context) error {
 	q.Result = setting
 	return err
 }
+
+type LatestChatQuery struct {
+	Core   *Core
+	Result int64
+}
+
+func (q *LatestChatQuery) Execute(ctx context.Context) error {
+	id, err := q.Core.db.GetLatestChat(ctx)
+	q.Result = id
+	return err
+}

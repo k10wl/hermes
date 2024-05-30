@@ -88,3 +88,9 @@ func (s *SQLite3) UpdateWebSettings(
 ) error {
 	return s.queries.UpdateWebSettings(ctx, params)
 }
+
+func (s *SQLite3) GetLatestChat(
+	ctx context.Context,
+) (int64, error) {
+	return s.queries.GetLatestChat(ctx)
+}

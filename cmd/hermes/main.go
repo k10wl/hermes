@@ -29,11 +29,11 @@ func main() {
 	}
 	defer sqlite.Close()
 	hermesCore := core.NewCore(openai, sqlite)
+	cli.CLI(hermesCore, config)
 	if config.Web {
 		if err := web.Serve(hermesCore, config); err != nil {
 			panic(err)
 		}
 		return
 	}
-	cli.CLI(hermesCore, config)
 }

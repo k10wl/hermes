@@ -25,7 +25,9 @@ Example:
 
 func CLI(c *core.Core, config *runtime.Config) {
 	if config.Prompt == "" {
-		fmt.Println(help)
+		if !config.Web {
+			fmt.Println(help)
+		}
 		return
 	}
 	sendMessage := core.CreateChatAndCompletionCommand{Core: c, Message: config.Prompt}

@@ -1,12 +1,14 @@
 package web
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"html/template"
 	"net/http"
 	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/k10wl/hermes/internal/core"
 	hermes_runtime "github.com/k10wl/hermes/internal/runtime"
@@ -21,7 +23,7 @@ var viewsEmbed embed.FS
 func Serve(core *core.Core, config *hermes_runtime.Config) error {
 	server := NewServer(core)
 	addr := fmt.Sprintf("%s:%s", config.Host, config.Port)
-	openBrowser(fmt.Sprintf("http://%s", addr))
+	openBrowser(getUrl(addr, core, config))
 	httpServer := http.Server{
 		Addr:    addr,
 		Handler: server,
@@ -69,4 +71,22 @@ func openBrowser(url string) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func getUrl(addr string, c *core.Core, config *hermes_runtime.Config) string {
+	var str strings.Builder
+	str.WriteString(fmt.Sprintf("http://%s", addr))
+	if !config.Last && config.Prompt == "" {
+		return str.String()
+	}
+	q := core.LatestChatQuery{
+		Core: c,
+	}
+	err := q.Execute(context.Background())
+	if err != nil {
+		fmt.Println("Cannot get latest chat")
+		return str.String()
+	}
+	str.WriteString(fmt.Sprintf("/chats/%d", q.Result))
+	return str.String()
 }

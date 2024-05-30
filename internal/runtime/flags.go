@@ -19,17 +19,22 @@ func loadFlags(c *Config) error {
 		"Inline prompt message attached to end of Stdin string, or used as standalone prompt string",
 	)
 	web := flag.Bool("web", false, "Starts web server")
+	last := flag.Bool(
+		"last",
+		false,
+		"Opens last chat in web. Optional, does nothing if \"-web\" was not provided",
+	)
 	host := flagStringWithShorthand(
 		"host",
 		"h",
 		host,
-		"Host for web server. Optional, does nothing if \"-web\" was not set",
+		"Host for web server. Optional, does nothing if \"-web\" was not provided",
 	)
 	port := flagStringWithShorthand(
 		"port",
 		"p",
 		port,
-		"Port for web server. Optional, does nothing if \"-web\" was not set",
+		"Port for web server. Optional, does nothing if \"-web\" was not provided",
 	)
 	flag.Parse()
 	c.Model = *model
@@ -51,6 +56,7 @@ func loadFlags(c *Config) error {
 	c.Host = *host
 	c.Port = *port
 	c.Web = *web
+	c.Last = *last
 	return nil
 }
 

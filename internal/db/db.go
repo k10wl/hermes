@@ -15,4 +15,6 @@ type Client interface {
 
 	GetWebSettings(context.Context) (sqlc.WebSetting, error)
 	UpdateWebSettings(context.Context, sqlc.UpdateWebSettingsParams) error
+
+	GetLatestChat(context.Context) (int64, error)
 }

@@ -18,6 +18,7 @@ type Config struct {
 	OpenAIKey string
 	ConfigDir string
 	Web       bool
+	Last      bool
 	Host      string
 	Port      string
 }
