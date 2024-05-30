@@ -5,7 +5,8 @@ class Settings {
    * @property {boolean} initted
    */
 
-  /** @type settings */
+  /** @type Settings | undefined */
+  static instance;
   #settings;
 
   /** @param {settings} settings */
@@ -13,7 +14,19 @@ class Settings {
     this.#settings = settings.initted ? settings : this.#init();
   }
 
-  /** @returns {settings} */
+  /** @param {settings} settings */
+  static init(settings) {
+    if (this.instance) {
+      throw new Error("settings already initialized");
+    }
+    this.instance = new Settings(settings);
+    return this.instance;
+  }
+
+  /**
+   * @public
+   * @returns {settings}
+   */
   get() {
     return this.#settings;
   }

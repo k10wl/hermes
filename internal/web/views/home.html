@@ -8,10 +8,13 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Hermes</title>
     <link rel="stylesheet" href="/assets/stylesheet.css">
+    <script src="/assets/utils.js"></script>
     <script src="/assets/settings.js"></script>
-    <script>const settings = new Settings(JSON.parse({{.WebSettings}}));</script>
     <script src="/assets/theme.js"></script>
-    <script src="/assets/scripts.js"></script>
+    <script>
+        new Theme(Settings.init(JSON.parse({{.WebSettings}}))).load();
+    </script>
+    <script src="/assets/dom-content-loaded.js"></script>
 </head>
 
 <body>
@@ -29,7 +32,7 @@
 
 {{define "chats-list"}}
 <div id="chats-list">
-    <a href="/" class="chat-link primary-bg">New chat</a>
+    <a href="/" class="chat-link">New chat</a>
     {{range .Chats}}{{template "chat-link" .}}{{end}}
 </div>
 {{end}}
@@ -61,7 +64,7 @@
 
 {{define "form"}}
 <form id="message-form">
-    <textarea id="message-input" name="content" placeholder="What are the best use cases for AI?" autofocus></textarea>
+    <textarea rows="1" id="message-input" name="content" placeholder="Type message..." autofocus></textarea>
     <button id="message-submit-button" type="submit">send</button>
 </form>
 {{end}}
