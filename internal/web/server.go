@@ -23,7 +23,6 @@ var viewsEmbed embed.FS
 func Serve(core *core.Core, config *hermes_runtime.Config) error {
 	server := NewServer(core)
 	addr := fmt.Sprintf("%s:%s", config.Host, config.Port)
-	openBrowser(getUrl(addr, core, config))
 	httpServer := http.Server{
 		Addr:    addr,
 		Handler: server,
@@ -52,7 +51,7 @@ func NewTemplate() *template.Template {
 	return tmpl
 }
 
-func openBrowser(url string) {
+func OpenBrowser(url string) {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "linux":
@@ -73,7 +72,7 @@ func openBrowser(url string) {
 	}
 }
 
-func getUrl(addr string, c *core.Core, config *hermes_runtime.Config) string {
+func GetUrl(addr string, c *core.Core, config *hermes_runtime.Config) string {
 	var str strings.Builder
 	str.WriteString(fmt.Sprintf("http://%s", addr))
 	if !config.Last && config.Prompt == "" {

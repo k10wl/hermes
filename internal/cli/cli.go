@@ -8,7 +8,7 @@ import (
 	"github.com/k10wl/hermes/internal/runtime"
 )
 
-const help = `Hermes - Host-based Extensible Response Management System
+const HelpString = `Hermes - Host-based Extensible Response Management System
 
 Usage:  hermes -m "Hello world!"
         cat logs.txt | hermes -m "show errors"
@@ -23,18 +23,11 @@ Example:
         questions and providing information to the best of my
         knowledge and abilities.`
 
-func CLI(c *core.Core, config *runtime.Config) {
-	if config.Prompt == "" {
-		if !config.Web {
-			fmt.Println(help)
-		}
-		return
-	}
+func CLI(c *core.Core, config *runtime.Config) error {
 	sendMessage := core.CreateChatAndCompletionCommand{Core: c, Message: config.Prompt}
-	ctx := context.Background()
-	err := sendMessage.Execute(ctx)
-	if err != nil {
-		panic(err)
+	if err := sendMessage.Execute(context.Background()); err != nil {
+		return err
 	}
 	fmt.Println(sendMessage.Result.Content)
+	return nil
 }

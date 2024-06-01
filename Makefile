@@ -1,7 +1,7 @@
 APP_NAME=hermes
 DEV_APP_NAME=hermes-dev
 
-SRC_DIR=./cmd/hermes
+SRC_DIR=./cmd
 
 .PHONY: build run all dev-build dev-run dev-watch dev-all clean sqlc
 
@@ -16,7 +16,7 @@ run:
 
 install:
 	@echo "Running binary instalation..."
-	@go install ./cmd/hermes/
+	@go install $(SRC_DIR)
 	@echo "Done"
 
 all: build run
@@ -44,4 +44,9 @@ sqlc:
 clean:
 	@echo "Cleaning up..."
 	@rm -f ./bin/$(APP_NAME) ./bin/$(DEV_APP_NAME)
+	@echo "Done"
+
+test:
+	@echo "Running tests..."
+	@go test ./...
 	@echo "Done"

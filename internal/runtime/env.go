@@ -13,13 +13,3 @@ func loadEnv(c *Config) {
 	openAIKey := os.Getenv("OPEN_AI_KEY")
 	c.OpenAIKey = openAIKey
 }
-
-func ensureExists(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err := os.Mkdir(path, os.ModePerm)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}

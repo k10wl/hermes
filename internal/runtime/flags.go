@@ -18,6 +18,7 @@ func loadFlags(c *Config) error {
 		"",
 		"Inline prompt message attached to end of Stdin string, or used as standalone prompt string",
 	)
+	// TEST
 	web := flag.Bool("web", false, "Starts web server")
 	last := flag.Bool(
 		"last",
@@ -39,6 +40,7 @@ func loadFlags(c *Config) error {
 	flag.Parse()
 	c.Model = *model
 	stat, _ := os.Stdin.Stat()
+	// TEST
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 		p, err := io.ReadAll(os.Stdin)
 		if err != nil {
@@ -46,6 +48,7 @@ func loadFlags(c *Config) error {
 		}
 		c.Prompt = string(p)
 	}
+	// TEST
 	if *message != "" {
 		if c.Prompt == "" {
 			c.Prompt = *message

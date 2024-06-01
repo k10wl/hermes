@@ -53,3 +53,13 @@ func loadConfig() (*Config, error) {
 	c.ConfigDir = hermesConfigDir
 	return &c, nil
 }
+
+func ensureExists(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err := os.Mkdir(path, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
