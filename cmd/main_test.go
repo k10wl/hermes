@@ -65,6 +65,7 @@ func TestApp(t *testing.T) {
 			},
 			expected: expected{stdout: cli.HelpString + "\n"},
 		},
+
 		{
 			name: "complete message",
 			prepare: func() {
@@ -81,6 +82,7 @@ func TestApp(t *testing.T) {
 			},
 			expected: expected{stdout: completion + "\n"},
 		},
+
 		{
 			name: "start web server",
 			prepare: func() {
