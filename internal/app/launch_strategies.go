@@ -11,12 +11,12 @@ import (
 )
 
 type launchStrategy interface {
-	execute(*core.Core, *runtime.Config) error
+	Execute(*core.Core, *runtime.Config) error
 }
 
 type launchWeb struct{}
 
-func (l *launchWeb) execute(c *core.Core, config *runtime.Config) error {
+func (l *launchWeb) Execute(c *core.Core, config *runtime.Config) error {
 	if config.Prompt != "" {
 		sendMessage := core.CreateChatAndCompletionCommand{
 			Core:    c,
@@ -31,13 +31,13 @@ func (l *launchWeb) execute(c *core.Core, config *runtime.Config) error {
 
 type launchCLI struct{}
 
-func (l *launchCLI) execute(c *core.Core, config *runtime.Config) error {
+func (l *launchCLI) Execute(c *core.Core, config *runtime.Config) error {
 	return cli.CLI(c, config)
 }
 
 type launchBadInput struct{}
 
-func (l *launchBadInput) execute(c *core.Core, config *runtime.Config) error {
-	fmt.Println(cli.HelpString)
+func (l *launchBadInput) Execute(c *core.Core, config *runtime.Config) error {
+	fmt.Fprintf(config.Stdoout, "%s\n", cli.HelpString)
 	return nil
 }

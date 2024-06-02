@@ -3,7 +3,6 @@ package sqlite3
 import (
 	"context"
 	"database/sql"
-	"path"
 
 	"github.com/k10wl/hermes/internal/runtime"
 	"github.com/k10wl/hermes/internal/sqlc"
@@ -16,12 +15,12 @@ type SQLite3 struct {
 }
 
 func NewSQLite3(config *runtime.Config) (*SQLite3, error) {
-	dbName := path.Join(config.ConfigDir, "main.db")
-	err := runMigrations(dbName)
+	dbName := config.DatabaseDSN
+	db, err := sql.Open("sqlite3", dbName)
 	if err != nil {
 		return nil, err
 	}
-	db, err := sql.Open("sqlite3", dbName)
+	err = runMigrations(db)
 	if err != nil {
 		return nil, err
 	}

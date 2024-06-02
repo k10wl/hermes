@@ -16,12 +16,7 @@ import (
 //go:embed migrations/*.sql
 var migrationFiles embed.FS
 
-func runMigrations(dbPath string) error {
-	db, err := sql.Open("sqlite3", dbPath)
-	if err != nil {
-		return fmt.Errorf("failed to open database: %w", err)
-	}
-	defer db.Close()
+func runMigrations(db *sql.DB) error {
 	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
 	if err != nil {
 		return fmt.Errorf("failed to create driver: %w", err)
@@ -38,9 +33,6 @@ func runMigrations(dbPath string) error {
 		return fmt.Errorf("failed to check if database is dirty: %w", err)
 	} else if dirty {
 		log.Println("Database is dirty, resetting...")
-		if err := resetDatabase(dbPath); err != nil {
-			return fmt.Errorf("failed to reset database: %w", err)
-		}
 		if err := rerunMigrations(m); err != nil {
 			return fmt.Errorf("failed to rerun migrations: %w", err)
 		}

@@ -24,8 +24,8 @@ func TestPickStrategy(t *testing.T) {
 				{
 					Web:    true,
 					Prompt: "any string",
-					Host:   "127.0.0.1",
-					Port:   "8123",
+					Host:   runtime.DefaultHost,
+					Port:   runtime.DefaultPort,
 					Last:   true,
 				},
 			},
@@ -36,6 +36,8 @@ func TestPickStrategy(t *testing.T) {
 			input: []runtime.Config{
 				{
 					Prompt: "this is my prompt",
+					Host:   runtime.DefaultHost,
+					Port:   runtime.DefaultPort,
 				},
 			},
 			expected: &launchCLI{},
@@ -45,17 +47,19 @@ func TestPickStrategy(t *testing.T) {
 			input: []runtime.Config{
 				{
 					Prompt: "",
+					Host:   runtime.DefaultHost,
+					Port:   runtime.DefaultPort,
 				},
 				{
 					Prompt: "     ",
+					Host:   runtime.DefaultHost,
+					Port:   runtime.DefaultPort,
 				},
 				{
-					Web:  false,
-					Host: "127.0.0.1",
+					Web: false,
 				},
 				{
-					Web:  false,
-					Port: "8123",
+					Web: false,
 				},
 				{
 					Web:  false,
@@ -71,7 +75,7 @@ func TestPickStrategy(t *testing.T) {
 
 	for _, test := range table {
 		for _, input := range test.input {
-			output := pickStrategy(&input)
+			output := PickStrategy(&input)
 			fmt.Printf("output: %v\n", output)
 			fmt.Printf("test.expected: %v\n", test.expected)
 			if output != test.expected {

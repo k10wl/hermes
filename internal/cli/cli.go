@@ -28,6 +28,6 @@ func CLI(c *core.Core, config *runtime.Config) error {
 	if err := sendMessage.Execute(context.Background()); err != nil {
 		return err
 	}
-	fmt.Println(sendMessage.Result.Content)
+	fmt.Fprintf(config.Stdoout, "%s\n", sendMessage.Result.Content)
 	return nil
 }

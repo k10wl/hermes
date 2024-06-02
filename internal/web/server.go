@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/k10wl/hermes/internal/core"
 	hermes_runtime "github.com/k10wl/hermes/internal/runtime"
@@ -28,7 +29,22 @@ func Serve(core *core.Core, config *hermes_runtime.Config) error {
 		Handler: server,
 	}
 	fmt.Printf("Starting server on %s\n", addr)
-	return httpServer.ListenAndServe()
+	echan := make(chan error, 1)
+	go func() {
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			echan <- err
+		}
+		close(echan)
+	}()
+	select {
+	case err := <-echan:
+		return err
+	case <-config.ShutdownContext.Done():
+		fmt.Fprintln(config.Stdoout, "Shutdown signal received")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	return httpServer.Shutdown(ctx)
 }
 
 func NewServer(core *core.Core) http.Handler {

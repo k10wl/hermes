@@ -19,7 +19,12 @@ type OpenAIAdapter struct {
 	client *client.OpenAIClient
 }
 
-func NewOpenAIAdapter(client *client.OpenAIClient) *OpenAIAdapter {
+type OpenAIAdapterInterface interface {
+	ChatCompletion(messages []Message) (Message, int, error)
+	SetModel(model string) error
+}
+
+func NewOpenAIAdapter(client *client.OpenAIClient) OpenAIAdapterInterface {
 	return &OpenAIAdapter{client: client}
 }
 
@@ -52,13 +57,13 @@ func (a *OpenAIAdapter) ChatCompletion(messages []Message) (Message, int, error)
 	return a.messageDecoder(c.Choices[0].Message), usedMessages, nil
 }
 
-func (a *OpenAIAdapter) SetModel(model string) (*OpenAIAdapter, error) {
+func (a *OpenAIAdapter) SetModel(model string) error {
 	m, err := client.NewChatCompletionModel(a.client, model)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	a.model = m
-	return a, nil
+	return nil
 }
 
 func (a *OpenAIAdapter) messageDecoder(message client.Message) Message {

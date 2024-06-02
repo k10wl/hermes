@@ -28,19 +28,18 @@ func loadFlags(c *Config) error {
 	host := flagStringWithShorthand(
 		"host",
 		"h",
-		host,
+		DefaultHost,
 		"Host for web server. Optional, does nothing if \"-web\" was not provided",
 	)
 	port := flagStringWithShorthand(
 		"port",
 		"p",
-		port,
+		DefaultPort,
 		"Port for web server. Optional, does nothing if \"-web\" was not provided",
 	)
 	flag.Parse()
 	c.Model = *model
 	stat, _ := os.Stdin.Stat()
-	// TEST
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 		p, err := io.ReadAll(os.Stdin)
 		if err != nil {
@@ -48,7 +47,6 @@ func loadFlags(c *Config) error {
 		}
 		c.Prompt = string(p)
 	}
-	// TEST
 	if *message != "" {
 		if c.Prompt == "" {
 			c.Prompt = *message
