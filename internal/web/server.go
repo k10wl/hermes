@@ -28,7 +28,7 @@ func Serve(core *core.Core, config *hermes_runtime.Config) error {
 		Addr:    addr,
 		Handler: server,
 	}
-	fmt.Printf("Starting server on %s\n", addr)
+	fmt.Fprintf(config.Stdoout, "Starting server on %s\n", addr)
 	echan := make(chan error, 1)
 	go func() {
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {

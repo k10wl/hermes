@@ -2,9 +2,12 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"io"
+	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
 	"github.com/k10wl/hermes/internal/cli"
@@ -16,14 +19,16 @@ var completion = "This is a mock response."
 
 func TestApp(t *testing.T) {
 	type expected struct {
-		stdout string
-		stderr string
+		stdout  string
+		stderr  string
+		network string
 	}
 	type tc struct {
 		name        string
 		expected    expected
 		shouldError bool
 		prepare     func()
+		extraFn     func() error
 	}
 
 	oldConfig := getConfig
@@ -77,7 +82,7 @@ func TestApp(t *testing.T) {
 			expected: expected{stdout: completion + "\n"},
 		},
 		{
-			name: "complete message",
+			name: "start web server",
 			prepare: func() {
 				getConfig = func(
 					stdin io.Reader,
@@ -87,10 +92,24 @@ func TestApp(t *testing.T) {
 					c, err := oldConfig(stdin, stdout, stderr)
 					c.DatabaseDSN = ":memory:"
 					c.Prompt = "complete prompt"
+					c.Web = true
+					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+					defer cancel()
+					c.ShutdownContext = ctx
 					return c, err
 				}
 			},
-			expected: expected{stdout: completion + "\n"},
+			expected: expected{
+				stdout: "Starting server on 127.0.0.1:8123\nShutdown signal received\n",
+			},
+			extraFn: func() error {
+				resp, err := http.Get("http://127.0.0.1:8123")
+				if err != nil {
+					return err
+				}
+				defer resp.Body.Close()
+				return nil
+			},
 		},
 	}
 
@@ -118,6 +137,12 @@ func TestApp(t *testing.T) {
 				test.expected.stdout,
 				stdout.String(),
 			)
+		}
+		if test.extraFn != nil {
+			err := test.extraFn()
+			if err != nil {
+				t.Errorf("Failed extraFn test for %s\nError: %v", test.name, err)
+			}
 		}
 		reset()
 	}
