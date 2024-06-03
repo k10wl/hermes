@@ -17,11 +17,33 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   document.addEventListener("keydown", (e) => {
+    const input = assertInstance(messageInput, HTMLTextAreaElement);
+    if (e.key === "Escape") {
+      if (document.activeElement === input) {
+        input.blur();
+      } else if (window.location.pathname !== "/") {
+        setTimeout(() =>
+          window.location.replace(
+            window.location.protocol + "//" + window.location.host,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (e.altKey && e.key === "ArrowUp") {
+      return chatNavigation("prev");
+    }
+
+    if (e.altKey && e.key === "ArrowDown") {
+      return chatNavigation("next");
+    }
+
     if (
       [document.body, null].find((el) => el === document.activeElement) &&
       e.key === "Enter"
     ) {
-      assertInstance(messageInput, HTMLTextAreaElement).focus();
+      input.focus();
       assertInstance(messageSubmitButton, HTMLButtonElement).click();
       e.preventDefault();
       return;
@@ -92,6 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const el = assertInstance(chatsSelector.item(i), HTMLAnchorElement);
     if (el.pathname === window.location.pathname) {
       el.classList.add("primary-bg");
+      el.scrollIntoView(false);
     }
   }
 
@@ -100,3 +123,17 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("resize", autoresize(messageInput));
   resizeObs.observe(messageInput);
 });
+
+/** @param {"prev" | "next"} dir */
+function chatNavigation(dir) {
+  const el = assertInstance(
+    document.querySelector(".chat-link.primary-bg"),
+    HTMLAnchorElement,
+  );
+  let reqEl =
+    dir === "next" ? el.nextElementSibling : el.previousElementSibling;
+  if (!reqEl) {
+    return;
+  }
+  window.location.replace(assertInstance(reqEl, HTMLAnchorElement).href);
+}
