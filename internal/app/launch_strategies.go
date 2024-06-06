@@ -26,6 +26,7 @@ func (l *launchWeb) Execute(c *core.Core, config *runtime.Config) error {
 			return err
 		}
 	}
+	web.OpenBrowser(web.GetUrl(fmt.Sprintf("%s:%s", config.Host, config.Port), c, config))
 	return web.Serve(c, config)
 }
 
