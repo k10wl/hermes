@@ -10,6 +10,6 @@ func loadEnv(c *Config) {
 	} else {
 		c.AppName = appName
 	}
-	openAIKey := os.Getenv("OPEN_AI_KEY")
+	openAIKey := os.Getenv("HERMES_OPENAI_API_KEY")
 	c.OpenAIKey = openAIKey
 }
