@@ -102,6 +102,6 @@ func GetUrl(addr string, c *core.Core, config *hermes_runtime.Config) string {
 		fmt.Println("Cannot get latest chat")
 		return str.String()
 	}
-	str.WriteString(fmt.Sprintf("/chats/%d", q.Result))
+	str.WriteString(fmt.Sprintf("/chats/%d", q.Result.ID))
 	return str.String()
 }

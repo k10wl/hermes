@@ -140,13 +140,13 @@ main {
   }
 }
 
-.role-assistant {
+.role-2 {
   background: var(--bg-2);
   color: var(--text-0);
   border-bottom-left-radius: 0;
 }
 
-.role-user {
+.role-1 {
   border-bottom-right-radius: 0;
   margin-left: auto;
   color: var(--light-bg-0);

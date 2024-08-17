@@ -4,7 +4,7 @@ import (
 	"context"
 
 	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
-	"github.com/k10wl/hermes/internal/sqlc"
+	"github.com/k10wl/hermes/internal/models"
 )
 
 type Command interface {
@@ -14,7 +14,7 @@ type Command interface {
 type CreateChatAndCompletionCommand struct {
 	Core    *Core
 	Message string
-	Result  sqlc.Message
+	Result  *models.Message
 }
 
 func (c *CreateChatAndCompletionCommand) Execute(ctx context.Context) error {
@@ -23,7 +23,8 @@ func (c *CreateChatAndCompletionCommand) Execute(ctx context.Context) error {
 	}
 	chat, _, err := c.Core.db.CreateChatAndMessage(
 		ctx,
-		sqlc.CreateMessageParams{Content: c.Message, RoleID: 1},
+		1,
+		c.Message,
 	)
 	if err != nil {
 		return err
@@ -37,20 +38,19 @@ func (c *CreateChatAndCompletionCommand) Execute(ctx context.Context) error {
 	}
 	message, err := c.Core.db.CreateMessage(
 		ctx,
-		sqlc.CreateMessageParams{ChatID: chat.ID, Content: res.Content, RoleID: 2},
+		chat.ID,
+		2,
+		res.Content,
 	)
-	if err != nil {
-		return err
-	}
 	c.Result = message
-	return nil
+	return err
 }
 
 type CreateCompletionCommand struct {
 	Core    *Core
 	Message string
 	ChatID  int64
-	Result  sqlc.Message
+	Result  *models.Message
 }
 
 func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
@@ -63,14 +63,16 @@ func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
 	}
 	_, err = c.Core.db.CreateMessage(
 		ctx,
-		sqlc.CreateMessageParams{ChatID: c.ChatID, Content: c.Message, RoleID: 1},
+		c.ChatID,
+		1,
+		c.Message,
 	)
 	if err != nil {
 		return err
 	}
 	history := []ai_clients.Message{}
 	for _, p := range prev {
-		history = append(history, sqlcMessageToAIMessage(p))
+		history = append(history, messageToAIMessage(p))
 	}
 	history = append(history, ai_clients.Message{Content: c.Message, Role: UserRole})
 	// TODO insert used value into the db and adjust queries to receive less messages
@@ -80,23 +82,19 @@ func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
 	}
 	message, err := c.Core.db.CreateMessage(
 		ctx,
-		sqlc.CreateMessageParams{ChatID: c.ChatID, Content: res.Content, RoleID: 2},
+		c.ChatID,
+		2,
+		res.Content,
 	)
-	if err != nil {
-		return err
-	}
 	c.Result = message
-	return nil
+	return err
 }
 
 type UpdateWebSettingsCommand struct {
 	Core        *Core
-	WebSettings sqlc.WebSetting
+	WebSettings models.WebSettings
 }
 
 func (c *UpdateWebSettingsCommand) Execute(ctx context.Context) error {
-	return c.Core.db.UpdateWebSettings(ctx, sqlc.UpdateWebSettingsParams{
-		DarkMode: c.WebSettings.DarkMode,
-		Initted:  c.WebSettings.Initted,
-	})
+	return c.Core.db.UpdateWebSettings(ctx, c.WebSettings.DarkMode)
 }

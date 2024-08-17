@@ -11,13 +11,13 @@ import (
 	"strconv"
 
 	"github.com/k10wl/hermes/internal/core"
-	"github.com/k10wl/hermes/internal/sqlc"
+	"github.com/k10wl/hermes/internal/models"
 )
 
 func handleChat(c *core.Core, t *template.Template) http.HandlerFunc {
 	type home struct {
-		Chats       []sqlc.Chat
-		Messages    []sqlc.GetChatMessagesRow
+		Chats       []*models.Chat
+		Messages    []*models.Message
 		WebSettings string
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +59,7 @@ func handleAssets() http.Handler {
 func handleMessage(c *core.Core, t *template.Template) http.HandlerFunc {
 	type message struct {
 		Content string
-		Role    string
+		RoleID  int64
 		ID      int64
 		ChatID  int64
 	}
@@ -92,14 +92,15 @@ func handleMessage(c *core.Core, t *template.Template) http.HandlerFunc {
 			m.Content = command.Result.Content
 			m.ID = command.Result.ID
 		}
-		m.Role = core.AssistantRole
+		// TODO remove magic number
+		m.RoleID = 2
 		t.ExecuteTemplate(w, "message", m)
 	}
 }
 
 func handlePutSettings(c *core.Core) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var s sqlc.WebSetting
+		var s models.WebSettings
 		body, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
 		if err != nil {

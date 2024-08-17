@@ -3,7 +3,7 @@ DEV_APP_NAME=hermes-dev
 
 SRC_DIR=./cmd
 
-.PHONY: build run all dev-build dev-run dev-watch dev-all clean sqlc
+.PHONY: build run all dev-build dev-run dev-watch dev-all clean
 
 build:
 	@echo "Building prod version..."
@@ -35,11 +35,6 @@ dev-watch:
 	@APP_NAME=$(DEV_APP_NAME) air
 
 dev-all: dev-build dev-run
-
-sqlc:
-	@echo "Creating sqlc files..."
-	@sqlc generate
-	@echo "Done"
 
 clean:
 	@echo "Cleaning up..."
