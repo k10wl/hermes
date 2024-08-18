@@ -68,6 +68,8 @@ func NewTemplate() *template.Template {
 }
 
 func OpenBrowser(url string) {
+	// XXX remove this
+	return
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "linux":

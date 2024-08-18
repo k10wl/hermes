@@ -59,7 +59,7 @@ func handleAssets() http.Handler {
 func handleMessage(c *core.Core, t *template.Template) http.HandlerFunc {
 	type message struct {
 		Content string
-		RoleID  int64
+		Role    string
 		ID      int64
 		ChatID  int64
 	}
@@ -69,16 +69,24 @@ func handleMessage(c *core.Core, t *template.Template) http.HandlerFunc {
 		chatId := r.PathValue("id")
 		// TODO handle error
 		if chatId == "" {
-			command := &core.CreateChatAndCompletionCommand{Core: c, Message: content}
-			command.Execute(context.Background())
+			command := &core.CreateChatAndCompletionCommand{
+				Core:    c,
+				Role:    core.UserRole,
+				Message: content,
+			}
+			command.Execute(r.Context())
 			m.Content = command.Result.Content
 			m.ChatID = command.Result.ChatID
+			m.Role = command.Result.Role
 			w.Header().Set("Content-Type", "text/html")
 			w.Header().Set("Eval", "js")
 			w.WriteHeader(http.StatusMovedPermanently)
 			w.Write(
 				[]byte(
-					fmt.Sprintf(`window.location.replace('/chats/%v');`, m.ChatID),
+					fmt.Sprintf(
+						`window.location.replace('/chats/%v');`,
+						m.ChatID,
+					),
 				),
 			)
 			return
@@ -87,13 +95,16 @@ func handleMessage(c *core.Core, t *template.Template) http.HandlerFunc {
 			if err != nil {
 				panic(err)
 			}
-			command := &core.CreateCompletionCommand{Core: c, ChatID: id, Message: content}
+			command := &core.CreateCompletionCommand{Core: c,
+				Role:    core.UserRole,
+				ChatID:  id,
+				Message: content,
+			}
 			command.Execute(context.Background())
 			m.Content = command.Result.Content
 			m.ID = command.Result.ID
+			m.Role = command.Result.Role
 		}
-		// TODO remove magic number
-		m.RoleID = 2
 		t.ExecuteTemplate(w, "message", m)
 	}
 }
@@ -114,8 +125,11 @@ func handlePutSettings(c *core.Core) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		updateWebSettings := core.UpdateWebSettingsCommand{Core: c, WebSettings: s}
-		err = updateWebSettings.Execute(context.TODO())
+		updateWebSettings := core.UpdateWebSettingsCommand{
+			Core:        c,
+			WebSettings: s,
+		}
+		err = updateWebSettings.Execute(r.Context())
 		if err != nil {
 			fmt.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)

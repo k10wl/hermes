@@ -16,6 +16,7 @@ type CompletionParameters struct {
 	Temperature int64
 }
 
+// TODO implement model and provider handling
 type Model struct {
 	ID        int64
 	Provider  string
@@ -35,7 +36,7 @@ type Chat struct {
 type Message struct {
 	ID                 int64  `json:"id"`
 	ChatID             int64  `json:"chat_id"`
-	RoleID             int64  `json:"role_id"`
+	Role               string `json:"role"`
 	Content            string `json:"content"`
 	Generation         int64  `json:"generation"`
 	SelectedGeneration bool   `json:"selected_generation"`

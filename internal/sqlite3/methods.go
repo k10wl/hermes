@@ -9,10 +9,10 @@ import (
 func (s *SQLite3) CreateMessage(
 	ctx context.Context,
 	chatId int64,
-	roleId int64,
+	role string,
 	content string,
 ) (*models.Message, error) {
-	return createMessage(s.db.QueryRowContext, ctx, chatId, roleId, content)
+	return createMessage(s.db.QueryRowContext, ctx, chatId, role, content)
 }
 
 func (s *SQLite3) CreateChat(ctx context.Context, name string) (*models.Chat, error) {
@@ -21,7 +21,7 @@ func (s *SQLite3) CreateChat(ctx context.Context, name string) (*models.Chat, er
 
 func (s *SQLite3) CreateChatAndMessage(
 	ctx context.Context,
-	roleId int64,
+	role string,
 	content string,
 ) (*models.Chat, *models.Message, error) {
 	tx, err := s.db.Begin()
@@ -33,7 +33,7 @@ func (s *SQLite3) CreateChatAndMessage(
 	if err != nil {
 		return nil, nil, err
 	}
-	message, err := createMessage(tx.QueryRowContext, ctx, chat.ID, 1, content)
+	message, err := createMessage(tx.QueryRowContext, ctx, chat.ID, role, content)
 	if err != nil {
 		return nil, nil, err
 	}

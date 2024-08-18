@@ -21,6 +21,7 @@ func (l *launchWeb) Execute(c *core.Core, config *runtime.Config) error {
 		sendMessage := core.CreateChatAndCompletionCommand{
 			Core:    c,
 			Message: config.Prompt,
+			Role:    "user",
 		}
 		if err := sendMessage.Execute(context.Background()); err != nil {
 			return err

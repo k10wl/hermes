@@ -37,18 +37,8 @@ func (c *Core) assertAI() error {
 }
 
 func messageToAIMessage(m *models.Message) ai_clients.Message {
-	var role string
-	// TODO replace with db role retrieval
-	switch m.RoleID {
-	case 1:
-		role = "user"
-	case 2:
-		role = "assistant"
-	case 3:
-		role = "system"
-	}
 	return ai_clients.Message{
 		Content: m.Content,
-		Role:    role,
+		Role:    m.Role,
 	}
 }

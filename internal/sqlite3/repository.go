@@ -13,28 +13,38 @@ type executorFnMultiple func(context.Context, string, ...interface{}) (*sql.Rows
 const createMessageQuery = `
 INSERT INTO messages (chat_id, role_id, content)
 VALUES ($1,$2,$3)
-RETURNING id, chat_id, role_id, content, created_at, updated_at, deleted_at;
+RETURNING id, chat_id, content, created_at, updated_at, deleted_at;
+`
+
+const getRoleIDByName = `
+SELECT id FROM roles WHERE name = $1;
 `
 
 func createMessage(
 	executor executorFnSingle,
 	ctx context.Context,
 	chatId int64,
-	roleId int64,
+	role string,
 	content string,
 ) (*models.Message, error) {
-	row := executor(
+	row := executor(ctx, getRoleIDByName, role)
+	var roleID int64
+	err := row.Scan(&roleID)
+	if err != nil {
+		return nil, err
+	}
+	row = executor(
 		ctx,
 		createMessageQuery,
 		chatId,
-		roleId,
+		roleID,
 		content,
 	)
 	var message models.Message
-	err := row.Scan(
+	message.Role = role
+	err = row.Scan(
 		&message.ID,
 		&message.ChatID,
-		&message.RoleID,
 		&message.Content,
 		&message.CreatedAt,
 		&message.UpdatedAt,
@@ -98,7 +108,9 @@ func getChats(
 }
 
 const getChatMessagesQuery = `
-SELECT id, chat_id, role_id, content, created_at, updated_at, deleted_at FROM messages
+SELECT m.id, chat_id, roles.name, content, m.created_at, m.updated_at, m.deleted_at 
+FROM messages AS m
+JOIN roles ON role_id = roles.id
 WHERE chat_id = $1;
 `
 
@@ -117,7 +129,7 @@ func getChatMessages(
 		err = rows.Scan(
 			&message.ID,
 			&message.ChatID,
-			&message.RoleID,
+			&message.Role,
 			&message.Content,
 			&message.CreatedAt,
 			&message.UpdatedAt,

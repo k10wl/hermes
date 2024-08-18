@@ -11,12 +11,12 @@ type Client interface {
 	CreateMessage(
 		ctx context.Context,
 		chatId int64,
-		roleId int64,
+		role string,
 		content string,
 	) (*models.Message, error)
 	CreateChatAndMessage(
 		ctx context.Context,
-		roleId int64,
+		role string,
 		content string,
 	) (*models.Chat, *models.Message, error)
 	GetChats(context.Context) ([]*models.Chat, error)

@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
     input.value = "";
     input.rows = 1;
     assertInstance(messagesList, HTMLDivElement).append(
-      Templates.createMessage(content, "1"),
+      Templates.createMessage(content, "user"),
     );
     let pathname = window.location.pathname;
     if (pathname === "/") {

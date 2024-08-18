@@ -13,6 +13,7 @@ type Command interface {
 
 type CreateChatAndCompletionCommand struct {
 	Core    *Core
+	Role    string
 	Message string
 	Result  *models.Message
 }
@@ -23,7 +24,7 @@ func (c *CreateChatAndCompletionCommand) Execute(ctx context.Context) error {
 	}
 	chat, _, err := c.Core.db.CreateChatAndMessage(
 		ctx,
-		1,
+		c.Role,
 		c.Message,
 	)
 	if err != nil {
@@ -39,7 +40,7 @@ func (c *CreateChatAndCompletionCommand) Execute(ctx context.Context) error {
 	message, err := c.Core.db.CreateMessage(
 		ctx,
 		chat.ID,
-		2,
+		res.Role,
 		res.Content,
 	)
 	c.Result = message
@@ -49,6 +50,7 @@ func (c *CreateChatAndCompletionCommand) Execute(ctx context.Context) error {
 type CreateCompletionCommand struct {
 	Core    *Core
 	Message string
+	Role    string
 	ChatID  int64
 	Result  *models.Message
 }
@@ -64,7 +66,7 @@ func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
 	_, err = c.Core.db.CreateMessage(
 		ctx,
 		c.ChatID,
-		1,
+		c.Role,
 		c.Message,
 	)
 	if err != nil {
@@ -83,7 +85,7 @@ func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
 	message, err := c.Core.db.CreateMessage(
 		ctx,
 		c.ChatID,
-		2,
+		res.Role,
 		res.Content,
 	)
 	c.Result = message

@@ -24,7 +24,11 @@ Example:
         knowledge and abilities.`
 
 func CLI(c *core.Core, config *runtime.Config) error {
-	sendMessage := core.CreateChatAndCompletionCommand{Core: c, Message: config.Prompt}
+	sendMessage := core.CreateChatAndCompletionCommand{
+		Core:    c,
+		Message: config.Prompt,
+		Role:    "user",
+	}
 	if err := sendMessage.Execute(context.Background()); err != nil {
 		return err
 	}
