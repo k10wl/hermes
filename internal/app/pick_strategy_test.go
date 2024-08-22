@@ -4,28 +4,28 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/k10wl/hermes/internal/runtime"
+	"github.com/k10wl/hermes/internal/settings"
 )
 
 func TestPickStrategy(t *testing.T) {
 	type tc struct {
 		name     string
-		input    []runtime.Config
+		input    []settings.Config
 		expected interface{}
 	}
 
 	table := []tc{
 		{
 			name: "return web app launcher",
-			input: []runtime.Config{
+			input: []settings.Config{
 				{
 					Web: true,
 				},
 				{
 					Web:    true,
 					Prompt: "any string",
-					Host:   runtime.DefaultHost,
-					Port:   runtime.DefaultPort,
+					Host:   settings.DefaultHost,
+					Port:   settings.DefaultPort,
 					Last:   true,
 				},
 			},
@@ -33,27 +33,27 @@ func TestPickStrategy(t *testing.T) {
 		},
 		{
 			name: "return CLI launcher",
-			input: []runtime.Config{
+			input: []settings.Config{
 				{
 					Prompt: "this is my prompt",
-					Host:   runtime.DefaultHost,
-					Port:   runtime.DefaultPort,
+					Host:   settings.DefaultHost,
+					Port:   settings.DefaultPort,
 				},
 			},
 			expected: &launchCLI{},
 		},
 		{
 			name: "return bad input launcher",
-			input: []runtime.Config{
+			input: []settings.Config{
 				{
 					Prompt: "",
-					Host:   runtime.DefaultHost,
-					Port:   runtime.DefaultPort,
+					Host:   settings.DefaultHost,
+					Port:   settings.DefaultPort,
 				},
 				{
 					Prompt: "     ",
-					Host:   runtime.DefaultHost,
-					Port:   runtime.DefaultPort,
+					Host:   settings.DefaultHost,
+					Port:   settings.DefaultPort,
 				},
 				{
 					Web: false,

@@ -3,7 +3,7 @@ package sqlite3
 import (
 	"database/sql"
 
-	"github.com/k10wl/hermes/internal/runtime"
+	"github.com/k10wl/hermes/internal/settings"
 	_ "modernc.org/sqlite"
 )
 
@@ -11,7 +11,7 @@ type SQLite3 struct {
 	db *sql.DB
 }
 
-func NewSQLite3(config *runtime.Config) (*SQLite3, error) {
+func NewSQLite3(config *settings.Config) (*SQLite3, error) {
 	dbName := config.DatabaseDSN
 	db, err := sql.Open("sqlite3", dbName)
 	if err != nil {

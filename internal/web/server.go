@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/k10wl/hermes/internal/core"
-	hermes_runtime "github.com/k10wl/hermes/internal/runtime"
+	"github.com/k10wl/hermes/internal/settings"
 )
 
 //go:embed assets
@@ -21,7 +21,7 @@ var assetsEmbed embed.FS
 //go:embed views
 var viewsEmbed embed.FS
 
-func Serve(core *core.Core, config *hermes_runtime.Config) error {
+func Serve(core *core.Core, config *settings.Config) error {
 	server := NewServer(core)
 	addr := fmt.Sprintf("%s:%s", config.Host, config.Port)
 	httpServer := http.Server{
@@ -68,8 +68,6 @@ func NewTemplate() *template.Template {
 }
 
 func OpenBrowser(url string) {
-	// XXX remove this
-	return
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "linux":
@@ -90,7 +88,7 @@ func OpenBrowser(url string) {
 	}
 }
 
-func GetUrl(addr string, c *core.Core, config *hermes_runtime.Config) string {
+func GetUrl(addr string, c *core.Core, config *settings.Config) string {
 	var str strings.Builder
 	str.WriteString(fmt.Sprintf("http://%s", addr))
 	if !config.Last && config.Prompt == "" {

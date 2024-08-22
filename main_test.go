@@ -11,7 +11,7 @@ import (
 
 	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
 	"github.com/k10wl/hermes/internal/cli"
-	"github.com/k10wl/hermes/internal/runtime"
+	"github.com/k10wl/hermes/internal/settings"
 	client "github.com/k10wl/openai-client"
 )
 
@@ -57,7 +57,7 @@ func TestApp(t *testing.T) {
 					stdin io.Reader,
 					stdout io.Writer,
 					stderr io.Writer,
-				) (*runtime.Config, error) {
+				) (*settings.Config, error) {
 					c, err := oldConfig(stdin, stdout, stderr)
 					c.DatabaseDSN = ":memory:"
 					return c, err
@@ -73,7 +73,7 @@ func TestApp(t *testing.T) {
 					stdin io.Reader,
 					stdout io.Writer,
 					stderr io.Writer,
-				) (*runtime.Config, error) {
+				) (*settings.Config, error) {
 					c, err := oldConfig(stdin, stdout, stderr)
 					c.DatabaseDSN = ":memory:"
 					c.Prompt = "complete prompt"
@@ -90,7 +90,7 @@ func TestApp(t *testing.T) {
 					stdin io.Reader,
 					stdout io.Writer,
 					stderr io.Writer,
-				) (*runtime.Config, error) {
+				) (*settings.Config, error) {
 					c, err := oldConfig(stdin, stdout, stderr)
 					c.DatabaseDSN = ":memory:"
 					c.Prompt = "complete prompt"

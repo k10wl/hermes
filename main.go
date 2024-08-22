@@ -8,12 +8,12 @@ import (
 	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
 	"github.com/k10wl/hermes/internal/app"
 	"github.com/k10wl/hermes/internal/core"
-	"github.com/k10wl/hermes/internal/runtime"
+	"github.com/k10wl/hermes/internal/settings"
 	"github.com/k10wl/hermes/internal/sqlite3"
 	client "github.com/k10wl/openai-client"
 )
 
-var getConfig = runtime.GetConfig
+var getConfig = settings.GetConfig
 var newOpenAIAdapter = ai_clients.NewOpenAIAdapter
 
 func run(stdin io.Reader, stdout io.Writer, stderr io.Writer) error {

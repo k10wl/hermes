@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/k10wl/hermes/internal/core"
-	"github.com/k10wl/hermes/internal/runtime"
+	"github.com/k10wl/hermes/internal/settings"
 )
 
 const HelpString = `Hermes - Host-based Extensible Response Management System
@@ -23,7 +23,7 @@ Example:
         questions and providing information to the best of my
         knowledge and abilities.`
 
-func CLI(c *core.Core, config *runtime.Config) error {
+func CLI(c *core.Core, config *settings.Config) error {
 	sendMessage := core.CreateChatAndCompletionCommand{
 		Core:    c,
 		Message: config.Prompt,

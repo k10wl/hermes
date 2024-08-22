@@ -3,14 +3,14 @@ package app
 import (
 	"strings"
 
-	"github.com/k10wl/hermes/internal/runtime"
+	"github.com/k10wl/hermes/internal/settings"
 )
 
-func PickStrategy(c *runtime.Config) launchStrategy {
+func PickStrategy(c *settings.Config) launchStrategy {
 	if c.Web {
 		return &launchWeb{}
 	}
-	if c.Last || c.Host != runtime.DefaultHost || c.Port != runtime.DefaultPort {
+	if c.Last || c.Host != settings.DefaultHost || c.Port != settings.DefaultPort {
 		return &launchBadInput{}
 	}
 	if strings.Trim(c.Prompt, " ") != "" {
