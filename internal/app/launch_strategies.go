@@ -17,10 +17,10 @@ type launchStrategy interface {
 type launchWeb struct{}
 
 func (l *launchWeb) Execute(c *core.Core, config *settings.Config) error {
-	if config.Prompt != "" {
+	if config.Input != "" {
 		sendMessage := core.CreateChatAndCompletionCommand{
 			Core:    c,
-			Message: config.Prompt,
+			Message: config.Input,
 			Role:    "user",
 		}
 		if err := sendMessage.Execute(context.Background()); err != nil {

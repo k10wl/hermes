@@ -69,11 +69,12 @@ func handleMessage(c *core.Core, t *template.Template) http.HandlerFunc {
 		chatId := r.PathValue("id")
 		// TODO handle error
 		if chatId == "" {
-			command := &core.CreateChatAndCompletionCommand{
-				Core:    c,
-				Role:    core.UserRole,
-				Message: content,
-			}
+			command := core.NewCreateChatAndCompletionCommand(
+				c,
+				core.UserRole,
+				content,
+				"",
+			)
 			command.Execute(r.Context())
 			m.Content = command.Result.Content
 			m.ChatID = command.Result.ChatID
@@ -95,11 +96,9 @@ func handleMessage(c *core.Core, t *template.Template) http.HandlerFunc {
 			if err != nil {
 				panic(err)
 			}
-			command := &core.CreateCompletionCommand{Core: c,
-				Role:    core.UserRole,
-				ChatID:  id,
-				Message: content,
-			}
+			command := core.NewCreateCompletionCommand(
+				c, id, core.UserRole, content, "",
+			)
 			command.Execute(context.Background())
 			m.Content = command.Result.Content
 			m.ID = command.Result.ID
@@ -125,10 +124,7 @@ func handlePutSettings(c *core.Core) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		updateWebSettings := core.UpdateWebSettingsCommand{
-			Core:        c,
-			WebSettings: s,
-		}
+		updateWebSettings := core.NewUpdateWebSettingsCommand(c, s)
 		err = updateWebSettings.Execute(r.Context())
 		if err != nil {
 			fmt.Println(err)

@@ -13,7 +13,7 @@ func PickStrategy(c *settings.Config) launchStrategy {
 	if c.Last || c.Host != settings.DefaultHost || c.Port != settings.DefaultPort {
 		return &launchBadInput{}
 	}
-	if strings.Trim(c.Prompt, " ") != "" {
+	if strings.Trim(c.Input, " ") != "" {
 		return &launchCLI{}
 	}
 	return &launchBadInput{}

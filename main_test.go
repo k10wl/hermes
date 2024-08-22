@@ -76,7 +76,7 @@ func TestApp(t *testing.T) {
 				) (*settings.Config, error) {
 					c, err := oldConfig(stdin, stdout, stderr)
 					c.DatabaseDSN = ":memory:"
-					c.Prompt = "complete prompt"
+					c.Input = "complete prompt"
 					return c, err
 				}
 			},
@@ -93,7 +93,7 @@ func TestApp(t *testing.T) {
 				) (*settings.Config, error) {
 					c, err := oldConfig(stdin, stdout, stderr)
 					c.DatabaseDSN = ":memory:"
-					c.Prompt = "complete prompt"
+					c.Input = "complete prompt"
 					c.Web = true
 					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 					defer cancel()

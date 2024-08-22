@@ -22,11 +22,11 @@ func TestPickStrategy(t *testing.T) {
 					Web: true,
 				},
 				{
-					Web:    true,
-					Prompt: "any string",
-					Host:   settings.DefaultHost,
-					Port:   settings.DefaultPort,
-					Last:   true,
+					Web:   true,
+					Input: "any string",
+					Host:  settings.DefaultHost,
+					Port:  settings.DefaultPort,
+					Last:  true,
 				},
 			},
 			expected: &launchWeb{},
@@ -35,9 +35,9 @@ func TestPickStrategy(t *testing.T) {
 			name: "return CLI launcher",
 			input: []settings.Config{
 				{
-					Prompt: "this is my prompt",
-					Host:   settings.DefaultHost,
-					Port:   settings.DefaultPort,
+					Input: "this is my prompt",
+					Host:  settings.DefaultHost,
+					Port:  settings.DefaultPort,
 				},
 			},
 			expected: &launchCLI{},
@@ -46,14 +46,14 @@ func TestPickStrategy(t *testing.T) {
 			name: "return bad input launcher",
 			input: []settings.Config{
 				{
-					Prompt: "",
-					Host:   settings.DefaultHost,
-					Port:   settings.DefaultPort,
+					Input: "",
+					Host:  settings.DefaultHost,
+					Port:  settings.DefaultPort,
 				},
 				{
-					Prompt: "     ",
-					Host:   settings.DefaultHost,
-					Port:   settings.DefaultPort,
+					Input: "     ",
+					Host:  settings.DefaultHost,
+					Port:  settings.DefaultPort,
 				},
 				{
 					Web: false,
@@ -66,7 +66,7 @@ func TestPickStrategy(t *testing.T) {
 					Last: true,
 				},
 				{
-					Prompt: "",
+					Input: "",
 				},
 			},
 			expected: &launchBadInput{},

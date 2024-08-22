@@ -37,28 +37,41 @@ func loadFlags(c *Config) error {
 		DefaultPort,
 		"Port for web server. Optional, does nothing if \"-web\" was not provided",
 	)
+	template := flagStringWithShorthand(
+		"template",
+		"t",
+		"",
+		"Template to process current message",
+	)
 	flag.Parse()
+	c.Input = readInput(*message)
+	c.Template = *template
 	c.Model = *model
-	stat, _ := os.Stdin.Stat()
-	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		p, err := io.ReadAll(os.Stdin)
-		if err != nil {
-			return err
-		}
-		c.Prompt = string(p)
-	}
-	if *message != "" {
-		if c.Prompt == "" {
-			c.Prompt = *message
-		} else {
-			c.Prompt = fmt.Sprintf("%s\n\n%s", c.Prompt, *message)
-		}
-	}
 	c.Host = *host
 	c.Port = *port
 	c.Web = *web
 	c.Last = *last
 	return nil
+}
+
+func readInput(message string) string {
+	stdin, err := readStdin()
+	if stdin == "" || err != nil {
+		return message
+	}
+	return fmt.Sprintf("%s\n\n%s", stdin, message)
+}
+
+func readStdin() (string, error) {
+	stat, _ := os.Stdin.Stat()
+	if (stat.Mode() & os.ModeCharDevice) != 0 {
+		return "", nil
+	}
+	p, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return "", err
+	}
+	return string(p), nil
 }
 
 func flagStringWithShorthand(

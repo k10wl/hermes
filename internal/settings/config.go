@@ -16,7 +16,8 @@ const (
 type Config struct {
 	AppName         string
 	Model           string
-	Prompt          string
+	Input           string
+	Template        string
 	OpenAIKey       string
 	ConfigDir       string
 	Web             bool

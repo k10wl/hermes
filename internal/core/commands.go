@@ -12,10 +12,25 @@ type Command interface {
 }
 
 type CreateChatAndCompletionCommand struct {
-	Core    *Core
-	Role    string
-	Message string
-	Result  *models.Message
+	Core     *Core
+	Role     string
+	Message  string
+	Template string
+	Result   *models.Message
+}
+
+func NewCreateChatAndCompletionCommand(
+	Core *Core,
+	Role string,
+	Message string,
+	Template string,
+) *CreateChatAndCompletionCommand {
+	return &CreateChatAndCompletionCommand{
+		Core:     Core,
+		Role:     Role,
+		Message:  Message,
+		Template: Template,
+	}
 }
 
 func (c *CreateChatAndCompletionCommand) Execute(ctx context.Context) error {
@@ -48,11 +63,27 @@ func (c *CreateChatAndCompletionCommand) Execute(ctx context.Context) error {
 }
 
 type CreateCompletionCommand struct {
-	Core    *Core
-	Message string
-	Role    string
-	ChatID  int64
-	Result  *models.Message
+	Core     *Core
+	Message  string
+	Template string
+	Role     string
+	ChatID   int64
+	Result   *models.Message
+}
+
+func NewCreateCompletionCommand(
+	Core *Core,
+	ChatID int64,
+	Role string,
+	Message string,
+	Template string,
+) *CreateCompletionCommand {
+	return &CreateCompletionCommand{
+		Core:     Core,
+		Message:  Message,
+		Template: Template,
+		Role:     Role,
+	}
 }
 
 func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
@@ -95,6 +126,16 @@ func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
 type UpdateWebSettingsCommand struct {
 	Core        *Core
 	WebSettings models.WebSettings
+}
+
+func NewUpdateWebSettingsCommand(
+	Core *Core,
+	WebSettings models.WebSettings,
+) *UpdateWebSettingsCommand {
+	return &UpdateWebSettingsCommand{
+		Core:        Core,
+		WebSettings: WebSettings,
+	}
 }
 
 func (c *UpdateWebSettingsCommand) Execute(ctx context.Context) error {
