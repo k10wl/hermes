@@ -12,6 +12,67 @@ import (
 	"github.com/k10wl/hermes/internal/sqlite3"
 )
 
+func TestCreateChatAndCompletionCommand(t *testing.T) {
+	type testCase struct {
+		name           string
+		init           func()
+		shouldError    bool
+		expectedResult models.Message
+	}
+
+	db, err := sqlite3.NewSQLite3(&settings.Config{DatabaseDSN: ":memory:"})
+	if err != nil {
+		panic(err)
+	}
+	coreInstance := core.NewCore(
+		MockAIClient{},
+		db,
+	)
+
+	var currentCommand *core.CreateChatAndCompletionCommand
+
+	table := []testCase{
+		{
+			name: "Should create simple response",
+			init: func() {
+				currentCommand = core.NewCreateChatAndCompletionCommand(
+					coreInstance, core.AssistantRole, "hello world", "",
+				)
+			},
+			shouldError: false,
+			expectedResult: models.Message{
+				ID:      2,
+				ChatID:  1,
+				Role:    core.AssistantRole,
+				Content: "hello world",
+			},
+		},
+	}
+
+	for _, test := range table {
+		test.init()
+		err := currentCommand.Execute(context.TODO())
+		resetTime(&test.expectedResult)
+		resetTime(currentCommand.Result)
+		if test.shouldError && err == nil {
+			t.Errorf("%s expected to error, but did not\n", test.name)
+			continue
+		}
+		if !test.shouldError && err != nil {
+			t.Errorf("%s unexpected error: %v\n", test.name, err)
+			continue
+		}
+		if !reflect.DeepEqual(test.expectedResult, *currentCommand.Result) {
+			t.Errorf(
+				"%s - bad result\nexpected: %+v\nactual:   %+v",
+				test.name,
+				test.expectedResult,
+				*currentCommand.Result,
+			)
+		}
+	}
+}
+
 func TestCreateCompletionCommand(t *testing.T) {
 	type testCase struct {
 		name           string
