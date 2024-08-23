@@ -26,4 +26,7 @@ type Client interface {
 	UpdateWebSettings(ctx context.Context, dark_mode bool) error
 
 	GetLatestChat(context.Context) (*models.Chat, error)
+
+	CreateTemplate(ctx context.Context, name string, template string) (*models.Template, error)
+	GetTemplateByName(ctx context.Context, name string) (*models.Template, error)
 }

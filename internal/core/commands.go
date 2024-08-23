@@ -141,3 +141,25 @@ func NewUpdateWebSettingsCommand(
 func (c *UpdateWebSettingsCommand) Execute(ctx context.Context) error {
 	return c.Core.db.UpdateWebSettings(ctx, c.WebSettings.DarkMode)
 }
+
+type CreateTemplateCommand struct {
+	Core     *Core
+	name     string
+	template string
+}
+
+func NewCreateTemplateCommand(core *Core, template string) *CreateTemplateCommand {
+	return &CreateTemplateCommand{
+		Core:     core,
+		template: template,
+	}
+}
+
+func (c CreateTemplateCommand) Execute(ctx context.Context) error {
+	name, err := extractTemplateDefinitionName(c.template)
+	if err != nil {
+		return err
+	}
+	_, err = c.Core.db.CreateTemplate(ctx, name, c.template)
+	return err
+}

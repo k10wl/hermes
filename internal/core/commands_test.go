@@ -47,13 +47,34 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 				Content: "hello world",
 			},
 		},
+		/* TODO do this shit
+		{
+			name: "Should fill template data",
+			init: func() {
+				core.NewCreateTemplateCommand(
+					coreInstance,
+					`{{define "welcome"}}hello world!{{end}}`,
+				).Execute(context.TODO())
+				currentCommand = core.NewCreateChatAndCompletionCommand(
+					coreInstance, core.AssistantRole, `{{template "welcome"}}`, "",
+				)
+			},
+			shouldError: false,
+			expectedResult: models.Message{
+				ID:      4,
+				ChatID:  2,
+				Role:    core.AssistantRole,
+				Content: "hello world",
+			},
+		},
+		*/
 	}
 
 	for _, test := range table {
 		test.init()
 		err := currentCommand.Execute(context.TODO())
-		resetTime(&test.expectedResult)
-		resetTime(currentCommand.Result)
+		resetMessageTime(&test.expectedResult)
+		resetMessageTime(currentCommand.Result)
 		if test.shouldError && err == nil {
 			t.Errorf("%s expected to error, but did not\n", test.name)
 			continue
@@ -112,8 +133,8 @@ func TestCreateCompletionCommand(t *testing.T) {
 	for _, test := range table {
 		test.init()
 		err := currentCommand.Execute(context.TODO())
-		resetTime(&test.expectedResult)
-		resetTime(currentCommand.Result)
+		resetMessageTime(&test.expectedResult)
+		resetMessageTime(currentCommand.Result)
 		if test.shouldError && err == nil {
 			t.Errorf("%s expected to error, but did not\n", test.name)
 			continue
@@ -133,6 +154,65 @@ func TestCreateCompletionCommand(t *testing.T) {
 	}
 }
 
+func TestCreateTemplateCommand(t *testing.T) {
+	type testCase struct {
+		name         string
+		template     string
+		templateName string
+		init         func()
+		shouldError  bool
+	}
+	db, err := sqlite3.NewSQLite3(&settings.Config{DatabaseDSN: ":memory:"})
+	if err != nil {
+		panic(err)
+	}
+	coreInstance := core.NewCore(
+		MockAIClient{},
+		db,
+	)
+	var command *core.CreateTemplateCommand
+	table := []testCase{
+		{
+			name:         "create welcome template",
+			template:     `{{define "welcome"}}hello world!{{end}}`,
+			templateName: "welcome",
+			init: func() {
+				command = core.NewCreateTemplateCommand(
+					coreInstance,
+					`{{define "welcome"}}hello world!{{end}}`,
+				)
+			},
+			shouldError: false,
+		},
+	}
+
+	for _, test := range table {
+		test.init()
+		err := command.Execute(context.TODO())
+		if test.shouldError && err == nil {
+			t.Errorf("%q expected to error, but did not\n", test.name)
+			continue
+		}
+		if !test.shouldError && err != nil {
+			t.Errorf("%q unexpected error: %v\n", test.name, err)
+			continue
+		}
+		tmpl, err := db.GetTemplateByName(context.TODO(), test.templateName)
+		if err != nil {
+			t.Errorf("%q failed to get created template: %v\n", test.name, err)
+			continue
+		}
+		if test.template != tmpl.Content {
+			t.Errorf(
+				"%q - bad result\nexpected: %+v\nactual:   %+v\n",
+				test.name,
+				test.template,
+				tmpl,
+			)
+		}
+	}
+}
+
 type MockAIClient struct{}
 
 func (mockClient MockAIClient) ChatCompletion(
@@ -142,7 +222,7 @@ func (mockClient MockAIClient) ChatCompletion(
 	return messages[0], 1, nil
 }
 
-func resetTime(message *models.Message) {
+func resetMessageTime(message *models.Message) {
 	message.CreatedAt = nil
 	message.UpdatedAt = nil
 	message.DeletedAt = nil

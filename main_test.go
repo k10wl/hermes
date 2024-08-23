@@ -143,6 +143,7 @@ func TestApp(t *testing.T) {
 		if test.extraFn != nil {
 			err := test.extraFn()
 			if err != nil {
+				// XXX damn i fucked up, this test requires active web server
 				t.Errorf("Failed extraFn test for %s\nError: %v", test.name, err)
 			}
 		}

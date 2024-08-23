@@ -3,8 +3,8 @@ DROP TABLE IF EXISTS template_dependencies;
 
 CREATE TABLE templates (
     id INTEGER PRIMARY KEY,
-    name TEXT,
-    template TEXT,
+    name TEXT UNIQUE NOT NULL,
+    content TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP

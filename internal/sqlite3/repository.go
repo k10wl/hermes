@@ -185,3 +185,51 @@ func getLatestChat(executor executorFnSingle, ctx context.Context) (*models.Chat
 	)
 	return &chat, err
 }
+
+const createTemplateQuery = `
+INSERT INTO templates (name, content)
+VALUES ($1, $2)
+RETURNING id, name, content, created_at, updated_at, deleted_at;
+`
+
+func createTemplate(
+	executor executorFnSingle,
+	ctx context.Context,
+	name string,
+	content string,
+) (*models.Template, error) {
+	row := executor(ctx, createTemplateQuery, name, content)
+	var templateDoc models.Template
+	err := row.Scan(
+		&templateDoc.ID,
+		&templateDoc.Name,
+		&templateDoc.Content,
+		&templateDoc.CreatedAt,
+		&templateDoc.UpdatedAt,
+		&templateDoc.DeletedAt,
+	)
+	return &templateDoc, err
+}
+
+const getTemplateByNameQuery = `
+SELECT id, name, content, created_at, updated_at, deleted_at FROM templates
+WHERE name = $1;
+`
+
+func getTemplateByName(
+	executor executorFnSingle,
+	ctx context.Context,
+	name string,
+) (*models.Template, error) {
+	row := executor(ctx, getTemplateByNameQuery, name)
+	var templateDoc models.Template
+	err := row.Scan(
+		&templateDoc.ID,
+		&templateDoc.Name,
+		&templateDoc.Content,
+		&templateDoc.CreatedAt,
+		&templateDoc.UpdatedAt,
+		&templateDoc.DeletedAt,
+	)
+	return &templateDoc, err
+}

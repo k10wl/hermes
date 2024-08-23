@@ -52,3 +52,10 @@ type WebSettings struct {
 	DarkMode bool
 	Initted  bool
 }
+
+type Template struct {
+	ID      int64  `json:"id"`
+	Name    string `json:"name"`
+	Content string `json:"content"`
+	Timestamps
+}
