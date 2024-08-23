@@ -59,3 +59,10 @@ type Template struct {
 	Content string `json:"content"`
 	Timestamps
 }
+
+// if you used this anywhere (any-fucking-where) outside of test function - you fucked up
+func (t *Timestamps) TimestampsToNilForTest__() {
+	t.CreatedAt = nil
+	t.UpdatedAt = nil
+	t.DeletedAt = nil
+}

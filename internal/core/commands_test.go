@@ -5,11 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/models"
-	"github.com/k10wl/hermes/internal/settings"
-	"github.com/k10wl/hermes/internal/sqlite3"
 )
 
 func TestCreateChatAndCompletionCommand(t *testing.T) {
@@ -20,15 +17,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 		expectedResult models.Message
 	}
 
-	db, err := sqlite3.NewSQLite3(&settings.Config{DatabaseDSN: ":memory:"})
-	if err != nil {
-		panic(err)
-	}
-	coreInstance := core.NewCore(
-		MockAIClient{},
-		db,
-	)
-
+	coreInstance, _ := createCoreAndDB()
 	var currentCommand *core.CreateChatAndCompletionCommand
 
 	table := []testCase{
@@ -73,8 +62,8 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 	for _, test := range table {
 		test.init()
 		err := currentCommand.Execute(context.TODO())
-		resetMessageTime(&test.expectedResult)
-		resetMessageTime(currentCommand.Result)
+		test.expectedResult.TimestampsToNilForTest__()
+		currentCommand.Result.TimestampsToNilForTest__()
 		if test.shouldError && err == nil {
 			t.Errorf("%s expected to error, but did not\n", test.name)
 			continue
@@ -102,15 +91,7 @@ func TestCreateCompletionCommand(t *testing.T) {
 		expectedResult models.Message
 	}
 
-	db, err := sqlite3.NewSQLite3(&settings.Config{DatabaseDSN: ":memory:"})
-	if err != nil {
-		panic(err)
-	}
-	coreInstance := core.NewCore(
-		MockAIClient{},
-		db,
-	)
-
+	coreInstance, _ := createCoreAndDB()
 	var currentCommand *core.CreateCompletionCommand
 
 	table := []testCase{
@@ -133,8 +114,8 @@ func TestCreateCompletionCommand(t *testing.T) {
 	for _, test := range table {
 		test.init()
 		err := currentCommand.Execute(context.TODO())
-		resetMessageTime(&test.expectedResult)
-		resetMessageTime(currentCommand.Result)
+		test.expectedResult.TimestampsToNilForTest__()
+		currentCommand.Result.TimestampsToNilForTest__()
 		if test.shouldError && err == nil {
 			t.Errorf("%s expected to error, but did not\n", test.name)
 			continue
@@ -162,15 +143,10 @@ func TestCreateTemplateCommand(t *testing.T) {
 		init         func()
 		shouldError  bool
 	}
-	db, err := sqlite3.NewSQLite3(&settings.Config{DatabaseDSN: ":memory:"})
-	if err != nil {
-		panic(err)
-	}
-	coreInstance := core.NewCore(
-		MockAIClient{},
-		db,
-	)
+
+	coreInstance, db := createCoreAndDB()
 	var command *core.CreateTemplateCommand
+
 	table := []testCase{
 		{
 			name:         "create welcome template",
@@ -211,19 +187,4 @@ func TestCreateTemplateCommand(t *testing.T) {
 			)
 		}
 	}
-}
-
-type MockAIClient struct{}
-
-func (mockClient MockAIClient) ChatCompletion(
-	messages []ai_clients.Message,
-) (ai_clients.Message, int, error) {
-	messages[0].Role = core.AssistantRole
-	return messages[0], 1, nil
-}
-
-func resetMessageTime(message *models.Message) {
-	message.CreatedAt = nil
-	message.UpdatedAt = nil
-	message.DeletedAt = nil
 }

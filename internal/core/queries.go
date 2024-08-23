@@ -69,3 +69,19 @@ func (q *LatestChatQuery) Execute(ctx context.Context) error {
 	q.Result = chat
 	return err
 }
+
+type GetTemplateByNameQuery struct {
+	Core   *Core
+	Result *models.Template
+	name   string
+}
+
+func NewGetTemplateByNameQuery(c *Core, name string) *GetTemplateByNameQuery {
+	return &GetTemplateByNameQuery{Core: c, name: name}
+}
+
+func (q *GetTemplateByNameQuery) Execute(ctx context.Context) error {
+	template, err := q.Core.db.GetTemplateByName(ctx, q.name)
+	q.Result = template
+	return err
+}
