@@ -37,17 +37,18 @@ func (c *CreateChatAndCompletionCommand) Execute(ctx context.Context) error {
 	if err := c.Core.assertAI(); err != nil {
 		return err
 	}
+	input := c.Core.prepareMessage(ctx, c.Message, c.Template)
 	chat, _, err := c.Core.db.CreateChatAndMessage(
 		ctx,
 		c.Role,
-		c.Message,
+		input,
 	)
 	if err != nil {
 		return err
 	}
 	// TODO insert used value into the db and adjust queries to receive less messages
 	res, _, err := c.Core.ai_client.ChatCompletion(
-		[]ai_clients.Message{{Content: c.Message, Role: UserRole}},
+		[]ai_clients.Message{{Content: input, Role: UserRole}},
 	)
 	if err != nil {
 		return err
@@ -90,6 +91,7 @@ func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
 	if err := c.Core.assertAI(); err != nil {
 		return err
 	}
+	input := c.Core.prepareMessage(ctx, c.Message, c.Template)
 	prev, err := c.Core.db.GetChatMessages(ctx, c.ChatID)
 	if err != nil {
 		return err
@@ -98,7 +100,7 @@ func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
 		ctx,
 		c.ChatID,
 		c.Role,
-		c.Message,
+		input,
 	)
 	if err != nil {
 		return err
@@ -107,7 +109,7 @@ func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
 	for _, p := range prev {
 		history = append(history, messageToAIMessage(p))
 	}
-	history = append(history, ai_clients.Message{Content: c.Message, Role: UserRole})
+	history = append(history, ai_clients.Message{Content: input, Role: UserRole})
 	// TODO insert used value into the db and adjust queries to receive less messages
 	res, _, err := c.Core.ai_client.ChatCompletion(history)
 	if err != nil {

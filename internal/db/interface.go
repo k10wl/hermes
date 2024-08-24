@@ -27,6 +27,13 @@ type Client interface {
 
 	GetLatestChat(context.Context) (*models.Chat, error)
 
-	CreateTemplate(ctx context.Context, name string, template string) (*models.Template, error)
-	GetTemplateByName(ctx context.Context, name string) (*models.Template, error)
+	CreateTemplate(
+		ctx context.Context,
+		name string,
+		template string,
+	) (*models.Template, error)
+	GetTemplatesByNames(
+		ctx context.Context,
+		names []string,
+	) ([]*models.Template, error)
 }

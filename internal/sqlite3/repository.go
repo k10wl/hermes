@@ -3,6 +3,7 @@ package sqlite3
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	"github.com/k10wl/hermes/internal/models"
 )
@@ -211,25 +212,39 @@ func createTemplate(
 	return &templateDoc, err
 }
 
-const getTemplateByNameQuery = `
+func getTemplatesByNamesQuery(names []interface{}) string {
+	// my brother in christ this is painful to write... holy fuck
+	return `
 SELECT id, name, content, created_at, updated_at, deleted_at FROM templates
-WHERE name = $1;
-`
+WHERE name IN (?` + strings.Repeat(",?", len(names)-1) + `);`
+}
 
-func getTemplateByName(
-	executor executorFnSingle,
+func getTemplatesByNames(
+	executor executorFnMultiple,
 	ctx context.Context,
-	name string,
-) (*models.Template, error) {
-	row := executor(ctx, getTemplateByNameQuery, name)
-	var templateDoc models.Template
-	err := row.Scan(
-		&templateDoc.ID,
-		&templateDoc.Name,
-		&templateDoc.Content,
-		&templateDoc.CreatedAt,
-		&templateDoc.UpdatedAt,
-		&templateDoc.DeletedAt,
-	)
-	return &templateDoc, err
+	names []string,
+) ([]*models.Template, error) {
+	namesInterface := convertToAnySlice(names)
+	rows, err := executor(ctx, getTemplatesByNamesQuery(namesInterface), namesInterface...)
+	if err != nil {
+		return nil, err
+	}
+	templates := []*models.Template{}
+	var rowErr error
+	for rows.Next() {
+		var templateDoc models.Template
+		if err := rows.Scan(
+			&templateDoc.ID,
+			&templateDoc.Name,
+			&templateDoc.Content,
+			&templateDoc.CreatedAt,
+			&templateDoc.UpdatedAt,
+			&templateDoc.DeletedAt,
+		); err != nil {
+			rowErr = err
+			break
+		}
+		templates = append(templates, &templateDoc)
+	}
+	return templates, rowErr
 }

@@ -20,6 +20,31 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 	coreInstance, _ := createCoreAndDB()
 	var currentCommand *core.CreateChatAndCompletionCommand
 
+	if err := core.NewCreateTemplateCommand(
+		coreInstance,
+		`{{define "welcome"}}hello world!{{end}}`,
+	).Execute(context.Background()); err != nil {
+		panic(err)
+	}
+	if err := core.NewCreateTemplateCommand(
+		coreInstance,
+		`{{define "wrapper"}}wrapper - {{.}} - wrapper{{end}}`,
+	).Execute(context.Background()); err != nil {
+		panic(err)
+	}
+	if err := core.NewCreateTemplateCommand(
+		coreInstance,
+		`{{define "nested1"}}nested1: {{template "nested2" .}}{{end}}`,
+	).Execute(context.Background()); err != nil {
+		panic(err)
+	}
+	if err := core.NewCreateTemplateCommand(
+		coreInstance,
+		`{{define "nested2"}}nested2: {{.}}{{end}}`,
+	).Execute(context.Background()); err != nil {
+		panic(err)
+	}
+
 	table := []testCase{
 		{
 			name: "Should create simple response",
@@ -36,16 +61,11 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 				Content: "hello world",
 			},
 		},
-		/* TODO do this shit
 		{
-			name: "Should fill template data",
+			name: "Should fill template data when template is passed as argument",
 			init: func() {
-				core.NewCreateTemplateCommand(
-					coreInstance,
-					`{{define "welcome"}}hello world!{{end}}`,
-				).Execute(context.TODO())
 				currentCommand = core.NewCreateChatAndCompletionCommand(
-					coreInstance, core.AssistantRole, `{{template "welcome"}}`, "",
+					coreInstance, core.AssistantRole, ``, "welcome",
 				)
 			},
 			shouldError: false,
@@ -53,10 +73,39 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 				ID:      4,
 				ChatID:  2,
 				Role:    core.AssistantRole,
-				Content: "hello world",
+				Content: "hello world!",
 			},
 		},
-		*/
+		{
+			name: "Should fill inner template data when template name is not provided",
+			init: func() {
+				currentCommand = core.NewCreateChatAndCompletionCommand(
+					coreInstance, core.AssistantRole, `{{template "welcome"}}`, "",
+				)
+			},
+			shouldError: false,
+			expectedResult: models.Message{
+				ID:      6,
+				ChatID:  3,
+				Role:    core.AssistantRole,
+				Content: "hello world!",
+			},
+		},
+		{
+			name: "Should fill inner template data and provided template name data",
+			init: func() {
+				currentCommand = core.NewCreateChatAndCompletionCommand(
+					coreInstance, core.AssistantRole, `{{template "welcome"}}`, "wrapper",
+				)
+			},
+			shouldError: false,
+			expectedResult: models.Message{
+				ID:      8,
+				ChatID:  4,
+				Role:    core.AssistantRole,
+				Content: "wrapper - hello world! - wrapper",
+			},
+		},
 	}
 
 	for _, test := range table {
@@ -65,16 +114,16 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 		test.expectedResult.TimestampsToNilForTest__()
 		currentCommand.Result.TimestampsToNilForTest__()
 		if test.shouldError && err == nil {
-			t.Errorf("%s expected to error, but did not\n", test.name)
+			t.Errorf("%q expected to error, but did not\n", test.name)
 			continue
 		}
 		if !test.shouldError && err != nil {
-			t.Errorf("%s unexpected error: %v\n", test.name, err)
+			t.Errorf("%q unexpected error: %v\n", test.name, err)
 			continue
 		}
 		if !reflect.DeepEqual(test.expectedResult, *currentCommand.Result) {
 			t.Errorf(
-				"%s - bad result\nexpected: %+v\nactual:   %+v",
+				"%q - bad result\nexpected: %+v\nactual:   %+v\n\n",
 				test.name,
 				test.expectedResult,
 				*currentCommand.Result,
@@ -139,7 +188,7 @@ func TestCreateTemplateCommand(t *testing.T) {
 	type testCase struct {
 		name         string
 		template     string
-		templateName string
+		templateName []string
 		init         func()
 		shouldError  bool
 	}
@@ -151,7 +200,7 @@ func TestCreateTemplateCommand(t *testing.T) {
 		{
 			name:         "create welcome template",
 			template:     `{{define "welcome"}}hello world!{{end}}`,
-			templateName: "welcome",
+			templateName: []string{"welcome"},
 			init: func() {
 				command = core.NewCreateTemplateCommand(
 					coreInstance,
@@ -173,12 +222,12 @@ func TestCreateTemplateCommand(t *testing.T) {
 			t.Errorf("%q unexpected error: %v\n", test.name, err)
 			continue
 		}
-		tmpl, err := db.GetTemplateByName(context.TODO(), test.templateName)
+		tmpl, err := db.GetTemplatesByNames(context.TODO(), test.templateName)
 		if err != nil {
 			t.Errorf("%q failed to get created template: %v\n", test.name, err)
 			continue
 		}
-		if test.template != tmpl.Content {
+		if test.template != tmpl[0].Content {
 			t.Errorf(
 				"%q - bad result\nexpected: %+v\nactual:   %+v\n",
 				test.name,

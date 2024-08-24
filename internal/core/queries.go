@@ -70,18 +70,18 @@ func (q *LatestChatQuery) Execute(ctx context.Context) error {
 	return err
 }
 
-type GetTemplateByNameQuery struct {
+type GetTemplatesByNamesQuery struct {
 	Core   *Core
-	Result *models.Template
-	name   string
+	Result []*models.Template
+	names  []string
 }
 
-func NewGetTemplateByNameQuery(c *Core, name string) *GetTemplateByNameQuery {
-	return &GetTemplateByNameQuery{Core: c, name: name}
+func NewGetTemplatesByNamesQuery(c *Core, names []string) *GetTemplatesByNamesQuery {
+	return &GetTemplatesByNamesQuery{Core: c, names: names}
 }
 
-func (q *GetTemplateByNameQuery) Execute(ctx context.Context) error {
-	template, err := q.Core.db.GetTemplateByName(ctx, q.name)
+func (q *GetTemplatesByNamesQuery) Execute(ctx context.Context) error {
+	template, err := q.Core.db.GetTemplatesByNames(ctx, q.names)
 	q.Result = template
 	return err
 }

@@ -77,9 +77,9 @@ func (s SQLite3) CreateTemplate(
 	return createTemplate(s.db.QueryRowContext, ctx, name, template)
 }
 
-func (s SQLite3) GetTemplateByName(
+func (s SQLite3) GetTemplatesByNames(
 	ctx context.Context,
-	name string,
-) (*models.Template, error) {
-	return getTemplateByName(s.db.QueryRowContext, ctx, name)
+	name []string,
+) ([]*models.Template, error) {
+	return getTemplatesByNames(s.db.QueryContext, ctx, name)
 }
