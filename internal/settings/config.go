@@ -8,11 +8,6 @@ import (
 	"sync"
 )
 
-const (
-	DefaultHost = "127.0.0.1"
-	DefaultPort = "8123"
-)
-
 type Config struct {
 	AppName         string
 	Model           string
@@ -31,6 +26,10 @@ type Config struct {
 	ShutdownContext context.Context
 }
 
+const DefaultHost = "127.0.0.1"
+
+var DefaultPort = "8123" // changes in ldflag for dev mode
+var appName = "hermes"   // changes in ldflag for dev mode
 var config *Config
 var once sync.Once
 
@@ -44,6 +43,7 @@ func GetConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, er
 
 func loadConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, error) {
 	var c Config
+	c.AppName = appName
 	sharedConfigDir, err := os.UserConfigDir()
 	if err != nil {
 		return &c, err
