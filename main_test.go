@@ -92,6 +92,7 @@ func TestApp(t *testing.T) {
 					stderr io.Writer,
 				) (*settings.Config, error) {
 					c, err := oldConfig(stdin, stdout, stderr)
+					c.Port = "8124"
 					c.DatabaseDSN = ":memory:"
 					c.Input = "complete prompt"
 					c.Web = true
@@ -102,10 +103,10 @@ func TestApp(t *testing.T) {
 				}
 			},
 			expected: expected{
-				stdout: "Starting server on 127.0.0.1:8123\nShutdown signal received\n",
+				stdout: "Starting server on 127.0.0.1:8124\nShutdown signal received\n",
 			},
 			extraFn: func() error {
-				resp, err := http.Get("http://127.0.0.1:8123")
+				resp, err := http.Get("http://127.0.0.1:8124")
 				if err != nil {
 					return err
 				}
