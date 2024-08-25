@@ -9,21 +9,41 @@ import (
 )
 
 type Config struct {
+	Settings
+	TemplateConfig
+	CLIFlags
+	WebFlags
+}
+
+type Settings struct {
 	AppName         string
-	Model           string
-	Content         string
-	Template        string
-	OpenAIKey       string
 	ConfigDir       string
-	Web             bool
-	Last            bool
-	Host            string
-	Port            string
+	DatabaseDSN     string
+	ShutdownContext context.Context
 	Stdin           io.Reader
 	Stdoout         io.Writer
 	Stderr          io.Writer
-	DatabaseDSN     string
-	ShutdownContext context.Context
+}
+
+type Providers struct {
+	OpenAIKey string
+}
+
+type CLIFlags struct {
+	Model   string
+	Content string
+}
+
+type WebFlags struct {
+	Web  bool
+	Last bool
+	Host string
+	Port string
+}
+
+type TemplateConfig struct {
+	Template       string
+	UpsertTemplate string
 }
 
 const DefaultHostname = "127.0.0.1"

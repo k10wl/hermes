@@ -39,7 +39,14 @@ func assignTemplateFlags(config *Config) {
 		"",
 		"Name of (t)emplate to be applied to provided content",
 	)
+	upsertTemplate := flagStringWithShorthand(
+		"upsert-template",
+		"ut",
+		"",
+		"Contents of (u)psert (t)emplate. Must comply golang text/template syntax",
+	)
 	config.Template = *template
+	config.UpsertTemplate = *upsertTemplate
 }
 
 func assignWebFlags(config *Config) {
