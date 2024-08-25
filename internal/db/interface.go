@@ -27,7 +27,7 @@ type Client interface {
 
 	GetLatestChat(context.Context) (*models.Chat, error)
 
-	CreateTemplate(
+	UpsertTemplate(
 		ctx context.Context,
 		name string,
 		template string,

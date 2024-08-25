@@ -69,12 +69,12 @@ func (s *SQLite3) GetLatestChat(
 	return getLatestChat(s.db.QueryRowContext, ctx)
 }
 
-func (s SQLite3) CreateTemplate(
+func (s SQLite3) UpsertTemplate(
 	ctx context.Context,
 	name string,
 	template string,
 ) (*models.Template, error) {
-	return createTemplate(s.db.QueryRowContext, ctx, name, template)
+	return upsertTemplate(s.db.QueryRowContext, ctx, name, template)
 }
 
 func (s SQLite3) GetTemplatesByNames(

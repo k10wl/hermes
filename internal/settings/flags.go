@@ -9,30 +9,7 @@ import (
 	client "github.com/k10wl/openai-client"
 )
 
-func loadFlags(config *Config) error {
-	assignSharedFlags(config)
-	assignTemplateFlags(config)
-	assignWebFlags(config)
-	flag.Parse()
-	config.Content = readInput(config.Content)
-	return nil
-}
-
-func assignSharedFlags(config *Config) {
-	model := flagStringWithShorthand("model", "m", client.GPT3_5Turbo, "Completion (m)odel name")
-	content := flagStringWithShorthand(
-		"content",
-		"c",
-		"",
-		`Input (c)ontent send to AI. Can contain templates (golang text/template syntax).
-Interactions with other flags:
-  -web  -- opens default browser in newly created chat;`,
-	)
-	config.Content = *content
-	config.Model = *model
-}
-
-func assignTemplateFlags(config *Config) {
+func loadFlags(config *Config) {
 	template := flagStringWithShorthand(
 		"template",
 		"t",
@@ -45,11 +22,15 @@ func assignTemplateFlags(config *Config) {
 		"",
 		"Contents of (u)psert (t)emplate. Must comply golang text/template syntax",
 	)
-	config.Template = *template
-	config.UpsertTemplate = *upsertTemplate
-}
-
-func assignWebFlags(config *Config) {
+	model := flagStringWithShorthand("model", "m", client.GPT3_5Turbo, "Completion (m)odel name")
+	content := flagStringWithShorthand(
+		"content",
+		"c",
+		"",
+		`Input (c)ontent send to AI. Can contain templates (golang text/template syntax).
+Interactions with other flags:
+  -web  -- opens default browser in newly created chat;`,
+	)
 	web := flagBoolWithShorthand("web", "w", false, "Starts (w)eb server")
 	last := flagBoolWithShorthand(
 		"last",
@@ -69,6 +50,12 @@ func assignWebFlags(config *Config) {
 		DefaultPort,
 		fmt.Sprintf("Specify (p)ort for web server. Default to %q", DefaultPort),
 	)
+
+	flag.Parse()
+	config.Template = *template
+	config.UpsertTemplate = *upsertTemplate
+	config.Content = readInput(*content)
+	config.Model = *model
 	config.Port = *port
 	config.Web = *web
 	config.Host = *host

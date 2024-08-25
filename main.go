@@ -39,6 +39,6 @@ func run(stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
 
 func main() {
 	if err := run(os.Stdin, os.Stdout, os.Stderr); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 	}
 }

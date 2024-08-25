@@ -10,8 +10,8 @@ import (
 
 const HelpString = `Hermes - Host-based Extensible Response Management System
 
-Usage:  hermes -m "Hello world!"
-        cat logs.txt | hermes -m "show errors"
+Usage:  hermes -content "Hello world!"
+        cat logs.txt | hermes -content "show errors"
 
 Hermes is a tool for communication and management of AI chats by 
 accessing underlying API via terminal
@@ -23,10 +23,10 @@ Example:
         questions and providing information to the best of my
         knowledge and abilities.`
 
-func CLI(c *core.Core, config *settings.Config) error {
+func NewChat(c *core.Core, config *settings.Config) error {
 	sendMessage := core.NewCreateChatAndCompletionCommand(
 		c,
-		"user",
+		core.UserRole,
 		config.Content,
 		config.Template,
 	)
@@ -35,4 +35,31 @@ func CLI(c *core.Core, config *settings.Config) error {
 	}
 	fmt.Fprintf(config.Stdoout, "%s\n", sendMessage.Result.Content)
 	return nil
+}
+
+func LastChat(c *core.Core, config *settings.Config) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	queryChats := core.LatestChatQuery{Core: c}
+	if err := queryChats.Execute(ctx); err != nil {
+		return err
+	}
+	completionCommand := core.NewCreateCompletionCommand(
+		c,
+		queryChats.Result.ID,
+		core.UserRole,
+		config.Content,
+		config.Template,
+	)
+	if err := completionCommand.Execute(ctx); err != nil {
+		return err
+	}
+	fmt.Fprintf(config.Stdoout, "%s\n", completionCommand.Result.Content)
+	return nil
+}
+
+func UpsertTemplate(c *core.Core, config *settings.Config) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	return core.NewUpsertTemplateCommand(c, config.UpsertTemplate).Execute(ctx)
 }

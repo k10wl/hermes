@@ -10,7 +10,8 @@ import (
 
 type Config struct {
 	Settings
-	TemplateConfig
+	Providers
+	TemplateFlags
 	CLIFlags
 	WebFlags
 }
@@ -32,16 +33,16 @@ type Providers struct {
 type CLIFlags struct {
 	Model   string
 	Content string
+	Last    bool
 }
 
 type WebFlags struct {
 	Web  bool
-	Last bool
 	Host string
 	Port string
 }
 
-type TemplateConfig struct {
+type TemplateFlags struct {
 	Template       string
 	UpsertTemplate string
 }
@@ -68,10 +69,7 @@ func loadConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, e
 	if err != nil {
 		return &c, err
 	}
-	err = loadFlags(&c)
-	if err != nil {
-		return &c, err
-	}
+	loadFlags(&c)
 	loadEnv(&c)
 	hermesConfigDir := path.Join(sharedConfigDir, c.AppName)
 	c.ConfigDir = hermesConfigDir

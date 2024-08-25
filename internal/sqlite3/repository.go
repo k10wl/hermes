@@ -187,19 +187,19 @@ func getLatestChat(executor executorFnSingle, ctx context.Context) (*models.Chat
 	return &chat, err
 }
 
-const createTemplateQuery = `
-INSERT INTO templates (name, content)
+const upsertTemplateQuery = `
+INSERT OR REPLACE INTO templates (name, content)
 VALUES ($1, $2)
 RETURNING id, name, content, created_at, updated_at, deleted_at;
 `
 
-func createTemplate(
+func upsertTemplate(
 	executor executorFnSingle,
 	ctx context.Context,
 	name string,
 	content string,
 ) (*models.Template, error) {
-	row := executor(ctx, createTemplateQuery, name, content)
+	row := executor(ctx, upsertTemplateQuery, name, content)
 	var templateDoc models.Template
 	err := row.Scan(
 		&templateDoc.ID,

@@ -148,7 +148,7 @@ func TestBuildTemplateString(t *testing.T) {
 		"loop2":       `{{define "loop2"}}{{template "loop1"}}{{end}}`,
 	}
 	for _, template := range dbTemplates {
-		if err := NewCreateTemplateCommand(coreInstance, template).Execute(context.Background()); err != nil {
+		if err := NewUpsertTemplateCommand(coreInstance, template).Execute(context.Background()); err != nil {
 			panic(err)
 		}
 	}
@@ -307,7 +307,9 @@ func (mockClient MockAIClient) ChatCompletion(
 }
 
 func createCoreAndDB() (*Core, db.Client) {
-	db, err := sqlite3.NewSQLite3(&settings.Config{DatabaseDSN: ":memory:"})
+	db, err := sqlite3.NewSQLite3(
+		&settings.Config{Settings: settings.Settings{DatabaseDSN: ":memory:"}},
+	)
 	if err != nil {
 		panic(err)
 	}

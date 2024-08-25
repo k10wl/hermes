@@ -84,6 +84,7 @@ func NewCreateCompletionCommand(
 ) *CreateCompletionCommand {
 	return &CreateCompletionCommand{
 		Core:     Core,
+		ChatID:   ChatID,
 		Message:  Message,
 		Template: Template,
 		Role:     Role,
@@ -150,24 +151,24 @@ func (c *UpdateWebSettingsCommand) Execute(ctx context.Context) error {
 	return c.Core.db.UpdateWebSettings(ctx, c.WebSettings.DarkMode)
 }
 
-type CreateTemplateCommand struct {
+type UpsertTemplateCommand struct {
 	Core     *Core
 	name     string
 	template string
 }
 
-func NewCreateTemplateCommand(core *Core, template string) *CreateTemplateCommand {
-	return &CreateTemplateCommand{
+func NewUpsertTemplateCommand(core *Core, template string) *UpsertTemplateCommand {
+	return &UpsertTemplateCommand{
 		Core:     core,
 		template: template,
 	}
 }
 
-func (c CreateTemplateCommand) Execute(ctx context.Context) error {
+func (c UpsertTemplateCommand) Execute(ctx context.Context) error {
 	name, err := extractTemplateDefinitionName(c.template)
 	if err != nil {
 		return err
 	}
-	_, err = c.Core.db.CreateTemplate(ctx, name, c.template)
+	_, err = c.Core.db.UpsertTemplate(ctx, name, c.template)
 	return err
 }

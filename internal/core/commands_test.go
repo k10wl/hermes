@@ -30,7 +30,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 	}
 
 	for _, template := range dbTemplates {
-		if err := core.NewCreateTemplateCommand(
+		if err := core.NewUpsertTemplateCommand(
 			coreInstance,
 			template,
 		).Execute(context.Background()); err != nil {
@@ -209,6 +209,7 @@ func TestCreateCompletionCommand(t *testing.T) {
 			shouldError: false,
 			expectedResult: models.Message{
 				ID:      2,
+				ChatID:  1,
 				Role:    core.AssistantRole,
 				Content: "hello world",
 			},
@@ -249,7 +250,7 @@ func TestCreateTemplateCommand(t *testing.T) {
 	}
 
 	coreInstance, db := createCoreAndDB()
-	var command *core.CreateTemplateCommand
+	var command *core.UpsertTemplateCommand
 
 	table := []testCase{
 		{
@@ -257,9 +258,21 @@ func TestCreateTemplateCommand(t *testing.T) {
 			template:     `{{define "welcome"}}hello world!{{end}}`,
 			templateName: []string{"welcome"},
 			init: func() {
-				command = core.NewCreateTemplateCommand(
+				command = core.NewUpsertTemplateCommand(
 					coreInstance,
 					`{{define "welcome"}}hello world!{{end}}`,
+				)
+			},
+			shouldError: false,
+		},
+		{
+			name:         "should override written command",
+			template:     `{{define "welcome"}}welcome world!{{end}}`,
+			templateName: []string{"welcome"},
+			init: func() {
+				command = core.NewUpsertTemplateCommand(
+					coreInstance,
+					`{{define "welcome"}}welcome world!{{end}}`,
 				)
 			},
 			shouldError: false,

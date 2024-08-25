@@ -1,7 +1,6 @@
 package launch
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/k10wl/hermes/internal/settings"
@@ -19,14 +18,20 @@ func TestPickStrategy(t *testing.T) {
 			name: "return web app launcher",
 			input: []settings.Config{
 				{
-					Web: true,
+					WebFlags: settings.WebFlags{
+						Web: true,
+					},
 				},
 				{
-					Web:     true,
-					Content: "any string",
-					Host:    settings.DefaultHostname,
-					Port:    settings.DefaultPort,
-					Last:    true,
+					WebFlags: settings.WebFlags{
+						Web:  true,
+						Host: settings.DefaultHostname,
+						Port: settings.DefaultPort,
+					},
+					CLIFlags: settings.CLIFlags{
+						Content: "any string",
+						Last:    true,
+					},
 				},
 			},
 			expected: &launchWeb{},
@@ -35,9 +40,18 @@ func TestPickStrategy(t *testing.T) {
 			name: "return CLI launcher",
 			input: []settings.Config{
 				{
-					Content: "this is my prompt",
-					Host:    settings.DefaultHostname,
-					Port:    settings.DefaultPort,
+					CLIFlags: settings.CLIFlags{
+						Content: "this is my prompt",
+					},
+					WebFlags: settings.WebFlags{
+						Host: settings.DefaultHostname,
+						Port: settings.DefaultPort,
+					},
+				},
+				{
+					TemplateFlags: settings.TemplateFlags{
+						UpsertTemplate: `{{define "hi"}}hello world{{end}}`,
+					},
 				},
 			},
 			expected: &launchCLI{},
@@ -46,27 +60,45 @@ func TestPickStrategy(t *testing.T) {
 			name: "return bad input launcher",
 			input: []settings.Config{
 				{
-					Content: "",
-					Host:    settings.DefaultHostname,
-					Port:    settings.DefaultPort,
+					CLIFlags: settings.CLIFlags{
+						Content: "",
+					},
+					WebFlags: settings.WebFlags{
+						Host: settings.DefaultHostname,
+						Port: settings.DefaultPort,
+					},
 				},
 				{
-					Content: "     ",
-					Host:    settings.DefaultHostname,
-					Port:    settings.DefaultPort,
+					CLIFlags: settings.CLIFlags{
+						Content: "     ",
+					},
+					WebFlags: settings.WebFlags{
+						Host: settings.DefaultHostname,
+						Port: settings.DefaultPort,
+					},
 				},
 				{
-					Web: false,
+					WebFlags: settings.WebFlags{
+						Web: false,
+					},
 				},
 				{
-					Web: false,
+					WebFlags: settings.WebFlags{
+						Web: false,
+					},
 				},
 				{
-					Web:  false,
-					Last: true,
+					CLIFlags: settings.CLIFlags{
+						Last: true,
+					},
+					WebFlags: settings.WebFlags{
+						Web: false,
+					},
 				},
 				{
-					Content: "",
+					CLIFlags: settings.CLIFlags{
+						Content: "",
+					},
 				},
 			},
 			expected: &launchBadInput{},
@@ -76,8 +108,6 @@ func TestPickStrategy(t *testing.T) {
 	for _, test := range table {
 		for _, input := range test.input {
 			output := PickStrategy(&input)
-			fmt.Printf("output: %v\n", output)
-			fmt.Printf("test.expected: %v\n", test.expected)
 			if output != test.expected {
 				t.Errorf(
 					"%s:\nexpected: %T\nactual:   %T",

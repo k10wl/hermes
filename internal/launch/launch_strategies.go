@@ -34,7 +34,13 @@ func (l *launchWeb) Execute(c *core.Core, config *settings.Config) error {
 type launchCLI struct{}
 
 func (l *launchCLI) Execute(c *core.Core, config *settings.Config) error {
-	return cli.CLI(c, config)
+	if config.UpsertTemplate != "" {
+		return cli.UpsertTemplate(c, config)
+	}
+	if config.Last {
+		return cli.LastChat(c, config)
+	}
+	return cli.NewChat(c, config)
 }
 
 type launchBadInput struct{}
