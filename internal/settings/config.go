@@ -19,6 +19,7 @@ type Config struct {
 type Settings struct {
 	AppName         string
 	ConfigDir       string
+	DatabaseName    string
 	DatabaseDSN     string
 	ShutdownContext context.Context
 	Stdin           io.Reader
@@ -49,8 +50,9 @@ type TemplateFlags struct {
 
 const DefaultHostname = "127.0.0.1"
 
-var DefaultPort = "8123" // changes in ldflag for dev mode
-var appName = "hermes"   // changes in ldflag for dev mode
+var DefaultPort = "8123"            // changes in ldflag for dev mode
+var DefaultDatabaseName = "main.db" // changes in ldflag for dev mode
+var appName = "hermes"              // changes in ldflag for dev mode
 var config *Config
 var once sync.Once
 
@@ -73,8 +75,8 @@ func loadConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, e
 	loadEnv(&c)
 	hermesConfigDir := path.Join(sharedConfigDir, c.AppName)
 	c.ConfigDir = hermesConfigDir
-	c.DatabaseDSN = path.Join(hermesConfigDir, "main.db")
-	if c.DatabaseDSN != ":memory:" {
+	c.DatabaseDSN = path.Join(hermesConfigDir, DefaultDatabaseName)
+	if c.DatabaseName != ":memory:" {
 		err = ensureExists(hermesConfigDir)
 		if err != nil {
 			return &c, err

@@ -44,5 +44,5 @@ clean:
 
 test:
 	@echo "Running tests..."
-	@go test ./...
+	@go test -ldflags "-X github.com/k10wl/hermes/internal/settings.appName=$(DEV_APP_NAME) -X github.com/k10wl/hermes/internal/settings.DefaultPort=$(DEV_PORT) -X github.com/k10wl/hermes/internal/settings.DefaultDatabaseName=':memory:'" ./...
 	@echo "Done"

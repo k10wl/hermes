@@ -50,6 +50,15 @@ Interactions with other flags:
 		DefaultPort,
 		fmt.Sprintf("Specify (p)ort for web server. Default to %q", DefaultPort),
 	)
+	databaseName := flagStringWithShorthand(
+		"database-name",
+		"dn",
+		DefaultPort,
+		fmt.Sprintf(
+			"Sets (d)atabase (n)ame. Used in tests to create in memory db. Default to %q",
+			DefaultDatabaseName,
+		),
+	)
 
 	flag.Parse()
 	config.Template = *template
@@ -60,6 +69,7 @@ Interactions with other flags:
 	config.Web = *web
 	config.Host = *host
 	config.Last = *last
+	config.DatabaseName = *databaseName
 }
 
 func readInput(message string) string {
