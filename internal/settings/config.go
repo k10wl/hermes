@@ -11,7 +11,7 @@ import (
 type Config struct {
 	AppName         string
 	Model           string
-	Input           string
+	Content         string
 	Template        string
 	OpenAIKey       string
 	ConfigDir       string
@@ -26,7 +26,7 @@ type Config struct {
 	ShutdownContext context.Context
 }
 
-const DefaultHost = "127.0.0.1"
+const DefaultHostname = "127.0.0.1"
 
 var DefaultPort = "8123" // changes in ldflag for dev mode
 var appName = "hermes"   // changes in ldflag for dev mode

@@ -9,49 +9,63 @@ import (
 	client "github.com/k10wl/openai-client"
 )
 
-func loadFlags(c *Config) error {
-	// FIXME this should be loaded from some kind of user preferences
-	model := flag.String("model", client.GPT3_5Turbo, "ai model name")
-	message := flagStringWithShorthand(
-		"message",
-		"m",
+func loadFlags(config *Config) error {
+	assignSharedFlags(config)
+	assignTemplateFlags(config)
+	assignWebFlags(config)
+	flag.Parse()
+	config.Content = readInput(config.Content)
+	return nil
+}
+
+func assignSharedFlags(config *Config) {
+	model := flagStringWithShorthand("model", "m", client.GPT3_5Turbo, "Completion (m)odel name")
+	content := flagStringWithShorthand(
+		"content",
+		"c",
 		"",
-		"Inline prompt message attached to end of Stdin string, or used as standalone prompt string",
+		`Input (c)ontent send to AI. Can contain templates (golang text/template syntax).
+Interactions with other flags:
+  -web  -- opens default browser in newly created chat;`,
 	)
-	// TEST
-	web := flag.Bool("web", false, "Starts web server")
-	last := flag.Bool(
+	config.Content = *content
+	config.Model = *model
+}
+
+func assignTemplateFlags(config *Config) {
+	template := flagStringWithShorthand(
+		"template",
+		"t",
+		"",
+		"Name of (t)emplate to be applied to provided content",
+	)
+	config.Template = *template
+}
+
+func assignWebFlags(config *Config) {
+	web := flagBoolWithShorthand("web", "w", false, "Starts (w)eb server")
+	last := flagBoolWithShorthand(
 		"last",
+		"l",
 		false,
-		"Opens last chat in web. Optional, does nothing if \"-web\" was not provided",
+		"Opens (l)ast chat in web. Does nothing if \"-web\" was not provided",
 	)
 	host := flagStringWithShorthand(
+		"hostname",
 		"host",
-		"h",
-		DefaultHost,
-		"Host for web server. Optional, does nothing if \"-web\" was not provided",
+		DefaultHostname,
+		fmt.Sprintf("Define (host)name IP for web server. Defaults to %q", DefaultHostname),
 	)
 	port := flagStringWithShorthand(
 		"port",
 		"p",
 		DefaultPort,
-		"Port for web server. Optional, does nothing if \"-web\" was not provided",
+		fmt.Sprintf("Specify (p)ort for web server. Default to %q", DefaultPort),
 	)
-	template := flagStringWithShorthand(
-		"template",
-		"t",
-		"",
-		"Template to process current message",
-	)
-	flag.Parse()
-	c.Input = readInput(*message)
-	c.Template = *template
-	c.Model = *model
-	c.Host = *host
-	c.Port = *port
-	c.Web = *web
-	c.Last = *last
-	return nil
+	config.Port = *port
+	config.Web = *web
+	config.Host = *host
+	config.Last = *last
 }
 
 func readInput(message string) string {
@@ -72,6 +86,18 @@ func readStdin() (string, error) {
 		return "", err
 	}
 	return string(p), nil
+}
+
+func flagBoolWithShorthand(
+	name string,
+	shorthand string,
+	value bool,
+	usage string,
+) *bool {
+	var val bool
+	flag.BoolVar(&val, name, value, usage)
+	flag.BoolVar(&val, shorthand, value, fmt.Sprintf("shorthand for %q", name))
+	return &val
 }
 
 func flagStringWithShorthand(

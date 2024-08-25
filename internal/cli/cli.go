@@ -27,7 +27,7 @@ func CLI(c *core.Core, config *settings.Config) error {
 	sendMessage := core.NewCreateChatAndCompletionCommand(
 		c,
 		"user",
-		config.Input,
+		config.Content,
 		config.Template,
 	)
 	if err := sendMessage.Execute(context.Background()); err != nil {
