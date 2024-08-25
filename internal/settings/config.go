@@ -67,26 +67,32 @@ func GetConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, er
 func loadConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, error) {
 	var c Config
 	c.AppName = appName
-	sharedConfigDir, err := os.UserConfigDir()
-	if err != nil {
-		return &c, err
-	}
 	loadFlags(&c)
 	loadEnv(&c)
-	hermesConfigDir := path.Join(sharedConfigDir, c.AppName)
-	c.ConfigDir = hermesConfigDir
-	c.DatabaseDSN = path.Join(hermesConfigDir, DefaultDatabaseName)
-	if c.DatabaseName != ":memory:" {
-		err = ensureExists(hermesConfigDir)
-		if err != nil {
-			return &c, err
-		}
+	if err := prepareDBData(&c); err != nil {
+		return &c, err
 	}
 	c.Stdin = stdin
 	c.Stdoout = stdout
 	c.Stderr = stderr
 	c.ShutdownContext = context.Background()
 	return &c, nil
+}
+
+func prepareDBData(c *Config) error {
+	if c.DatabaseName == ":memory:" {
+		c.DatabaseDSN = c.DatabaseName
+		return nil
+	}
+	sharedConfigDir, err := os.UserConfigDir()
+	if err != nil {
+		return err
+	}
+	hermesConfigDir := path.Join(sharedConfigDir, c.AppName)
+	c.ConfigDir = hermesConfigDir
+	c.DatabaseDSN = path.Join(hermesConfigDir, c.DatabaseName)
+	err = ensureExists(hermesConfigDir)
+	return err
 }
 
 func ensureExists(path string) error {

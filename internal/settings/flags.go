@@ -53,11 +53,8 @@ Interactions with other flags:
 	databaseName := flagStringWithShorthand(
 		"database-name",
 		"dn",
-		DefaultPort,
-		fmt.Sprintf(
-			"Sets (d)atabase (n)ame. Used in tests to create in memory db. Default to %q",
-			DefaultDatabaseName,
-		),
+		DefaultDatabaseName,
+		"Sets (d)atabase (n)ame. Used in tests to create in memory db",
 	)
 
 	flag.Parse()
