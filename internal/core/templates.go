@@ -4,63 +4,110 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"text/template"
 
 	"github.com/k10wl/hermes/internal/models"
 )
 
+type templateBuilder struct {
+	core             *Core
+	requiredTemplate string
+	storedTemplates  map[string]*models.Template
+}
+
+func newTemplateBuilder(core *Core) *templateBuilder {
+	return &templateBuilder{
+		core:             core,
+		requiredTemplate: "",
+		storedTemplates:  map[string]*models.Template{"": {}},
+	}
+}
+
+func (tb *templateBuilder) mustProcessTemplate(template string) {
+	tb.requiredTemplate = template
+}
+
+func (tb *templateBuilder) process(
+	ctx context.Context,
+	input string,
+) {
+	inputTemplates, err := extractTemplates(input)
+	if err != nil {
+		return
+	}
+	if _, ok := tb.storedTemplates[tb.requiredTemplate]; !ok {
+		inputTemplates = append(inputTemplates, tb.requiredTemplate)
+	}
+	inputTemplates = tb.removeStored(inputTemplates)
+	if len(inputTemplates) == 0 {
+		return
+	}
+	query := NewGetTemplatesByNamesQuery(tb.core, inputTemplates)
+	if err := query.Execute(ctx); err != nil {
+		return
+	}
+	for _, template := range query.Result {
+		tb.storedTemplates[template.Name] = template
+		tb.process(ctx, template.Content)
+	}
+}
+
+func (tb templateBuilder) string() (string, error) {
+	if !tb.hasRequired() {
+		return "", fmt.Errorf("does not contain required template")
+	}
+	buf := &strings.Builder{}
+	for _, template := range tb.storedTemplates {
+		buf.WriteString(template.Content)
+	}
+	return buf.String(), nil
+}
+
+func (tb templateBuilder) hasRequired() bool {
+	if tb.requiredTemplate == "" {
+		return true
+	}
+	_, ok := tb.storedTemplates[tb.requiredTemplate]
+	return ok
+}
+
+func (tb templateBuilder) removeStored(templates []string) []string {
+	return slices.DeleteFunc(templates, func(name string) bool {
+		_, ok := tb.storedTemplates[name]
+		return ok
+	})
+
+}
+
 func (c Core) prepareMessage(
 	ctx context.Context,
 	input string,
 	template string,
-) string {
-	fmt.Println("")
-	defer fmt.Println("")
-	usedTemplates, err := extractTemplates(input)
+) (string, error) {
+	templateBuilder := newTemplateBuilder(&c)
+	templateBuilder.mustProcessTemplate(template)
+	templateBuilder.process(ctx, input)
+	templates, err := templateBuilder.string()
 	if err != nil {
-		return input
+		return input, err
 	}
-	if template != "" {
-		usedTemplates = append(usedTemplates, template)
-	}
-	if len(usedTemplates) == 0 {
-		return input
-	}
-	query := NewGetTemplatesByNamesQuery(&c, usedTemplates)
-	if err := query.Execute(ctx); err != nil {
-		return input
-	}
-	content := concat(query.Result)
-	fmt.Printf("template: %v\n", template)
-	fmt.Printf("input: %v\n", input)
-	fmt.Printf("content: %v\n", content)
-	// must go into template definition
-	// must be defined to combine template with input
-	fmt.Printf("templatesContents: %v\n", content)
-	res, err := execute(content, "", input)
-	fmt.Printf("res1: %v\n", res)
+	res, err := execute(templates, "", input)
 	if err != nil {
-		return input
+		return input, err
 	}
 	if template == "" {
-		return res
+		return res, nil
 	}
-	res, err = execute(content, template, res)
-	fmt.Printf("res2: %v\n", res)
-	return res
+	res, err = execute(templates, template, res)
+	return res, err
 }
 
-/*
-{{define "wrapper"}}wrapper -- {{.}} -- wrapper{{end}}
-{{define "hello"}}hello world{{end}}
-
-{{template "wrapper" {{template "hello"}} }}
-{{
-*/
+const definitionError = "failed to get template name"
 
 func extractTemplateDefinitionName(content string) (string, error) {
-	defineRegexp := regexp.MustCompile(`{{define "(?P<name>.*)"}}`)
+	defineRegexp := regexp.MustCompile(`{{define "(?P<name>.*?)"}}`)
 	i := defineRegexp.SubexpIndex("name")
 	res := defineRegexp.FindStringSubmatch(content)
 	if len(res) < i+1 {
@@ -71,7 +118,7 @@ func extractTemplateDefinitionName(content string) (string, error) {
 
 func extractTemplates(content string) ([]string, error) {
 	templateRegexp := regexp.MustCompile(
-		`{{(\s+)?template(\s+)"(?P<name>.*?)"(\s(\.([A-z]+)?)+)?(\s+)?}}`,
+		`{{(\s+)?template(\s+)"(?P<name>.*?)".*?}}`,
 	)
 	i := templateRegexp.SubexpIndex("name")
 	templateNames := []string{}
@@ -87,7 +134,7 @@ func extractTemplates(content string) ([]string, error) {
 	return templateNames, err
 }
 
-func execute(content string, name string, input any) (string, error) {
+func execute(content string, name string, input string) (string, error) {
 	tmpl, err := template.New("").Parse(content)
 	if err != nil {
 		return "", err
@@ -95,6 +142,9 @@ func execute(content string, name string, input any) (string, error) {
 	executeName := name
 	if name == "" {
 		extractedName, err := extractTemplateDefinitionName(content)
+		if err != nil && err.Error() == definitionError {
+			return input, nil
+		}
 		if err != nil {
 			return "", err
 		}
@@ -110,12 +160,8 @@ func execute(content string, name string, input any) (string, error) {
 
 func concat(templates []*models.Template) string {
 	buf := &strings.Builder{}
-	for i, template := range templates {
-		sufix := "\n"
-		if len(templates) == i+1 {
-			sufix = ""
-		}
-		buf.WriteString(fmt.Sprintf("%s%s", template.Content, sufix))
+	for _, template := range templates {
+		buf.WriteString(template.Content)
 	}
 	return buf.String()
 }

@@ -37,7 +37,10 @@ func (c *CreateChatAndCompletionCommand) Execute(ctx context.Context) error {
 	if err := c.Core.assertAI(); err != nil {
 		return err
 	}
-	input := c.Core.prepareMessage(ctx, c.Message, c.Template)
+	input, err := c.Core.prepareMessage(ctx, c.Message, c.Template)
+	if err != nil {
+		return err
+	}
 	chat, _, err := c.Core.db.CreateChatAndMessage(
 		ctx,
 		c.Role,
@@ -91,7 +94,10 @@ func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
 	if err := c.Core.assertAI(); err != nil {
 		return err
 	}
-	input := c.Core.prepareMessage(ctx, c.Message, c.Template)
+	input, err := c.Core.prepareMessage(ctx, c.Message, c.Template)
+	if err != nil {
+		return err
+	}
 	prev, err := c.Core.db.GetChatMessages(ctx, c.ChatID)
 	if err != nil {
 		return err

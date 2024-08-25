@@ -106,18 +106,32 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 				Content: "wrapper - hello world! - wrapper",
 			},
 		},
+		{
+			name: "Should error if given template name does not exist",
+			init: func() {
+				currentCommand = core.NewCreateChatAndCompletionCommand(
+					coreInstance, core.AssistantRole, `{{template "welcome"}}`, "does not exist",
+				)
+			},
+			shouldError:    true,
+			expectedResult: models.Message{},
+		},
 	}
 
 	for _, test := range table {
 		test.init()
 		err := currentCommand.Execute(context.TODO())
 		test.expectedResult.TimestampsToNilForTest__()
-		currentCommand.Result.TimestampsToNilForTest__()
-		if test.shouldError && err == nil {
-			t.Errorf("%q expected to error, but did not\n", test.name)
+		if currentCommand.Result != nil {
+			currentCommand.Result.TimestampsToNilForTest__()
+		}
+		if test.shouldError {
+			if err == nil {
+				t.Errorf("%q expected to error, but did not\n", test.name)
+			}
 			continue
 		}
-		if !test.shouldError && err != nil {
+		if err != nil {
 			t.Errorf("%q unexpected error: %v\n", test.name, err)
 			continue
 		}
