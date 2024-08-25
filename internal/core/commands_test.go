@@ -20,29 +20,22 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 	coreInstance, _ := createCoreAndDB()
 	var currentCommand *core.CreateChatAndCompletionCommand
 
-	if err := core.NewCreateTemplateCommand(
-		coreInstance,
-		`{{define "welcome"}}hello world!{{end}}`,
-	).Execute(context.Background()); err != nil {
-		panic(err)
+	dbTemplates := map[string]string{
+		"welcome": `{{define "welcome"}}hello world!{{end}}`,
+		"wrapper": `{{define "wrapper"}}wrapper - {{.}} - wrapper{{end}}`,
+		"nested1": `{{define "nested1"}}nested1: {{template "nested2" .}}{{end}}`,
+		"nested2": `{{define "nested2"}}nested2: {{.}}{{end}}`,
+		"loop1":   `{{define "loop1"}}{{template "loop2"}}{{end}}`,
+		"loop2":   `{{define "loop2"}}{{template "loop1"}}{{end}}`,
 	}
-	if err := core.NewCreateTemplateCommand(
-		coreInstance,
-		`{{define "wrapper"}}wrapper - {{.}} - wrapper{{end}}`,
-	).Execute(context.Background()); err != nil {
-		panic(err)
-	}
-	if err := core.NewCreateTemplateCommand(
-		coreInstance,
-		`{{define "nested1"}}nested1: {{template "nested2" .}}{{end}}`,
-	).Execute(context.Background()); err != nil {
-		panic(err)
-	}
-	if err := core.NewCreateTemplateCommand(
-		coreInstance,
-		`{{define "nested2"}}nested2: {{.}}{{end}}`,
-	).Execute(context.Background()); err != nil {
-		panic(err)
+
+	for _, template := range dbTemplates {
+		if err := core.NewCreateTemplateCommand(
+			coreInstance,
+			template,
+		).Execute(context.Background()); err != nil {
+			panic(err)
+		}
 	}
 
 	table := []testCase{
@@ -111,6 +104,54 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 			init: func() {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
 					coreInstance, core.AssistantRole, `{{template "welcome"}}`, "does not exist",
+				)
+			},
+			shouldError:    true,
+			expectedResult: models.Message{},
+		},
+		{
+			name: "Should process string input and fill template data",
+			init: func() {
+				currentCommand = core.NewCreateChatAndCompletionCommand(
+					coreInstance, core.AssistantRole, "hello world!", "wrapper",
+				)
+			},
+			shouldError: false,
+			expectedResult: models.Message{
+				ID:      10,
+				ChatID:  5,
+				Role:    core.AssistantRole,
+				Content: "wrapper - hello world! - wrapper",
+			},
+		},
+		{
+			name: "Should error on circular templates with provided template",
+			init: func() {
+				currentCommand = core.NewCreateChatAndCompletionCommand(
+					coreInstance, core.AssistantRole, "will blow up", "loop1",
+				)
+			},
+			shouldError:    true,
+			expectedResult: models.Message{},
+		},
+		{
+			name: "Should error on circular templates with inputted template",
+			init: func() {
+				currentCommand = core.NewCreateChatAndCompletionCommand(
+					coreInstance, core.AssistantRole, `will blow up {{template "loop1" . }} `, "",
+				)
+			},
+			shouldError:    true,
+			expectedResult: models.Message{},
+		},
+		{
+			name: "Should error on circular templates with inputted template and template name as an argument",
+			init: func() {
+				currentCommand = core.NewCreateChatAndCompletionCommand(
+					coreInstance,
+					core.AssistantRole,
+					`will blow up {{template "loop1" . }} `,
+					"loop2",
 				)
 			},
 			shouldError:    true,

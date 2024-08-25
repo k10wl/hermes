@@ -100,6 +100,9 @@ func (c Core) prepareMessage(
 	if template == "" {
 		return res, nil
 	}
+	if innerTemplates, err := extractTemplates(input); err != nil || len(innerTemplates) == 0 {
+		return res, nil
+	}
 	res, err = execute(templates, template, res)
 	return res, err
 }
