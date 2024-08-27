@@ -157,26 +157,42 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 			shouldError:    true,
 			expectedResult: models.Message{},
 		},
-		/*
-			{
-				name: "Should fill inner template and remain current message",
-				init: func() {
-					currentCommand = core.NewCreateChatAndCompletionCommand(
-						coreInstance,
-						core.AssistantRole,
-						`should fill welcome ({{template "welcome"}})`,
-						"",
-					)
-				},
-				shouldError: false,
-				expectedResult: models.Message{
-					ChatID:  6,
-					ID:      12,
-					Role:    core.AssistantRole,
-					Content: "should fill welcome (hello world!)",
-				},
+		{
+			name: "Should fill inner templates and remain current message",
+			init: func() {
+				currentCommand = core.NewCreateChatAndCompletionCommand(
+					coreInstance,
+					core.AssistantRole,
+					`should fill welcome ({{template "welcome"}})({{template "welcome"}})`,
+					"",
+				)
 			},
-		*/
+			shouldError: false,
+			expectedResult: models.Message{
+				ChatID:  6,
+				ID:      12,
+				Role:    core.AssistantRole,
+				Content: "should fill welcome (hello world!)(hello world!)",
+			},
+		},
+		{
+			name: "Should fill inner templates, template name, and remain current message",
+			init: func() {
+				currentCommand = core.NewCreateChatAndCompletionCommand(
+					coreInstance,
+					core.AssistantRole,
+					`should fill welcome ({{template "welcome"}})({{template "welcome"}})`,
+					"wrapper",
+				)
+			},
+			shouldError: false,
+			expectedResult: models.Message{
+				ChatID:  7,
+				ID:      14,
+				Role:    core.AssistantRole,
+				Content: "wrapper - should fill welcome (hello world!)(hello world!) - wrapper",
+			},
+		},
 	}
 
 	for _, test := range table {
@@ -188,12 +204,16 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 		}
 		if test.shouldError {
 			if err == nil {
-				t.Errorf("%q expected to error, but did not\n", test.name)
+				t.Errorf(
+					"%q expected to error, but did not.\nres: %+v\n\n",
+					test.name,
+					*currentCommand.Result,
+				)
 			}
 			continue
 		}
 		if err != nil {
-			t.Errorf("%q unexpected error: %v\n", test.name, err)
+			t.Errorf("%q unexpected error: %v\n\n", test.name, err)
 			continue
 		}
 		if !reflect.DeepEqual(test.expectedResult, *currentCommand.Result) {

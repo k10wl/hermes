@@ -3,40 +3,35 @@ package core
 import (
 	"context"
 	"fmt"
+	"io"
 	"regexp"
+	"slices"
 	"strings"
 	"text/template"
 
 	"github.com/k10wl/hermes/internal/models"
 )
 
+const rootTemplateName = "!!__root__!!"
+const inPlaceTemplateName = "!!__execute_in_place__!!"
+
 func (c Core) prepareMessage(
 	ctx context.Context,
 	input string,
-	template string,
+	templateName string,
 ) (string, error) {
 	templateBuilder := newTemplateBuilder(&c)
-	templateBuilder.mustProcessTemplate(template)
+	templateBuilder.mustProcessTemplate(templateName)
 	templateBuilder.process(ctx, input)
-	templates, err := templateBuilder.string()
+	templateString, err := templateBuilder.string()
 	if err != nil {
 		return input, err
 	}
-	fmt.Printf("input: %v\n", input)
-	fmt.Printf("templates: %v\n", templates)
-	res, err := execute(templates, "", input)
-	fmt.Printf("res: %v\n", res)
-	if err != nil {
-		return input, err
-	}
-	if template == "" {
-		return res, nil
-	}
-	if innerTemplates, err := extractTemplates(input); err != nil || len(innerTemplates) == 0 {
-		return res, nil
-	}
-	res, err = execute(templates, template, res)
-	return res, err
+	t := prepareTemplates(templateString)
+	refinedInput := prepareInput(templateName, input)
+	buf := &strings.Builder{}
+	err = executor(t, buf, refinedInput)
+	return buf.String(), err
 }
 
 const definitionError = "failed to get template name"
@@ -99,4 +94,55 @@ func concat(templates []*models.Template) string {
 		buf.WriteString(template.Content)
 	}
 	return buf.String()
+}
+
+func withInPlaceBlock(str string) string {
+	return fmt.Sprintf(`{{block "%s" .}}%s{{end}}`, inPlaceTemplateName, str)
+}
+
+func detectTemplateUsage(inputTemplate string) bool {
+	regex := regexp.MustCompile(`{{\s*template\s+"(?P<name>[^"]+?)"(.*?)?\s*}}`)
+	i := regex.SubexpIndex("name")
+	matches := regex.FindAllStringSubmatch(inputTemplate, -1)
+	str := []string{}
+	for _, match := range matches {
+		if len(match) < i || slices.Contains(str, match[i]) {
+			continue
+		}
+		str = append(str, match[i])
+	}
+	return len(str) > 0
+}
+
+func withTemplateDefinition(name string, content string) string {
+	return fmt.Sprintf(`{{define %q}}{{.}}{{end}}%s`, name, content)
+}
+
+func prepareTemplates(
+	templates string,
+) *template.Template {
+	tmpl := template.New(rootTemplateName)
+	tmpl = template.Must(tmpl.Parse(withTemplateDefinition(rootTemplateName, templates)))
+	return tmpl
+}
+
+func prepareInput(templateName string, input string) string {
+	if templateName == "" {
+		return input
+	}
+	return fmt.Sprintf("{{template %q %q}}", templateName, input)
+}
+
+func executor(t *template.Template, writer io.Writer, str string) error {
+	fmt.Println("entering executor")
+	if detectTemplateUsage(str) {
+		updated, _ := t.Parse(withInPlaceBlock(str))
+		buf := &strings.Builder{}
+		err := updated.ExecuteTemplate(buf, inPlaceTemplateName, nil)
+		if err != nil {
+			return err
+		}
+		return executor(updated, writer, buf.String())
+	}
+	return t.ExecuteTemplate(writer, rootTemplateName, str)
 }
