@@ -52,9 +52,9 @@ Interactions with other flags:
 	)
 	databaseName := flagStringWithShorthand(
 		"database-name",
-		"dn",
+		"db",
 		DefaultDatabaseName,
-		"Sets (d)atabase (n)ame. Used in tests to create in memory db",
+		"Sets (d)ata(b)ase name. Used in tests to create in memory db",
 	)
 
 	flag.Parse()
