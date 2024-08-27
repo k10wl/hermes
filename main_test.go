@@ -63,7 +63,7 @@ func TestApp(t *testing.T) {
 					return c, err
 				}
 			},
-			expected: expected{stdout: cli.HelpString + "\n"},
+			expected: expected{stdout: cli.GetHelpString(settings.Version) + "\n"},
 		},
 
 		{
