@@ -46,6 +46,6 @@ func (l *launchCLI) Execute(c *core.Core, config *settings.Config) error {
 type launchBadInput struct{}
 
 func (l *launchBadInput) Execute(c *core.Core, config *settings.Config) error {
-	fmt.Fprintf(config.Stdoout, "%s\n", cli.HelpString)
+	fmt.Fprintf(config.Stdoout, "%s\n", cli.GetHelpString(config.Version))
 	return nil
 }

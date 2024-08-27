@@ -8,6 +8,15 @@ import (
 	"sync"
 )
 
+const Version = "2.1.1"
+const DefaultHostname = "127.0.0.1"
+
+var DefaultPort = "8123"            // changes in ldflag for dev mode
+var DefaultDatabaseName = "main.db" // changes in ldflag for dev mode
+var appName = "hermes"              // changes in ldflag for dev mode
+var config *Config
+var once sync.Once
+
 type Config struct {
 	Settings
 	Providers
@@ -17,6 +26,7 @@ type Config struct {
 }
 
 type Settings struct {
+	Version         string
 	AppName         string
 	ConfigDir       string
 	DatabaseName    string
@@ -48,14 +58,6 @@ type TemplateFlags struct {
 	UpsertTemplate string
 }
 
-const DefaultHostname = "127.0.0.1"
-
-var DefaultPort = "8123"            // changes in ldflag for dev mode
-var DefaultDatabaseName = "main.db" // changes in ldflag for dev mode
-var appName = "hermes"              // changes in ldflag for dev mode
-var config *Config
-var once sync.Once
-
 func GetConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, error) {
 	var err error
 	once.Do(func() {
@@ -72,6 +74,7 @@ func loadConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, e
 	if err := prepareDBData(&c); err != nil {
 		return &c, err
 	}
+	c.Version = Version
 	c.Stdin = stdin
 	c.Stdoout = stdout
 	c.Stderr = stderr
