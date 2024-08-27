@@ -134,7 +134,6 @@ func prepareInput(templateName string, input string) string {
 }
 
 func executor(t *template.Template, writer io.Writer, str string) error {
-	fmt.Println("entering executor")
 	if detectTemplateUsage(str) {
 		updated, _ := t.Parse(withInPlaceBlock(str))
 		buf := &strings.Builder{}
