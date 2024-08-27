@@ -157,6 +157,26 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 			shouldError:    true,
 			expectedResult: models.Message{},
 		},
+		/*
+			{
+				name: "Should fill inner template and remain current message",
+				init: func() {
+					currentCommand = core.NewCreateChatAndCompletionCommand(
+						coreInstance,
+						core.AssistantRole,
+						`should fill welcome ({{template "welcome"}})`,
+						"",
+					)
+				},
+				shouldError: false,
+				expectedResult: models.Message{
+					ChatID:  6,
+					ID:      12,
+					Role:    core.AssistantRole,
+					Content: "should fill welcome (hello world!)",
+				},
+			},
+		*/
 	}
 
 	for _, test := range table {
