@@ -19,13 +19,13 @@ func TestBuildTemplateString(t *testing.T) {
 	coreInstance, _ := __createCoreAndDB()
 
 	dbTemplates := map[string]string{
-		"hello-world": `{{define "hello-world"}}Hello world!{{end}}`,
-		"bye-world":   `{{define "bye-world"}}Goodbye, cruel world!{{end}}`,
-		"nested-l1":   `{{define "nested-l1"}}nested l1 {{template "nested-l2"}}{{end}}`,
-		"nested-l2":   `{{define "nested-l2"}}nested l2 {{template "nested-l3"}}{{end}}`,
-		"nested-l3":   `{{define "nested-l3"}}nested l3{{end}}`,
-		"loop1":       `{{define "loop1"}}{{template "loop2"}}{{end}}`,
-		"loop2":       `{{define "loop2"}}{{template "loop1"}}{{end}}`,
+		"hello-world": `--{{define "hello-world"}}Hello world!--{{end}}`,
+		"bye-world":   `--{{define "bye-world"}}Goodbye, cruel world!--{{end}}`,
+		"nested-l1":   `--{{define "nested-l1"}}nested l1 --{{template "nested-l2"}}--{{end}}`,
+		"nested-l2":   `--{{define "nested-l2"}}nested l2 --{{template "nested-l3"}}--{{end}}`,
+		"nested-l3":   `--{{define "nested-l3"}}nested l3--{{end}}`,
+		"loop1":       `--{{define "loop1"}}--{{template "loop2"}}--{{end}}`,
+		"loop2":       `--{{define "loop2"}}--{{template "loop1"}}--{{end}}`,
 	}
 	for _, template := range dbTemplates {
 		if err := NewUpsertTemplateCommand(coreInstance, template).Execute(context.Background()); err != nil {
@@ -44,9 +44,9 @@ func TestBuildTemplateString(t *testing.T) {
 		{
 			name: "should return empty input if it contains unknown template",
 			input: []string{
-				`{{template "theduck"}}`,
-				`{{template "theduck" .}}`,
-				`{{template "theduck" .Value.Value}}`,
+				`--{{template "theduck"}}`,
+				`--{{template "theduck" .}}`,
+				`--{{template "theduck" .Value.Value}}`,
 			},
 			template:    "",
 			expected:    []string{},
@@ -55,9 +55,9 @@ func TestBuildTemplateString(t *testing.T) {
 		{
 			name: "should return template definition if input contains known template",
 			input: []string{
-				`{{template "hello-world"}}`,
-				`{{template "hello-world" .}}`,
-				`{{template "hello-world" .Value.Value}}`,
+				`--{{template "hello-world"}}`,
+				`--{{template "hello-world" .}}`,
+				`--{{template "hello-world" .Value.Value}}`,
 			},
 			template:    "",
 			expected:    []string{"hello-world"},
@@ -66,9 +66,9 @@ func TestBuildTemplateString(t *testing.T) {
 		{
 			name: "should return multiple template definitions",
 			input: []string{
-				`{{template "hello-world"}}{{template "bye-world"}}`,
-				`{{template "hello-world" .}}{{template "bye-world" .}}`,
-				`{{template "hello-world" .Value.Value}}{{template "bye-world" .Value.Value}}`,
+				`--{{template "hello-world"}}--{{template "bye-world"}}`,
+				`--{{template "hello-world" .}}--{{template "bye-world" .}}`,
+				`--{{template "hello-world" .Value.Value}}--{{template "bye-world" .Value.Value}}`,
 			},
 			template:    "",
 			expected:    []string{"hello-world", "bye-world"},
@@ -77,9 +77,9 @@ func TestBuildTemplateString(t *testing.T) {
 		{
 			name: "should return multiple template definitions",
 			input: []string{
-				`{{template "hello-world"}}{{template "bye-world"}}`,
-				`{{template "hello-world" .}}{{template "bye-world" .}}`,
-				`{{template "hello-world" .Value.Value}}{{template "bye-world" .Value.Value}}`,
+				`--{{template "hello-world"}}--{{template "bye-world"}}`,
+				`--{{template "hello-world" .}}--{{template "bye-world" .}}`,
+				`--{{template "hello-world" .Value.Value}}--{{template "bye-world" .Value.Value}}`,
 			},
 			template:    "",
 			expected:    []string{"hello-world", "bye-world"},
@@ -88,7 +88,7 @@ func TestBuildTemplateString(t *testing.T) {
 		{
 			name: "should return nested template definitions",
 			input: []string{
-				`{{template "nested-l1"}}`,
+				`--{{template "nested-l1"}}`,
 			},
 			template:    "",
 			expected:    []string{"nested-l1", "nested-l2", "nested-l3"},
@@ -97,7 +97,7 @@ func TestBuildTemplateString(t *testing.T) {
 		{
 			name: "should process looped nested templates",
 			input: []string{
-				`{{template "loop1"}}`,
+				`--{{template "loop1"}}`,
 			},
 			template:    "",
 			expected:    []string{"loop1", "loop2"},
@@ -115,7 +115,7 @@ func TestBuildTemplateString(t *testing.T) {
 		{
 			name: "should return template specified in argument with input templates",
 			input: []string{
-				`{{template "bye-world"}}`,
+				`--{{template "bye-world"}}`,
 			},
 			template:    "hello-world",
 			expected:    []string{"hello-world", "bye-world"},
@@ -124,7 +124,7 @@ func TestBuildTemplateString(t *testing.T) {
 		{
 			name: "should return nested template definitions with template as an argument",
 			input: []string{
-				`{{template "nested-l1"}}`,
+				`--{{template "nested-l1"}}`,
 			},
 			template:    "hello-world",
 			expected:    []string{"nested-l1", "nested-l2", "nested-l3", "hello-world"},
@@ -133,7 +133,7 @@ func TestBuildTemplateString(t *testing.T) {
 		{
 			name: "should error if template name provided by an argument does not exist",
 			input: []string{
-				`{{template "nested-l1"}}`,
+				`--{{template "nested-l1"}}`,
 			},
 			template:    "bullshit",
 			expected:    []string{},

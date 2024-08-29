@@ -20,7 +20,7 @@ func TestGetTemplateByNameQuery(t *testing.T) {
 	coreInstance, _ := createCoreAndDB()
 	var query *core.GetTemplatesByNamesQuery
 	if err := core.NewUpsertTemplateCommand(coreInstance,
-		`{{define "hello"}}hello world{{end}}`).Execute(context.Background()); err != nil {
+		`--{{define "hello"}}hello world--{{end}}`).Execute(context.Background()); err != nil {
 		panic(err)
 	}
 
@@ -35,7 +35,7 @@ func TestGetTemplateByNameQuery(t *testing.T) {
 				{
 					ID:      1,
 					Name:    "hello",
-					Content: `{{define "hello"}}hello world{{end}}`,
+					Content: `--{{define "hello"}}hello world--{{end}}`,
 				},
 			},
 		},

@@ -21,12 +21,12 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 	var currentCommand *core.CreateChatAndCompletionCommand
 
 	dbTemplates := map[string]string{
-		"welcome": `{{define "welcome"}}hello world!{{end}}`,
-		"wrapper": `{{define "wrapper"}}wrapper - {{.}} - wrapper{{end}}`,
-		"nested1": `{{define "nested1"}}nested1: {{template "nested2" .}}{{end}}`,
-		"nested2": `{{define "nested2"}}nested2: {{.}}{{end}}`,
-		"loop1":   `{{define "loop1"}}{{template "loop2"}}{{end}}`,
-		"loop2":   `{{define "loop2"}}{{template "loop1"}}{{end}}`,
+		"welcome": `--{{define "welcome"}}hello world!--{{end}}`,
+		"wrapper": `--{{define "wrapper"}}wrapper - --{{.}} - wrapper--{{end}}`,
+		"nested1": `--{{define "nested1"}}nested1: --{{template "nested2" .}}--{{end}}`,
+		"nested2": `--{{define "nested2"}}nested2: --{{.}}--{{end}}`,
+		"loop1":   `--{{define "loop1"}}--{{template "loop2"}}--{{end}}`,
+		"loop2":   `--{{define "loop2"}}--{{template "loop1"}}--{{end}}`,
 	}
 
 	for _, template := range dbTemplates {
@@ -73,7 +73,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 			name: "Should fill inner template data when template name is not provided",
 			init: func() {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
-					coreInstance, core.AssistantRole, `{{template "welcome"}}`, "",
+					coreInstance, core.AssistantRole, `--{{template "welcome"}}`, "",
 				)
 			},
 			shouldError: false,
@@ -88,7 +88,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 			name: "Should fill inner template data and provided template name data",
 			init: func() {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
-					coreInstance, core.AssistantRole, `{{template "welcome"}}`, "wrapper",
+					coreInstance, core.AssistantRole, `--{{template "welcome"}}`, "wrapper",
 				)
 			},
 			shouldError: false,
@@ -103,7 +103,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 			name: "Should error if given template name does not exist",
 			init: func() {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
-					coreInstance, core.AssistantRole, `{{template "welcome"}}`, "does not exist",
+					coreInstance, core.AssistantRole, `--{{template "welcome"}}`, "does not exist",
 				)
 			},
 			shouldError:    true,
@@ -138,7 +138,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 			name: "Should error on circular templates with inputted template",
 			init: func() {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
-					coreInstance, core.AssistantRole, `will blow up {{template "loop1" . }} `, "",
+					coreInstance, core.AssistantRole, `will blow up --{{template "loop1" . }} `, "",
 				)
 			},
 			shouldError:    true,
@@ -150,7 +150,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
 					coreInstance,
 					core.AssistantRole,
-					`will blow up {{template "loop1" . }} `,
+					`will blow up --{{template "loop1" . }} `,
 					"loop2",
 				)
 			},
@@ -163,7 +163,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
 					coreInstance,
 					core.AssistantRole,
-					`should fill welcome ({{template "welcome"}})({{template "welcome"}})`,
+					`should fill welcome (--{{template "welcome"}})(--{{template "welcome"}})`,
 					"",
 				)
 			},
@@ -181,7 +181,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
 					coreInstance,
 					core.AssistantRole,
-					`should fill welcome ({{template "welcome"}})({{template "welcome"}})`,
+					`should fill welcome (--{{template "welcome"}})(--{{template "welcome"}})`,
 					"wrapper",
 				)
 			},
@@ -295,24 +295,24 @@ func TestCreateTemplateCommand(t *testing.T) {
 	table := []testCase{
 		{
 			name:         "create welcome template",
-			template:     `{{define "welcome"}}hello world!{{end}}`,
+			template:     `--{{define "welcome"}}hello world!--{{end}}`,
 			templateName: []string{"welcome"},
 			init: func() {
 				command = core.NewUpsertTemplateCommand(
 					coreInstance,
-					`{{define "welcome"}}hello world!{{end}}`,
+					`--{{define "welcome"}}hello world!--{{end}}`,
 				)
 			},
 			shouldError: false,
 		},
 		{
 			name:         "should override written command",
-			template:     `{{define "welcome"}}welcome world!{{end}}`,
+			template:     `--{{define "welcome"}}welcome world!--{{end}}`,
 			templateName: []string{"welcome"},
 			init: func() {
 				command = core.NewUpsertTemplateCommand(
 					coreInstance,
-					`{{define "welcome"}}welcome world!{{end}}`,
+					`--{{define "welcome"}}welcome world!--{{end}}`,
 				)
 			},
 			shouldError: false,

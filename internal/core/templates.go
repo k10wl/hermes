@@ -14,6 +14,8 @@ import (
 
 const rootTemplateName = "!!__root__!!"
 const inPlaceTemplateName = "!!__execute_in_place__!!"
+const leftDelim = "--{{"
+const rightDelim = "}}"
 
 func (c Core) prepareMessage(
 	ctx context.Context,
@@ -37,7 +39,7 @@ func (c Core) prepareMessage(
 const definitionError = "failed to get template name"
 
 func extractTemplateDefinitionName(content string) (string, error) {
-	defineRegexp := regexp.MustCompile(`{{define "(?P<name>.*?)"}}`)
+	defineRegexp := regexp.MustCompile(withDelims(`define "(?P<name>.*?)"`))
 	i := defineRegexp.SubexpIndex("name")
 	res := defineRegexp.FindStringSubmatch(content)
 	if len(res) < i+1 {
@@ -48,7 +50,7 @@ func extractTemplateDefinitionName(content string) (string, error) {
 
 func extractTemplates(content string) ([]string, error) {
 	templateRegexp := regexp.MustCompile(
-		`{{\s*?template\s+"(?P<name>.*?)".*?}}`,
+		withDelims(`\s*?template\s+"(?P<name>.*?)".*?`),
 	)
 	i := templateRegexp.SubexpIndex("name")
 	templateNames := []string{}
@@ -66,6 +68,7 @@ func extractTemplates(content string) ([]string, error) {
 
 func execute(content string, name string, input string) (string, error) {
 	tmpl, err := template.New("").Parse(content)
+	tmpl = tmpl.Delims(leftDelim, rightDelim)
 	if err != nil {
 		return "", err
 	}
@@ -97,11 +100,16 @@ func concat(templates []*models.Template) string {
 }
 
 func withInPlaceBlock(str string) string {
-	return fmt.Sprintf(`{{block "%s" .}}%s{{end}}`, inPlaceTemplateName, str)
+	return fmt.Sprintf(
+		`%s%s%s`,
+		withDelims(fmt.Sprintf(`block "%s" .`, inPlaceTemplateName)),
+		str,
+		withDelims("end"),
+	)
 }
 
 func detectTemplateUsage(inputTemplate string) bool {
-	regex := regexp.MustCompile(`{{\s*template\s+"(?P<name>[^"]+?)"(.*?)?\s*}}`)
+	regex := regexp.MustCompile(withDelims(`\s*template\s+"(?P<name>[^"]+?)"(.*?)?\s*`))
 	i := regex.SubexpIndex("name")
 	matches := regex.FindAllStringSubmatch(inputTemplate, -1)
 	str := []string{}
@@ -115,13 +123,20 @@ func detectTemplateUsage(inputTemplate string) bool {
 }
 
 func withTemplateDefinition(name string, content string) string {
-	return fmt.Sprintf(`{{define %q}}{{.}}{{end}}%s`, name, content)
+	return fmt.Sprintf(
+		`%s%s%s%s`,
+		withDelims(fmt.Sprintf("define %q", name)),
+		withDelims("."),
+		withDelims("end"),
+		content,
+	)
 }
 
 func prepareTemplates(
 	templates string,
 ) *template.Template {
 	tmpl := template.New(rootTemplateName)
+	tmpl = tmpl.Delims(leftDelim, rightDelim)
 	tmpl = template.Must(tmpl.Parse(withTemplateDefinition(rootTemplateName, templates)))
 	return tmpl
 }
@@ -130,7 +145,7 @@ func prepareInput(templateName string, input string) string {
 	if templateName == "" {
 		return input
 	}
-	return fmt.Sprintf("{{template %q %q}}", templateName, input)
+	return withDelims(fmt.Sprintf("template %q %q", templateName, input))
 }
 
 func executor(t *template.Template, writer io.Writer, str string) error {
@@ -144,4 +159,8 @@ func executor(t *template.Template, writer io.Writer, str string) error {
 		return executor(updated, writer, buf.String())
 	}
 	return t.ExecuteTemplate(writer, rootTemplateName, str)
+}
+
+func withDelims(content string) string {
+	return fmt.Sprintf("%s%s%s", leftDelim, content, rightDelim)
 }

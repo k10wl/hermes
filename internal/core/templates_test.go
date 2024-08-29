@@ -20,20 +20,20 @@ func TestExtractTemplateDefinitionName(t *testing.T) {
 	table := []testCase{
 		{
 			name:     "should get template name",
-			input:    `{{define "welcome"}}`,
+			input:    `--{{define "welcome"}}`,
 			expected: "welcome",
 			errors:   false,
 		},
 		{
 			name: "should fail on bad string",
-			input: `{{define "we
+			input: `--{{define "we
             lcome"}}`,
 			expected: "",
 			errors:   true,
 		},
 		{
 			name:     "should fail on bad string",
-			input:    `{{define "we`,
+			input:    `--{{define "we`,
 			expected: "",
 			errors:   true,
 		},
@@ -45,7 +45,7 @@ func TestExtractTemplateDefinitionName(t *testing.T) {
 		},
 		{
 			name:     "should get template name if there is nested template",
-			input:    `{{define "welcome"}}{{template "stuff"}}{{end}}`,
+			input:    `--{{define "welcome"}}--{{template "stuff"}}--{{end}}`,
 			expected: "welcome",
 			errors:   false,
 		},
@@ -81,17 +81,17 @@ func TestExtractUsedTemplates(t *testing.T) {
 	table := []testCase{
 		{
 			name: "should get template name",
-			input: `{{template "name1"}}{{template "name2"}}
+			input: `--{{template "name1"}}--{{template "name2"}}
 
-            {{template "name3"}}`,
+            --{{template "name3"}}`,
 			expected: []string{"name1", "name2", "name3"},
 			errors:   false,
 		},
 		{
 			name: "should get template name with dot or variable assigned",
-			input: `{{template "name1" .Variable}}{{template "name2" .}}
+			input: `--{{template "name1" .Variable}}--{{template "name2" .}}
 
-            {{template "name3" .variable}}`,
+            --{{template "name3" .variable}}`,
 			expected: []string{"name1", "name2", "name3"},
 			errors:   false,
 		},
