@@ -20,7 +20,7 @@ func loadFlags(config *Config) {
 		"upsert-template",
 		"ut",
 		"",
-		"Contents of (u)psert (t)emplate. Must comply golang text/template syntax",
+		"Contents of (u)psert (t)emplate. Differs from golang templates, has unique delimiters. Left `--{{`, right `}}`. Is extension of golang std text/template. E.g. `--{{define \"test\"}}test--{{end}}`",
 	)
 	model := flagStringWithShorthand("model", "m", client.GPT3_5Turbo, "Completion (m)odel name")
 	content := flagStringWithShorthand(
