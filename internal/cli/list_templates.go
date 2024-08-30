@@ -11,11 +11,11 @@ func listTemplates(templates []*models.Template, w io.Writer) error {
 	if len(templates) == 0 {
 		_, err := fmt.Fprintf(
 			w,
-			"No templates. Please use -h to get info of how to add templates\n",
+			"No templates matched search.\nUse -h to get info of how to add templates.\n",
 		)
 		return err
 	}
-	_, err := fmt.Fprintf(w, "List of templates:\n")
+	_, err := fmt.Fprintf(w, "List of templates:\n\n")
 	for _, template := range templates {
 		if e := writeRow(w, template.Name, template.Content); e != nil {
 			err = e

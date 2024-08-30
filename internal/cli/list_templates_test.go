@@ -28,6 +28,7 @@ func TestListTemplates(t *testing.T) {
 				},
 			},
 			expected: `List of templates:
+
 [Name]    first
 [Content] --{{define "first"}}first--{{end}}
 --------------------
@@ -39,7 +40,7 @@ func TestListTemplates(t *testing.T) {
 		{
 			name:     "should return no templates if none are stored",
 			input:    []*models.Template{},
-			expected: "No templates. Please use -h to get info of how to add templates\n",
+			expected: "No templates matched search.\nUse -h to get info of how to add templates.\n",
 		},
 	}
 
