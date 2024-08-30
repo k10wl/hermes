@@ -17,11 +17,11 @@ func loadFlags(config *Config) {
 		"Name of (t)emplate to be applied to provided content",
 	)
 	listTemplates := flagStringWithShorthand(
-		"lt-template",
+		"list-templates",
 		"lt",
 		"",
 		`(L)ists (t)emplates with name that matches given regex. E.g.
-`+"- `hermes -lt *`"+`- returns all templates
+`+"- `hermes -lt %`"+`- returns all templates
 `+"- `hermes -lt short`"+`- return templates with name "short"`,
 	)
 	upsertTemplate := flagStringWithShorthand(
