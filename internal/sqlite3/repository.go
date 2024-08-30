@@ -248,3 +248,38 @@ func getTemplatesByNames(
 	}
 	return templates, rowErr
 }
+
+const getTemplatesByRegexpQuery = `
+SELECT id, name, content, created_at, updated_at, deleted_at FROM templates
+WHERE name LIKE $1;
+`
+
+func getTemplatesByRegexp(
+	executor executorFnMultiple,
+	ctx context.Context,
+	regexp string,
+) ([]*models.Template, error) {
+	rows, err := executor(ctx, getTemplatesByRegexpQuery, regexp)
+	if err != nil {
+		return nil, err
+	}
+	templates := []*models.Template{}
+	var rowErr error
+	for rows.Next() {
+		var templateDoc models.Template
+		if err := rows.Scan(
+			&templateDoc.ID,
+			&templateDoc.Name,
+			&templateDoc.Content,
+			&templateDoc.CreatedAt,
+			&templateDoc.UpdatedAt,
+			&templateDoc.DeletedAt,
+		); err != nil {
+			rowErr = err
+			break
+		}
+		templates = append(templates, &templateDoc)
+	}
+	return templates, rowErr
+
+}

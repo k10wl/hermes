@@ -36,4 +36,8 @@ type Client interface {
 		ctx context.Context,
 		names []string,
 	) ([]*models.Template, error)
+	GetTemplatesByRegexp(
+		ctx context.Context,
+		regexp string,
+	) ([]*models.Template, error)
 }

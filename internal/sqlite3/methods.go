@@ -83,3 +83,10 @@ func (s SQLite3) GetTemplatesByNames(
 ) ([]*models.Template, error) {
 	return getTemplatesByNames(s.db.QueryContext, ctx, name)
 }
+
+func (s SQLite3) GetTemplatesByRegexp(
+	ctx context.Context,
+	regexp string,
+) ([]*models.Template, error) {
+	return getTemplatesByRegexp(s.db.QueryContext, ctx, regexp)
+}
