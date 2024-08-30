@@ -80,7 +80,7 @@ func TestCLIStrategy(t *testing.T) {
 		{
 			name: "should call view templates if ViewTemplates value was provided",
 			config: settings.Config{
-				TemplateFlags: settings.TemplateFlags{ViewTemplates: "view"},
+				TemplateFlags: settings.TemplateFlags{ListTemplates: "view"},
 			},
 			expected: optionMap[ViewTemplates],
 		},
@@ -95,7 +95,7 @@ func TestCLIStrategy(t *testing.T) {
 			name: "should error on conflicting flags",
 			config: settings.Config{
 				TemplateFlags: settings.TemplateFlags{
-					ViewTemplates:  "some",
+					ListTemplates:  "some",
 					UpsertTemplate: "some",
 				},
 			},
@@ -139,7 +139,7 @@ func (ts *testStrategies) LastChat(*core.Core, *settings.Config) error {
 	ts.options.record(optionMap[LastChat])
 	return nil
 }
-func (ts *testStrategies) ViewTemplates(*core.Core, *settings.Config) error {
+func (ts *testStrategies) ListTemplates(*core.Core, *settings.Config) error {
 	ts.options.record(optionMap[ViewTemplates])
 	return nil
 }

@@ -13,6 +13,7 @@ func PickStrategy(config *settings.Config) launchStrategy {
 	}
 	if strings.Trim(config.Content, " ") != "" ||
 		config.UpsertTemplate != "" ||
+		config.ListTemplates != "" ||
 		config.Template != "" {
 		return newLaunchCLI(&cli.CLIStrategies{})
 	}

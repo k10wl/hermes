@@ -51,6 +51,12 @@ func (cli *CLIStrategies) UpsertTemplate(c *core.Core, config *settings.Config) 
 	return core.NewUpsertTemplateCommand(c, config.UpsertTemplate).Execute(ctx)
 }
 
-func (cli *CLIStrategies) ViewTemplates(c *core.Core, config *settings.Config) error {
-	return nil
+func (cli *CLIStrategies) ListTemplates(c *core.Core, config *settings.Config) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	getTemplatesByRegexp := core.NewGetTemplatesByRegexp(c, config.ListTemplates)
+	if err := getTemplatesByRegexp.Execute(ctx); err != nil {
+		return err
+	}
+	return listTemplates(getTemplatesByRegexp.Result, config.Stdoout)
 }

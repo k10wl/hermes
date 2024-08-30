@@ -51,6 +51,11 @@ func TestPickStrategy(t *testing.T) {
 				},
 				{
 					TemplateFlags: settings.TemplateFlags{
+						ListTemplates: `%`,
+					},
+				},
+				{
+					TemplateFlags: settings.TemplateFlags{
 						UpsertTemplate: `--{{define "hi"}}hello world--{{end}}`,
 					},
 				},

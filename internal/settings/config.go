@@ -55,7 +55,7 @@ type WebFlags struct {
 
 type TemplateFlags struct {
 	Template       string
-	ViewTemplates  string
+	ListTemplates  string
 	UpsertTemplate string
 }
 

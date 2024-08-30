@@ -10,7 +10,7 @@ import (
 type cliStrategies interface {
 	NewChat(*core.Core, *settings.Config) error
 	LastChat(*core.Core, *settings.Config) error
-	ViewTemplates(*core.Core, *settings.Config) error
+	ListTemplates(*core.Core, *settings.Config) error
 	UpsertTemplate(*core.Core, *settings.Config) error
 }
 
@@ -25,13 +25,13 @@ func newLaunchCLI(strategies cliStrategies) *launchCLI {
 }
 
 func (l *launchCLI) Execute(c *core.Core, config *settings.Config) error {
-	if config.ViewTemplates != "" && config.UpsertTemplate != "" {
+	if config.ListTemplates != "" && config.UpsertTemplate != "" {
 		return fmt.Errorf(
 			"conflicting instruction, please do not combine view templates with upsert template",
 		)
 	}
-	if config.ViewTemplates != "" {
-		return l.strategies.ViewTemplates(c, config)
+	if config.ListTemplates != "" {
+		return l.strategies.ListTemplates(c, config)
 	}
 	if config.UpsertTemplate != "" {
 		return l.strategies.UpsertTemplate(c, config)
