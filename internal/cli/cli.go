@@ -8,7 +8,9 @@ import (
 	"github.com/k10wl/hermes/internal/settings"
 )
 
-func NewChat(c *core.Core, config *settings.Config) error {
+type CLIStrategies struct{}
+
+func (cli *CLIStrategies) NewChat(c *core.Core, config *settings.Config) error {
 	sendMessage := core.NewCreateChatAndCompletionCommand(
 		c,
 		core.UserRole,
@@ -22,7 +24,7 @@ func NewChat(c *core.Core, config *settings.Config) error {
 	return nil
 }
 
-func LastChat(c *core.Core, config *settings.Config) error {
+func (cli *CLIStrategies) LastChat(c *core.Core, config *settings.Config) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	queryChats := core.LatestChatQuery{Core: c}
@@ -43,8 +45,12 @@ func LastChat(c *core.Core, config *settings.Config) error {
 	return nil
 }
 
-func UpsertTemplate(c *core.Core, config *settings.Config) error {
+func (cli *CLIStrategies) UpsertTemplate(c *core.Core, config *settings.Config) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	return core.NewUpsertTemplateCommand(c, config.UpsertTemplate).Execute(ctx)
+}
+
+func (cli *CLIStrategies) ViewTemplates(c *core.Core, config *settings.Config) error {
+	return nil
 }

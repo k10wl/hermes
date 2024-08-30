@@ -1,6 +1,7 @@
 package launch
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/k10wl/hermes/internal/settings"
@@ -50,7 +51,7 @@ func TestPickStrategy(t *testing.T) {
 				},
 				{
 					TemplateFlags: settings.TemplateFlags{
-						UpsertTemplate: `{{define "hi"}}hello world{{end}}`,
+						UpsertTemplate: `--{{define "hi"}}hello world--{{end}}`,
 					},
 				},
 			},
@@ -108,7 +109,7 @@ func TestPickStrategy(t *testing.T) {
 	for _, test := range table {
 		for _, input := range test.input {
 			output := PickStrategy(&input)
-			if output != test.expected {
+			if reflect.TypeOf(output) != reflect.TypeOf(test.expected) {
 				t.Errorf(
 					"%s:\nexpected: %T\nactual:   %T",
 					test.name,

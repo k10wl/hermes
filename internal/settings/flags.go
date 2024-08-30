@@ -16,6 +16,14 @@ func loadFlags(config *Config) {
 		"",
 		"Name of (t)emplate to be applied to provided content",
 	)
+	viewTemplates := flagStringWithShorthand(
+		"view-template",
+		"vt",
+		"",
+		`Lists templates with name that matches given regex. E.g.
+`+"- `hermes -vt *`"+`- returns all templates
+`+"- `hermes -vt short`"+`- return templates with name "short"`,
+	)
 	upsertTemplate := flagStringWithShorthand(
 		"upsert-template",
 		"ut",
@@ -59,6 +67,7 @@ Interactions with other flags:
 
 	flag.Parse()
 	config.Template = *template
+	config.ViewTemplates = *viewTemplates
 	config.UpsertTemplate = *upsertTemplate
 	config.Content = readInput(*content)
 	config.Model = *model

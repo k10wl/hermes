@@ -31,18 +31,6 @@ func (l *launchWeb) Execute(c *core.Core, config *settings.Config) error {
 	return web.Serve(c, config)
 }
 
-type launchCLI struct{}
-
-func (l *launchCLI) Execute(c *core.Core, config *settings.Config) error {
-	if config.UpsertTemplate != "" {
-		return cli.UpsertTemplate(c, config)
-	}
-	if config.Last {
-		return cli.LastChat(c, config)
-	}
-	return cli.NewChat(c, config)
-}
-
 type launchBadInput struct{}
 
 func (l *launchBadInput) Execute(c *core.Core, config *settings.Config) error {
