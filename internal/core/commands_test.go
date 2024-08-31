@@ -345,3 +345,74 @@ func TestCreateTemplateCommand(t *testing.T) {
 		}
 	}
 }
+
+func TestDeleteTemplateByName(t *testing.T) {
+	type testCase struct {
+		name         string
+		init         func()
+		shouldError  bool
+		templateName string
+	}
+
+	coreInstance, _ := createCoreAndDB()
+	cmd := core.NewDeleteTemplateByName
+	var command core.DeleteTemplateByName
+
+	templates := []string{
+		`--{{define "welcome1"}}welcome{{end}}`,
+		`--{{define "welcome2"}}welcome{{end}}`,
+	}
+
+	for _, template := range templates {
+		upsertCmd := core.NewUpsertTemplateCommand(coreInstance, template)
+		if err := upsertCmd.Execute(context.Background()); err != nil {
+			panic("bad test setup")
+		}
+	}
+
+	table := []testCase{
+		{
+			name: "should delete template",
+			init: func() {
+				command = *cmd(coreInstance, "welcome1")
+			},
+			templateName: "welcome1",
+		},
+		{
+			name: "should return err if no templates were deleted",
+			init: func() {
+				command = *cmd(coreInstance, "does not exist")
+			},
+			templateName: "does not exist",
+			shouldError:  true,
+		},
+		{
+			name: "should delete second template",
+			init: func() {
+				command = *cmd(coreInstance, "welcome2")
+			},
+			templateName: "welcome2",
+		},
+	}
+
+	for _, test := range table {
+		test.init()
+		err := command.Execute(context.Background())
+		if test.shouldError && err == nil {
+			t.Errorf("%q expected to error, but did not\n\n", test.name)
+			continue
+		}
+		if !test.shouldError && err != nil {
+			t.Errorf("%q unexpected error: %v\n\n", test.name, err)
+			continue
+		}
+		getTemplates := core.NewGetTemplatesByNamesQuery(coreInstance, []string{test.templateName})
+		if err := getTemplates.Execute(context.Background()); err != nil {
+			t.Errorf("%q query templates error: %v\n\n", test.name, err)
+		}
+		if len(getTemplates.Result) != 0 {
+			t.Errorf("%q failed to delete template\n\n", test.name)
+			continue
+		}
+	}
+}

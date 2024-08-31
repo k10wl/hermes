@@ -8,8 +8,9 @@ import (
 	"github.com/k10wl/hermes/internal/models"
 )
 
-type executorFnSingle func(context.Context, string, ...interface{}) *sql.Row
-type executorFnMultiple func(context.Context, string, ...interface{}) (*sql.Rows, error)
+type queryRow func(context.Context, string, ...interface{}) *sql.Row
+type queryRows func(context.Context, string, ...interface{}) (*sql.Rows, error)
+type execute func(context.Context, string, ...interface{}) (sql.Result, error)
 
 const createMessageQuery = `
 INSERT INTO messages (chat_id, role_id, content)
@@ -22,7 +23,7 @@ SELECT id FROM roles WHERE name = $1;
 `
 
 func createMessage(
-	executor executorFnSingle,
+	executor queryRow,
 	ctx context.Context,
 	chatId int64,
 	role string,
@@ -61,7 +62,7 @@ RETURNING id, name, created_at, updated_at, deleted_at;
 `
 
 func createChat(
-	executor executorFnSingle,
+	executor queryRow,
 	ctx context.Context,
 	name string,
 ) (*models.Chat, error) {
@@ -83,7 +84,7 @@ ORDER BY created_at DESC;
 `
 
 func getChats(
-	executor executorFnMultiple,
+	executor queryRows,
 	ctx context.Context,
 ) ([]*models.Chat, error) {
 	rows, err := executor(ctx, getChatsQuery)
@@ -116,7 +117,7 @@ WHERE chat_id = $1;
 `
 
 func getChatMessages(
-	executor executorFnMultiple,
+	executor queryRows,
 	ctx context.Context,
 	chatId int64,
 ) ([]*models.Message, error) {
@@ -149,7 +150,7 @@ SELECT dark_mode, initted FROM web_settings;
 `
 
 func getWebSettings(
-	executor executorFnSingle,
+	executor queryRow,
 	ctx context.Context,
 ) (*models.WebSettings, error) {
 	row := executor(ctx, getWebSettingsQuery)
@@ -163,7 +164,7 @@ UPDATE web_settings
 SET initted = true, dark_mode = $1;
 `
 
-func updateWebSettings(executor executorFnSingle, ctx context.Context, darkMode bool) error {
+func updateWebSettings(executor queryRow, ctx context.Context, darkMode bool) error {
 	row := executor(ctx, updateWebSettingsQuery, darkMode)
 	return row.Err()
 }
@@ -174,7 +175,7 @@ ORDER BY created_at DESC
 LIMIT 1;
 `
 
-func getLatestChat(executor executorFnSingle, ctx context.Context) (*models.Chat, error) {
+func getLatestChat(executor queryRow, ctx context.Context) (*models.Chat, error) {
 	row := executor(ctx, getLatestChatQuery)
 	var chat models.Chat
 	err := row.Scan(
@@ -194,7 +195,7 @@ RETURNING id, name, content, created_at, updated_at, deleted_at;
 `
 
 func upsertTemplate(
-	executor executorFnSingle,
+	executor queryRow,
 	ctx context.Context,
 	name string,
 	content string,
@@ -220,7 +221,7 @@ WHERE name IN (?` + strings.Repeat(",?", len(names)-1) + `);`
 }
 
 func getTemplatesByNames(
-	executor executorFnMultiple,
+	executor queryRows,
 	ctx context.Context,
 	names []string,
 ) ([]*models.Template, error) {
@@ -255,7 +256,7 @@ WHERE name LIKE $1;
 `
 
 func getTemplatesByRegexp(
-	executor executorFnMultiple,
+	executor queryRows,
 	ctx context.Context,
 	regexp string,
 ) ([]*models.Template, error) {
@@ -282,4 +283,19 @@ func getTemplatesByRegexp(
 	}
 	return templates, rowErr
 
+}
+
+const deleteTemplateByNameQuery = `DELETE FROM templates WHERE name = $1;`
+
+func deleteTemplateByName(
+	executor execute,
+	ctx context.Context,
+	name string,
+) (bool, error) {
+	res, err := executor(ctx, deleteTemplateByNameQuery, name)
+	if err != nil {
+		return false, err
+	}
+	affected, err := res.RowsAffected()
+	return affected == 1, err
 }

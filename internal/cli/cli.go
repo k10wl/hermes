@@ -60,3 +60,12 @@ func (cli *CLIStrategies) ListTemplates(c *core.Core, config *settings.Config) e
 	}
 	return listTemplates(getTemplatesByRegexp.Result, config.Stdoout)
 }
+
+func (cli *CLIStrategies) DeleteTemplate(c *core.Core, config *settings.Config) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	fmt.Println("deleting template...")
+	err := core.NewDeleteTemplateByName(c, config.DeleteTemplate).Execute(ctx)
+	fmt.Println("must be deleted")
+	return err
+}

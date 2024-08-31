@@ -12,6 +12,7 @@ type cliStrategies interface {
 	LastChat(*core.Core, *settings.Config) error
 	ListTemplates(*core.Core, *settings.Config) error
 	UpsertTemplate(*core.Core, *settings.Config) error
+	DeleteTemplate(*core.Core, *settings.Config) error
 }
 
 type launchCLI struct {
@@ -25,9 +26,13 @@ func newLaunchCLI(strategies cliStrategies) *launchCLI {
 }
 
 func (l *launchCLI) Execute(c *core.Core, config *settings.Config) error {
-	if config.ListTemplates != "" && config.UpsertTemplate != "" {
+	if countTruthyValues(
+		config.ListTemplates,
+		config.UpsertTemplate,
+		config.DeleteTemplate,
+	) > 1 {
 		return fmt.Errorf(
-			"conflicting instruction, please do not combine view templates with upsert template",
+			"conflicting instruction, please review flags",
 		)
 	}
 	if config.ListTemplates != "" {
@@ -35,6 +40,9 @@ func (l *launchCLI) Execute(c *core.Core, config *settings.Config) error {
 	}
 	if config.UpsertTemplate != "" {
 		return l.strategies.UpsertTemplate(c, config)
+	}
+	if config.DeleteTemplate != "" {
+		return l.strategies.DeleteTemplate(c, config)
 	}
 	if config.Last {
 		return l.strategies.LastChat(c, config)

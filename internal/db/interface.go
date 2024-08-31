@@ -40,4 +40,8 @@ type Client interface {
 		ctx context.Context,
 		regexp string,
 	) ([]*models.Template, error)
+	DeleteTemplateByName(
+		ctx context.Context,
+		name string,
+	) (bool, error)
 }

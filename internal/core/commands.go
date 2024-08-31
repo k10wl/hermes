@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 
 	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
 	"github.com/k10wl/hermes/internal/models"
@@ -170,5 +171,25 @@ func (c UpsertTemplateCommand) Execute(ctx context.Context) error {
 		return err
 	}
 	_, err = c.Core.db.UpsertTemplate(ctx, name, c.template)
+	return err
+}
+
+type DeleteTemplateByName struct {
+	core *Core
+	name string
+}
+
+func NewDeleteTemplateByName(core *Core, name string) *DeleteTemplateByName {
+	return &DeleteTemplateByName{
+		core: core,
+		name: name,
+	}
+}
+
+func (c DeleteTemplateByName) Execute(ctx context.Context) error {
+	ok, err := c.core.db.DeleteTemplateByName(ctx, c.name)
+	if !ok {
+		return fmt.Errorf("did not remove any records")
+	}
 	return err
 }

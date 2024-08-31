@@ -30,6 +30,12 @@ func loadFlags(config *Config) {
 		"",
 		"Contents of (u)psert (t)emplate. Differs from golang templates, has unique delimiters. Left `--{{`, right `}}`. Is extension of golang std text/template. E.g. `--{{define \"test\"}}test--{{end}}`",
 	)
+	deleteTemplate := flagStringWithShorthand(
+		"delete-template",
+		"dt",
+		"",
+		`(D)eletes (t)emplate with given name. Returns error if template does not exist`,
+	)
 	model := flagStringWithShorthand("model", "m", client.GPT3_5Turbo, "Completion (m)odel name")
 	content := flagStringWithShorthand(
 		"content",
@@ -69,6 +75,7 @@ Interactions with other flags:
 	config.Template = *template
 	config.ListTemplates = *listTemplates
 	config.UpsertTemplate = *upsertTemplate
+	config.DeleteTemplate = *deleteTemplate
 	config.Content = readInput(*content)
 	config.Model = *model
 	config.Port = *port

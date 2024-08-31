@@ -90,3 +90,11 @@ func (s SQLite3) GetTemplatesByRegexp(
 ) ([]*models.Template, error) {
 	return getTemplatesByRegexp(s.db.QueryContext, ctx, regexp)
 }
+
+func (s SQLite3) DeleteTemplateByName(
+	ctx context.Context,
+	name string,
+) (bool, error) {
+	ok, err := deleteTemplateByName(s.db.ExecContext, ctx, name)
+	return ok, err
+}

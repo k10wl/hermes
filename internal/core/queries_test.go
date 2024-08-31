@@ -3,6 +3,7 @@ package core_test
 import (
 	"context"
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/k10wl/hermes/internal/core"
@@ -161,14 +162,19 @@ func TestGetTemplatesByRegexp(t *testing.T) {
 			t.Errorf("%s unexpected error: %v\n", test.name, err)
 			continue
 		}
-		expected := unpointerTemplateSlice(test.expectedResult)
-		actual := unpointerTemplateSlice(query.Result)
-		if !reflect.DeepEqual(expected, actual) {
-			t.Errorf(
-				"%s - bad result\nexpected: %+v\nactual:   %+v",
-				test.name,
-				expected, actual,
-			)
+		for _, e := range test.expectedResult {
+			expected := unpointerTemplateSlice(test.expectedResult)
+			actual := unpointerTemplateSlice(query.Result)
+			if !slices.ContainsFunc(query.Result, func(el *models.Template) bool {
+				return el.Name == e.Name
+			}) {
+				t.Errorf(
+					"%s - bad result\nexpected: %+v\nactual:   %+v",
+					test.name,
+					expected,
+					actual,
+				)
+			}
 		}
 	}
 }

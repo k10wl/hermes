@@ -13,6 +13,7 @@ const (
 	UpsertTemplate
 	LastChat
 	ViewTemplates
+	DeleteTemplate
 )
 
 var optionMap = map[int]string{
@@ -20,6 +21,7 @@ var optionMap = map[int]string{
 	UpsertTemplate: "UpsertTemplate",
 	LastChat:       "LastChat",
 	ViewTemplates:  "ViewTemplates",
+	DeleteTemplate: "DeleteTemplate",
 }
 
 type testCLIOptions struct {
@@ -32,6 +34,7 @@ func (o *testCLIOptions) reset() {
 		optionMap[UpsertTemplate]: false,
 		optionMap[LastChat]:       false,
 		optionMap[ViewTemplates]:  false,
+		optionMap[DeleteTemplate]: false,
 	}
 }
 
@@ -57,7 +60,7 @@ func (o *testCLIOptions) getLast() string {
 func TestCLIStrategy(t *testing.T) {
 	type testCase struct {
 		name        string
-		config      settings.Config
+		config      []settings.Config
 		expected    string
 		shouldError bool
 	}
@@ -72,59 +75,83 @@ func TestCLIStrategy(t *testing.T) {
 		},
 		{
 			name: "should call upsert template if UpsertTemplate value was provided",
-			config: settings.Config{
+			config: []settings.Config{{
 				TemplateFlags: settings.TemplateFlags{UpsertTemplate: "upsert"},
-			},
+			}},
 			expected: optionMap[UpsertTemplate],
 		},
 		{
 			name: "should call view templates if ViewTemplates value was provided",
-			config: settings.Config{
+			config: []settings.Config{{
 				TemplateFlags: settings.TemplateFlags{ListTemplates: "view"},
-			},
+			}},
 			expected: optionMap[ViewTemplates],
 		},
 		{
 			name: "should call last chat if Last was true",
-			config: settings.Config{
+			config: []settings.Config{{
 				CLIFlags: settings.CLIFlags{Last: true},
-			},
+			}},
 			expected: optionMap[LastChat],
 		},
 		{
 			name: "should error on conflicting flags",
-			config: settings.Config{
+			config: []settings.Config{{
 				TemplateFlags: settings.TemplateFlags{
 					ListTemplates:  "some",
 					UpsertTemplate: "some",
 				},
 			},
+
+				{
+					TemplateFlags: settings.TemplateFlags{
+						ListTemplates:  "some",
+						DeleteTemplate: "some",
+					},
+				},
+
+				{
+					TemplateFlags: settings.TemplateFlags{
+						DeleteTemplate: "some",
+						UpsertTemplate: "some",
+					},
+				},
+			},
 			expected:    "no result, should error instead",
 			shouldError: true,
+		},
+		{
+			name: "should call delete if DeleteTemplate has value",
+			config: []settings.Config{{
+				TemplateFlags: settings.TemplateFlags{DeleteTemplate: "name"},
+			}},
+			expected: optionMap[DeleteTemplate],
 		},
 	}
 
 	for _, test := range table {
-		options.reset()
-		err := lauch.Execute(&core.Core{}, &test.config)
-		actual := options.getLast()
-		if test.shouldError {
-			if err == nil {
-				t.Errorf("%q expected to error, but didn't. Last called %q", test.name, actual)
+		for _, config := range test.config {
+			options.reset()
+			err := lauch.Execute(&core.Core{}, &config)
+			actual := options.getLast()
+			if test.shouldError {
+				if err == nil {
+					t.Errorf("%q expected to error, but didn't. Last called %q", test.name, actual)
+				}
+				continue
 			}
-			continue
-		}
-		if err != nil {
-			t.Errorf("%q unexpected error: %v", test.name, err)
-			continue
-		}
-		if actual != test.expected {
-			t.Errorf(
-				"\n%q bad return\nexpected: %s\nactual:   %s\n\n",
-				test.name,
-				test.expected,
-				actual,
-			)
+			if err != nil {
+				t.Errorf("%q unexpected error: %v", test.name, err)
+				continue
+			}
+			if actual != test.expected {
+				t.Errorf(
+					"\n%q bad return\nexpected: %s\nactual:   %s\n\n",
+					test.name,
+					test.expected,
+					actual,
+				)
+			}
 		}
 	}
 }
@@ -145,5 +172,9 @@ func (ts *testStrategies) ListTemplates(*core.Core, *settings.Config) error {
 }
 func (ts *testStrategies) UpsertTemplate(*core.Core, *settings.Config) error {
 	ts.options.record(optionMap[UpsertTemplate])
+	return nil
+}
+func (ts *testStrategies) DeleteTemplate(*core.Core, *settings.Config) error {
+	ts.options.record(optionMap[DeleteTemplate])
 	return nil
 }
