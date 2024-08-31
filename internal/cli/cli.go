@@ -66,10 +66,11 @@ func (cli *CLIStrategies) DeleteTemplate(c *core.Core, config *settings.Config) 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	err := core.NewDeleteTemplateByName(c, config.DeleteTemplate).Execute(ctx)
-	if err == nil {
-		fmt.Fprintf(config.Stdoout, "Successfully deleted %q", config.DeleteTemplate)
+	if err != nil {
+		return err
 	}
-	return err
+	fmt.Fprintf(config.Stdoout, "Successfully deleted %q\n", config.DeleteTemplate)
+	return nil
 }
 
 func (cli *CLIStrategies) EditTemplate(c *core.Core, config *settings.Config) error {
@@ -86,5 +87,10 @@ func (cli *CLIStrategies) EditTemplate(c *core.Core, config *settings.Config) er
 	if err != nil {
 		return err
 	}
-	return core.NewEditTemplateByName(c, config.EditTemplate, res).Execute(ctx)
+	err = core.NewEditTemplateByName(c, config.EditTemplate, res).Execute(ctx)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(config.Stdoout, "Successfully edited template\n")
+	return nil
 }
