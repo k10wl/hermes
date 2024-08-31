@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-const Version = "3.1.1"
+const Version = "3.2.0"
 const DefaultHostname = "127.0.0.1"
 
 var DefaultPort = "8123"            // changes in ldflag for dev mode
