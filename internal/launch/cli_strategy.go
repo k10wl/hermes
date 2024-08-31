@@ -13,6 +13,7 @@ type cliStrategies interface {
 	ListTemplates(*core.Core, *settings.Config) error
 	UpsertTemplate(*core.Core, *settings.Config) error
 	DeleteTemplate(*core.Core, *settings.Config) error
+	EditTemplate(*core.Core, *settings.Config) error
 }
 
 type launchCLI struct {
@@ -30,6 +31,7 @@ func (l *launchCLI) Execute(c *core.Core, config *settings.Config) error {
 		config.ListTemplates,
 		config.UpsertTemplate,
 		config.DeleteTemplate,
+		config.EditTemplate,
 	) > 1 {
 		return fmt.Errorf(
 			"conflicting instruction, please review flags",
@@ -43,6 +45,9 @@ func (l *launchCLI) Execute(c *core.Core, config *settings.Config) error {
 	}
 	if config.DeleteTemplate != "" {
 		return l.strategies.DeleteTemplate(c, config)
+	}
+	if config.EditTemplate != "" {
+		return l.strategies.EditTemplate(c, config)
 	}
 	if config.Last {
 		return l.strategies.LastChat(c, config)

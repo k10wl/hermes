@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/settings"
@@ -69,4 +70,21 @@ func (cli *CLIStrategies) DeleteTemplate(c *core.Core, config *settings.Config) 
 		fmt.Fprintf(config.Stdoout, "Successfully deleted %q", config.DeleteTemplate)
 	}
 	return err
+}
+
+func (cli *CLIStrategies) EditTemplate(c *core.Core, config *settings.Config) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	query := core.NewGetTemplatesByNamesQuery(c, []string{config.EditTemplate})
+	if err := query.Execute(ctx); err != nil {
+		return err
+	}
+	if len(query.Result) != 1 {
+		return fmt.Errorf("failed to get template\n")
+	}
+	res, err := OpenInEditor(query.Result[0].Content, os.Stdin, config.Stdoout, config.Stderr)
+	if err != nil {
+		return err
+	}
+	return core.NewEditTemplateByName(c, config.EditTemplate, res).Execute(ctx)
 }

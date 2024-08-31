@@ -416,3 +416,109 @@ func TestDeleteTemplateByName(t *testing.T) {
 		}
 	}
 }
+
+func TestEditTemplateByName(t *testing.T) {
+	type testCase struct {
+		name         string
+		init         func() string
+		templateName string
+		shouldError  bool
+	}
+
+	coreInstance, _ := createCoreAndDB()
+	var command core.EditTemplateByName
+
+	templates := []string{
+		`--{{define "welcome"}}welcome--{{end}}`,
+	}
+	for _, template := range templates {
+		upsertCmd := core.NewUpsertTemplateCommand(coreInstance, template)
+		if err := upsertCmd.Execute(context.Background()); err != nil {
+			panic("bad test setup")
+		}
+	}
+
+	table := []testCase{
+		{
+			name: "should edit existing template",
+			init: func() string {
+				content := `--{{define "welcome"}}hi--{{end}}`
+				command = *core.NewEditTemplateByName(coreInstance, "welcome", content)
+				return content
+			},
+			templateName: "welcome",
+		},
+		{
+			name: "should allow block definition",
+			init: func() string {
+				content := `--{{block "welcome" .}}hi--{{end}}`
+				command = *core.NewEditTemplateByName(coreInstance, "welcome", content)
+				return content
+			},
+			templateName: "welcome",
+		},
+		{
+			name: "should error if template does not exist",
+			init: func() string {
+				content := `--{{define "welcome"}}hi--{{end}}`
+				command = *core.NewEditTemplateByName(coreInstance, "does not exist", content)
+				return content
+			},
+			templateName: "does not exist",
+			shouldError:  true,
+		},
+		{
+			name: "should error if template has corrupted content",
+			init: func() string {
+				content := `--{{define "welco`
+				command = *core.NewEditTemplateByName(coreInstance, "welcome", content)
+				return content
+			},
+			templateName: "welcome",
+			shouldError:  true,
+		},
+		{
+			name: "should error if new name does not match existing name",
+			init: func() string {
+				content := `--{{define "missmatch"}}stuff--{{end}}`
+				command = *core.NewEditTemplateByName(coreInstance, "welcome", content)
+				return content
+			},
+			templateName: "missmatch",
+			shouldError:  true,
+		},
+	}
+
+	for _, test := range table {
+		expected := test.init()
+		err := command.Execute(context.Background())
+		if test.shouldError {
+			if err == nil {
+				t.Errorf("%q expected to error, but did not\n\n", test.name)
+			}
+			continue
+		}
+		if !test.shouldError && err != nil {
+			t.Errorf("%q unexpected error: %v\n\n", test.name, err)
+			continue
+		}
+		getTemplates := core.NewGetTemplatesByNamesQuery(coreInstance, []string{test.templateName})
+		if err := getTemplates.Execute(context.Background()); err != nil {
+			t.Errorf("%q query templates error: %v\n\n", test.name, err)
+		}
+		if len(getTemplates.Result) != 1 {
+			t.Errorf("%q failed to edit template\n\n", test.name)
+			continue
+		}
+		actual := getTemplates.Result[0].Content
+		if expected != actual {
+			t.Errorf(
+				"%q bad result\nexpected: %v\nactual:   %v\n\n",
+				test.name,
+				expected,
+				actual,
+			)
+			continue
+		}
+	}
+}

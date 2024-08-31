@@ -59,6 +59,11 @@ func TestPickStrategy(t *testing.T) {
 						UpsertTemplate: `--{{define "hi"}}hello world--{{end}}`,
 					},
 				},
+				{
+					TemplateFlags: settings.TemplateFlags{
+						EditTemplate: `hi`,
+					},
+				},
 			},
 			expected: &launchCLI{},
 		},

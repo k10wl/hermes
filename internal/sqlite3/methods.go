@@ -95,6 +95,13 @@ func (s SQLite3) DeleteTemplateByName(
 	ctx context.Context,
 	name string,
 ) (bool, error) {
-	ok, err := deleteTemplateByName(s.db.ExecContext, ctx, name)
-	return ok, err
+	return deleteTemplateByName(s.db.ExecContext, ctx, name)
+}
+
+func (s SQLite3) EditTemplateByName(
+	ctx context.Context,
+	name string,
+	content string,
+) (bool, error) {
+	return editTemplateByName(s.db.ExecContext, ctx, name, content)
 }

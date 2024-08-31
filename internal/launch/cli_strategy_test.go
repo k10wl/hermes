@@ -14,6 +14,7 @@ const (
 	LastChat
 	ViewTemplates
 	DeleteTemplate
+	EditTemplate
 )
 
 var optionMap = map[int]string{
@@ -22,6 +23,7 @@ var optionMap = map[int]string{
 	LastChat:       "LastChat",
 	ViewTemplates:  "ViewTemplates",
 	DeleteTemplate: "DeleteTemplate",
+	EditTemplate:   "EditTemplate",
 }
 
 type testCLIOptions struct {
@@ -35,11 +37,11 @@ func (o *testCLIOptions) reset() {
 		optionMap[LastChat]:       false,
 		optionMap[ViewTemplates]:  false,
 		optionMap[DeleteTemplate]: false,
+		optionMap[EditTemplate]:   false,
 	}
 }
 
 func (o *testCLIOptions) record(option string) {
-	fmt.Printf("o.lastRecorded: %v\n", o.lastRecorded)
 	if _, ok := o.lastRecorded[option]; !ok {
 		panic(fmt.Sprintf("option does not exist, test is invalid - %q", option))
 	}
@@ -96,24 +98,47 @@ func TestCLIStrategy(t *testing.T) {
 		},
 		{
 			name: "should error on conflicting flags",
-			config: []settings.Config{{
-				TemplateFlags: settings.TemplateFlags{
-					ListTemplates:  "some",
-					UpsertTemplate: "some",
+			config: []settings.Config{
+				{
+					TemplateFlags: settings.TemplateFlags{
+						ListTemplates:  "some",
+						UpsertTemplate: "some",
+					},
 				},
-			},
-
 				{
 					TemplateFlags: settings.TemplateFlags{
 						ListTemplates:  "some",
 						DeleteTemplate: "some",
 					},
 				},
-
 				{
 					TemplateFlags: settings.TemplateFlags{
 						DeleteTemplate: "some",
 						UpsertTemplate: "some",
+					},
+				},
+				{
+					TemplateFlags: settings.TemplateFlags{
+						DeleteTemplate: "some",
+						UpsertTemplate: "some",
+					},
+				},
+				{
+					TemplateFlags: settings.TemplateFlags{
+						EditTemplate:   "some",
+						UpsertTemplate: "some",
+					},
+				},
+				{
+					TemplateFlags: settings.TemplateFlags{
+						EditTemplate:   "some",
+						DeleteTemplate: "some",
+					},
+				},
+				{
+					TemplateFlags: settings.TemplateFlags{
+						EditTemplate:  "some",
+						ListTemplates: "some",
 					},
 				},
 			},
@@ -126,6 +151,13 @@ func TestCLIStrategy(t *testing.T) {
 				TemplateFlags: settings.TemplateFlags{DeleteTemplate: "name"},
 			}},
 			expected: optionMap[DeleteTemplate],
+		},
+		{
+			name: "should call edit if EditTemplate has value",
+			config: []settings.Config{{
+				TemplateFlags: settings.TemplateFlags{EditTemplate: "name"},
+			}},
+			expected: optionMap[EditTemplate],
 		},
 	}
 
@@ -176,5 +208,9 @@ func (ts *testStrategies) UpsertTemplate(*core.Core, *settings.Config) error {
 }
 func (ts *testStrategies) DeleteTemplate(*core.Core, *settings.Config) error {
 	ts.options.record(optionMap[DeleteTemplate])
+	return nil
+}
+func (ts *testStrategies) EditTemplate(*core.Core, *settings.Config) error {
+	ts.options.record(optionMap[EditTemplate])
 	return nil
 }

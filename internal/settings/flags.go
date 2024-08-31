@@ -36,6 +36,13 @@ func loadFlags(config *Config) {
 		"",
 		`(D)eletes (t)emplate with given name. Returns error if template does not exist`,
 	)
+	editTemplate := flagStringWithShorthand(
+		"edit-template",
+		"et",
+		"",
+		`(E)dits (t)emplate with diven name`,
+	)
+
 	model := flagStringWithShorthand("model", "m", client.GPT3_5Turbo, "Completion (m)odel name")
 	content := flagStringWithShorthand(
 		"content",
@@ -76,6 +83,7 @@ Interactions with other flags:
 	config.ListTemplates = *listTemplates
 	config.UpsertTemplate = *upsertTemplate
 	config.DeleteTemplate = *deleteTemplate
+	config.EditTemplate = *editTemplate
 	config.Content = readInput(*content)
 	config.Model = *model
 	config.Port = *port

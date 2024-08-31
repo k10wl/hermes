@@ -15,6 +15,7 @@ func PickStrategy(config *settings.Config) launchStrategy {
 		config.ListTemplates,
 		config.Template,
 		config.DeleteTemplate,
+		config.EditTemplate,
 	) != 0 {
 		return newLaunchCLI(&cli.CLIStrategies{})
 	}

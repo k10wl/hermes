@@ -193,3 +193,38 @@ func (c DeleteTemplateByName) Execute(ctx context.Context) error {
 	}
 	return err
 }
+
+type EditTemplateByName struct {
+	core    *Core
+	name    string
+	content string
+}
+
+func NewEditTemplateByName(core *Core, name string, content string) *EditTemplateByName {
+	return &EditTemplateByName{
+		core:    core,
+		name:    name,
+		content: content,
+	}
+}
+
+func (c EditTemplateByName) Execute(ctx context.Context) error {
+	names, err := getTemplateNames(c.content)
+	if err != nil {
+		return err
+	}
+	if len(names) == 0 {
+		return fmt.Errorf("content does not contain templates")
+	}
+	if len(names) != 1 {
+		return fmt.Errorf("content contains multiple templates")
+	}
+	if names[0] != c.name {
+		return fmt.Errorf("content has different name than original")
+	}
+	ok, err := c.core.db.EditTemplateByName(ctx, c.name, c.content)
+	if !ok {
+		return fmt.Errorf("did not update template, please make sure it exists")
+	}
+	return err
+}

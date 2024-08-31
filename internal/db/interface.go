@@ -44,4 +44,9 @@ type Client interface {
 		ctx context.Context,
 		name string,
 	) (bool, error)
+	EditTemplateByName(
+		ctx context.Context,
+		name string,
+		content string,
+	) (bool, error)
 }

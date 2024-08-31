@@ -299,3 +299,25 @@ func deleteTemplateByName(
 	affected, err := res.RowsAffected()
 	return affected == 1, err
 }
+
+const editTemplateByNameQuery = `
+UPDATE templates
+SET content = ?
+WHERE name = ?;
+`
+
+func editTemplateByName(
+	executor execute,
+	ctx context.Context,
+	name string,
+	content string,
+) (bool, error) {
+	result, err := executor(ctx, editTemplateByNameQuery, content, name)
+	if err != nil {
+		return false, err
+	}
+	if affected, err := result.RowsAffected(); err != nil || affected == 0 {
+		return false, err
+	}
+	return true, nil
+}

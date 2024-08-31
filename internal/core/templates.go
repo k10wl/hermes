@@ -38,6 +38,25 @@ func (c Core) prepareMessage(
 
 const definitionError = "failed to get template name"
 
+func getTemplateNames(content string) ([]string, error) {
+	names := []string{}
+	tmpl := template.New("")
+	tmpl = tmpl.Delims(leftDelim, rightDelim)
+	tmpl, err := tmpl.Parse(content)
+	if err != nil {
+		return names, err
+	}
+	for _, template := range tmpl.Templates() {
+		name := template.Name()
+		if name == "" {
+			continue
+		}
+		names = append(names, name)
+	}
+	return names, nil
+}
+
+// Deprecated. Please replace with getTemplateNames
 func extractTemplateDefinitionName(content string) (string, error) {
 	defineRegexp := regexp.MustCompile(withDelims(`define "(?P<name>.*?)"`))
 	i := defineRegexp.SubexpIndex("name")

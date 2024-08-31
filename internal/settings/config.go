@@ -58,6 +58,7 @@ type TemplateFlags struct {
 	ListTemplates  string
 	UpsertTemplate string
 	DeleteTemplate string
+	EditTemplate   string
 }
 
 func GetConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, error) {
