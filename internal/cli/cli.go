@@ -87,10 +87,14 @@ func (cli *CLIStrategies) EditTemplate(c *core.Core, config *settings.Config) er
 	if err != nil {
 		return err
 	}
+	if res == query.Result[0].Content {
+		fmt.Fprintf(config.Stdoout, "contents are identical\n")
+		return nil
+	}
 	err = core.NewEditTemplateByName(c, config.EditTemplate, res).Execute(ctx)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(config.Stdoout, "Successfully edited template\n")
+	fmt.Fprintf(config.Stdoout, "successfully edited template\n")
 	return nil
 }
