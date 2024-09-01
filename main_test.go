@@ -11,7 +11,7 @@ import (
 
 	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
 	"github.com/k10wl/hermes/internal/cli"
-	"github.com/k10wl/hermes/internal/runtime"
+	"github.com/k10wl/hermes/internal/settings"
 	client "github.com/k10wl/openai-client"
 )
 
@@ -57,13 +57,13 @@ func TestApp(t *testing.T) {
 					stdin io.Reader,
 					stdout io.Writer,
 					stderr io.Writer,
-				) (*runtime.Config, error) {
+				) (*settings.Config, error) {
 					c, err := oldConfig(stdin, stdout, stderr)
 					c.DatabaseDSN = ":memory:"
 					return c, err
 				}
 			},
-			expected: expected{stdout: cli.HelpString + "\n"},
+			expected: expected{stdout: cli.GetHelpString(settings.Version) + "\n"},
 		},
 
 		{
@@ -73,10 +73,10 @@ func TestApp(t *testing.T) {
 					stdin io.Reader,
 					stdout io.Writer,
 					stderr io.Writer,
-				) (*runtime.Config, error) {
+				) (*settings.Config, error) {
 					c, err := oldConfig(stdin, stdout, stderr)
 					c.DatabaseDSN = ":memory:"
-					c.Prompt = "complete prompt"
+					c.Content = "complete prompt"
 					return c, err
 				}
 			},
@@ -90,10 +90,11 @@ func TestApp(t *testing.T) {
 					stdin io.Reader,
 					stdout io.Writer,
 					stderr io.Writer,
-				) (*runtime.Config, error) {
+				) (*settings.Config, error) {
 					c, err := oldConfig(stdin, stdout, stderr)
+					c.Port = "8124"
 					c.DatabaseDSN = ":memory:"
-					c.Prompt = "complete prompt"
+					c.Content = "complete prompt"
 					c.Web = true
 					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 					defer cancel()
@@ -102,10 +103,10 @@ func TestApp(t *testing.T) {
 				}
 			},
 			expected: expected{
-				stdout: "Starting server on 127.0.0.1:8123\nShutdown signal received\n",
+				stdout: "Starting server on 127.0.0.1:8124\nShutdown signal received\n",
 			},
 			extraFn: func() error {
-				resp, err := http.Get("http://127.0.0.1:8123")
+				resp, err := http.Get("http://127.0.0.1:8124")
 				if err != nil {
 					return err
 				}
@@ -143,6 +144,7 @@ func TestApp(t *testing.T) {
 		if test.extraFn != nil {
 			err := test.extraFn()
 			if err != nil {
+				// XXX damn i fucked up, this test requires active web server
 				t.Errorf("Failed extraFn test for %s\nError: %v", test.name, err)
 			}
 		}

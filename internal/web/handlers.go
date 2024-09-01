@@ -11,13 +11,13 @@ import (
 	"strconv"
 
 	"github.com/k10wl/hermes/internal/core"
-	"github.com/k10wl/hermes/internal/sqlc"
+	"github.com/k10wl/hermes/internal/models"
 )
 
 func handleChat(c *core.Core, t *template.Template) http.HandlerFunc {
 	type home struct {
-		Chats       []sqlc.Chat
-		Messages    []sqlc.GetChatMessagesRow
+		Chats       []*models.Chat
+		Messages    []*models.Message
 		WebSettings string
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -69,16 +69,25 @@ func handleMessage(c *core.Core, t *template.Template) http.HandlerFunc {
 		chatId := r.PathValue("id")
 		// TODO handle error
 		if chatId == "" {
-			command := &core.CreateChatAndCompletionCommand{Core: c, Message: content}
-			command.Execute(context.Background())
+			command := core.NewCreateChatAndCompletionCommand(
+				c,
+				core.UserRole,
+				content,
+				"",
+			)
+			command.Execute(r.Context())
 			m.Content = command.Result.Content
 			m.ChatID = command.Result.ChatID
+			m.Role = command.Result.Role
 			w.Header().Set("Content-Type", "text/html")
 			w.Header().Set("Eval", "js")
 			w.WriteHeader(http.StatusMovedPermanently)
 			w.Write(
 				[]byte(
-					fmt.Sprintf(`window.location.replace('/chats/%v');`, m.ChatID),
+					fmt.Sprintf(
+						`window.location.replace('/chats/%v');`,
+						m.ChatID,
+					),
 				),
 			)
 			return
@@ -87,19 +96,21 @@ func handleMessage(c *core.Core, t *template.Template) http.HandlerFunc {
 			if err != nil {
 				panic(err)
 			}
-			command := &core.CreateCompletionCommand{Core: c, ChatID: id, Message: content}
+			command := core.NewCreateCompletionCommand(
+				c, id, core.UserRole, content, "",
+			)
 			command.Execute(context.Background())
 			m.Content = command.Result.Content
 			m.ID = command.Result.ID
+			m.Role = command.Result.Role
 		}
-		m.Role = core.AssistantRole
 		t.ExecuteTemplate(w, "message", m)
 	}
 }
 
 func handlePutSettings(c *core.Core) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var s sqlc.WebSetting
+		var s models.WebSettings
 		body, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
 		if err != nil {
@@ -113,8 +124,8 @@ func handlePutSettings(c *core.Core) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		updateWebSettings := core.UpdateWebSettingsCommand{Core: c, WebSettings: s}
-		err = updateWebSettings.Execute(context.TODO())
+		updateWebSettings := core.NewUpdateWebSettingsCommand(c, s)
+		err = updateWebSettings.Execute(r.Context())
 		if err != nil {
 			fmt.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)

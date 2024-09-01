@@ -3,7 +3,7 @@ package core
 import (
 	"context"
 
-	"github.com/k10wl/hermes/internal/sqlc"
+	"github.com/k10wl/hermes/internal/models"
 )
 
 type Query interface {
@@ -12,7 +12,7 @@ type Query interface {
 
 type GetChatsQuery struct {
 	Core   *Core
-	Result []sqlc.Chat
+	Result []*models.Chat
 }
 
 func (q *GetChatsQuery) Execute(ctx context.Context) error {
@@ -30,7 +30,7 @@ func (q *GetChatsQuery) Execute(ctx context.Context) error {
 type GetChatMessagesQuery struct {
 	Core   *Core
 	ChatID int64
-	Result []sqlc.GetChatMessagesRow
+	Result []*models.Message
 }
 
 func (q *GetChatMessagesQuery) Execute(ctx context.Context) error {
@@ -47,7 +47,7 @@ func (q *GetChatMessagesQuery) Execute(ctx context.Context) error {
 
 type WebSettingsQuery struct {
 	Core   *Core
-	Result sqlc.WebSetting
+	Result *models.WebSettings
 }
 
 func (q *WebSettingsQuery) Execute(ctx context.Context) error {
@@ -61,11 +61,43 @@ func (q *WebSettingsQuery) Execute(ctx context.Context) error {
 
 type LatestChatQuery struct {
 	Core   *Core
-	Result int64
+	Result *models.Chat
 }
 
 func (q *LatestChatQuery) Execute(ctx context.Context) error {
-	id, err := q.Core.db.GetLatestChat(ctx)
-	q.Result = id
+	chat, err := q.Core.db.GetLatestChat(ctx)
+	q.Result = chat
+	return err
+}
+
+type GetTemplatesByNamesQuery struct {
+	Core   *Core
+	Result []*models.Template
+	names  []string
+}
+
+func NewGetTemplatesByNamesQuery(c *Core, names []string) *GetTemplatesByNamesQuery {
+	return &GetTemplatesByNamesQuery{Core: c, names: names}
+}
+
+func (q *GetTemplatesByNamesQuery) Execute(ctx context.Context) error {
+	template, err := q.Core.db.GetTemplatesByNames(ctx, q.names)
+	q.Result = template
+	return err
+}
+
+type GetTemplatesByRegexp struct {
+	Core   *Core
+	Result []*models.Template
+	regexp string
+}
+
+func NewGetTemplatesByRegexp(c *Core, regexp string) *GetTemplatesByRegexp {
+	return &GetTemplatesByRegexp{Core: c, regexp: regexp}
+}
+
+func (q *GetTemplatesByRegexp) Execute(ctx context.Context) error {
+	templates, err := q.Core.db.GetTemplatesByRegexp(ctx, q.regexp)
+	q.Result = templates
 	return err
 }

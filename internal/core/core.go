@@ -5,7 +5,7 @@ import (
 
 	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
 	"github.com/k10wl/hermes/internal/db"
-	"github.com/k10wl/hermes/internal/sqlc"
+	"github.com/k10wl/hermes/internal/models"
 )
 
 const (
@@ -36,7 +36,7 @@ func (c *Core) assertAI() error {
 	return nil
 }
 
-func sqlcMessageToAIMessage(m sqlc.GetChatMessagesRow) ai_clients.Message {
+func messageToAIMessage(m *models.Message) ai_clients.Message {
 	return ai_clients.Message{
 		Content: m.Content,
 		Role:    m.Role,

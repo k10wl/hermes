@@ -1,13 +1,14 @@
 APP_NAME=hermes
 DEV_APP_NAME=hermes-dev
+DEV_PORT=8124
 
-SRC_DIR=./cmd
+SRC_DIR=.
 
-.PHONY: build run all dev-build dev-run dev-watch dev-all clean sqlc
+.PHONY: build run all dev-build dev-run dev-watch dev-all clean
 
 build:
 	@echo "Building prod version..."
-	@go build -ldflags "-X 'main.appName=$(APP_NAME)'" -o ./bin/$(APP_NAME) $(SRC_DIR)
+	@go build -o ./bin/$(APP_NAME) $(SRC_DIR)
 	@echo "Done"
 
 run:
@@ -23,7 +24,7 @@ all: build run
 
 dev-build:
 	@echo "Building dev version..."
-	@go build -ldflags "-X 'main.appName=$(APP_NAME)'" -o ./bin/$(DEV_APP_NAME) $(SRC_DIR)
+	@go build -ldflags "-X github.com/k10wl/hermes/internal/settings.appName=$(DEV_APP_NAME) -X github.com/k10wl/hermes/internal/settings.DefaultPort=$(DEV_PORT)" -o ./bin/$(DEV_APP_NAME) $(SRC_DIR)
 	@echo "Done"
 
 dev-run:
@@ -36,11 +37,6 @@ dev-watch:
 
 dev-all: dev-build dev-run
 
-sqlc:
-	@echo "Creating sqlc files..."
-	@sqlc generate
-	@echo "Done"
-
 clean:
 	@echo "Cleaning up..."
 	@rm -f ./bin/$(APP_NAME) ./bin/$(DEV_APP_NAME)
@@ -48,5 +44,5 @@ clean:
 
 test:
 	@echo "Running tests..."
-	@go test ./...
+	@go test -ldflags "-X github.com/k10wl/hermes/internal/settings.appName=$(DEV_APP_NAME) -X github.com/k10wl/hermes/internal/settings.DefaultPort=$(DEV_PORT) -X github.com/k10wl/hermes/internal/settings.DefaultDatabaseName=':memory:'" ./...
 	@echo "Done"

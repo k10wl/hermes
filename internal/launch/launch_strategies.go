@@ -1,4 +1,4 @@
-package app
+package launch
 
 import (
 	"context"
@@ -6,21 +6,22 @@ import (
 
 	"github.com/k10wl/hermes/internal/cli"
 	"github.com/k10wl/hermes/internal/core"
-	"github.com/k10wl/hermes/internal/runtime"
+	"github.com/k10wl/hermes/internal/settings"
 	"github.com/k10wl/hermes/internal/web"
 )
 
 type launchStrategy interface {
-	Execute(*core.Core, *runtime.Config) error
+	Execute(*core.Core, *settings.Config) error
 }
 
 type launchWeb struct{}
 
-func (l *launchWeb) Execute(c *core.Core, config *runtime.Config) error {
-	if config.Prompt != "" {
+func (l *launchWeb) Execute(c *core.Core, config *settings.Config) error {
+	if config.Content != "" {
 		sendMessage := core.CreateChatAndCompletionCommand{
 			Core:    c,
-			Message: config.Prompt,
+			Message: config.Content,
+			Role:    "user",
 		}
 		if err := sendMessage.Execute(context.Background()); err != nil {
 			return err
@@ -30,15 +31,9 @@ func (l *launchWeb) Execute(c *core.Core, config *runtime.Config) error {
 	return web.Serve(c, config)
 }
 
-type launchCLI struct{}
-
-func (l *launchCLI) Execute(c *core.Core, config *runtime.Config) error {
-	return cli.CLI(c, config)
-}
-
 type launchBadInput struct{}
 
-func (l *launchBadInput) Execute(c *core.Core, config *runtime.Config) error {
-	fmt.Fprintf(config.Stdoout, "%s\n", cli.HelpString)
+func (l *launchBadInput) Execute(c *core.Core, config *settings.Config) error {
+	fmt.Fprintf(config.Stdoout, "%s\n", cli.GetHelpString(config.Version))
 	return nil
 }

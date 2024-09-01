@@ -6,14 +6,14 @@ import (
 	"os"
 
 	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
-	"github.com/k10wl/hermes/internal/app"
 	"github.com/k10wl/hermes/internal/core"
-	"github.com/k10wl/hermes/internal/runtime"
+	"github.com/k10wl/hermes/internal/launch"
+	"github.com/k10wl/hermes/internal/settings"
 	"github.com/k10wl/hermes/internal/sqlite3"
 	client "github.com/k10wl/openai-client"
 )
 
-var getConfig = runtime.GetConfig
+var getConfig = settings.GetConfig
 var newOpenAIAdapter = ai_clients.NewOpenAIAdapter
 
 func run(stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
@@ -34,11 +34,11 @@ func run(stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
 	}
 	defer sqlite.Close()
 	hermesCore := core.NewCore(openai, sqlite)
-	return app.PickStrategy(config).Execute(hermesCore, config)
+	return launch.PickStrategy(config).Execute(hermesCore, config)
 }
 
 func main() {
 	if err := run(os.Stdin, os.Stdout, os.Stderr); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 	}
 }
