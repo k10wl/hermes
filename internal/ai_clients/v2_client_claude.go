@@ -30,7 +30,7 @@ var claudeModelsShorthands = map[string]string{
 
 func (client clientClaude) complete(
 	messages []*Message,
-	parameters Parameters,
+	parameters *Parameters,
 	get getter,
 ) (*AIResponse, error) {
 	data, err := client.prepare(messages, parameters)
@@ -42,17 +42,18 @@ func (client clientClaude) complete(
 		bytes.NewReader(data),
 		client.fillHeaders,
 	)
+	fmt.Printf("claude data: %v\n", string(data))
 	var response claude.MessagesResponse
 	err = json.Unmarshal(data, &response)
 	if err != nil {
 		return nil, err
 	}
-	return client.decodeResult(&response), nil
+	return client.decodeResult(&response)
 }
 
 func (client clientClaude) prepare(
 	messages []*Message,
-	parameters Parameters,
+	parameters *Parameters,
 ) ([]byte, error) {
 	model := parameters.Model
 	if fullName, ok := claudeModelsShorthands[model]; ok {
@@ -60,9 +61,10 @@ func (client clientClaude) prepare(
 	}
 	encodedMessages, systemPrompt := client.encodeMessages(messages)
 	data := claude.MessagesRequest{
-		Model:    model,
-		Messages: encodedMessages,
-		System:   systemPrompt,
+		Model:     model,
+		Messages:  encodedMessages,
+		System:    systemPrompt,
+		MaxTokens: 4096,
 	}
 	if parameters.MaxTokens != nil {
 		data.MaxTokens = *parameters.MaxTokens
@@ -91,21 +93,21 @@ func (client clientClaude) encodeMessages(
 	return result, sb.String()
 }
 
-func (client clientClaude) decodeResult(response *claude.MessagesResponse) *AIResponse {
-	messages := []*Message{}
-	for _, message := range response.Content {
-		messages = append(messages, &Message{
-			Role:    response.Role,
-			Content: message.Text,
-		})
+func (client clientClaude) decodeResult(response *claude.MessagesResponse) (*AIResponse, error) {
+	fmt.Printf("response: %v\n", response)
+	if len(response.Content) == 0 {
+		return nil, fmt.Errorf("empty response content")
 	}
 	return &AIResponse{
-		Messages: messages,
+		Message: Message{
+			Content: response.Content[0].Text,
+			Role:    response.Role,
+		},
 		TokensUsage: TokensUsage{
 			Input:  response.Usage.InputTokens,
 			Output: response.Usage.OutputTokens,
 		},
-	}
+	}, nil
 }
 
 func (client clientClaude) fillHeaders(r *http.Request) error {

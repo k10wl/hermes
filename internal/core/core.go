@@ -1,11 +1,10 @@
 package core
 
 import (
-	"fmt"
-
 	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/db"
 	"github.com/k10wl/hermes/internal/models"
+	"github.com/k10wl/hermes/internal/settings"
 )
 
 const (
@@ -15,29 +14,19 @@ const (
 )
 
 type Core struct {
-	ai_client ai_clients.AIClient
-	db        db.Client
+	db     db.Client
+	config *settings.Config
 }
 
-func NewCore(ai ai_clients.AIClient, db db.Client) *Core {
+func NewCore(db db.Client, config *settings.Config) *Core {
 	return &Core{
-		ai_client: ai,
-		db:        db,
+		db:     db,
+		config: config,
 	}
 }
 
-func (c *Core) assertAI() error {
-	if c == nil {
-		return fmt.Errorf("core is nil")
-	}
-	if c.ai_client == nil {
-		return fmt.Errorf("ai client is nil")
-	}
-	return nil
-}
-
-func messageToAIMessage(m *models.Message) ai_clients.Message {
-	return ai_clients.Message{
+func messageToAIMessage(m *models.Message) *ai_clients.Message {
+	return &ai_clients.Message{
 		Content: m.Content,
 		Role:    m.Role,
 	}

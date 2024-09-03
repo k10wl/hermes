@@ -5,12 +5,12 @@ type MessagesRequest struct {
 	Model         string            `json:"model"`
 	Messages      []*MessageContent `json:"messages"`
 	MaxTokens     int64             `json:"max_tokens"`
-	Metadata      Metadata          `json:"metadata,omitempty"`
+	Metadata      *Metadata         `json:"metadata,omitempty"`
 	StopSequences []string          `json:"stop_sequences,omitempty"`
 	Stream        bool              `json:"stream,omitempty"`
 	System        string            `json:"system,omitempty"`
 	Temperature   float64           `json:"temperature,omitempty"`
-	ToolChoice    ToolChoice        `json:"tool_choice,omitempty"`
+	ToolChoice    *ToolChoice       `json:"tool_choice,omitempty"`
 	TopK          int64             `json:"top_k,omitempty"`
 	TopP          float64           `json:"top_p,omitempty"`
 }

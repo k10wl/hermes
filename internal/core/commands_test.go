@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/models"
 )
@@ -43,7 +44,12 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 			name: "Should create simple response",
 			init: func() {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
-					coreInstance, core.AssistantRole, "hello world", "",
+					coreInstance,
+					core.AssistantRole,
+					"hello world",
+					"",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					mockCompletion,
 				)
 			},
 			shouldError: false,
@@ -58,7 +64,12 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 			name: "Should fill template data when template is passed as argument",
 			init: func() {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
-					coreInstance, core.AssistantRole, ``, "welcome",
+					coreInstance,
+					core.AssistantRole,
+					``,
+					"welcome",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					mockCompletion,
 				)
 			},
 			shouldError: false,
@@ -73,7 +84,12 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 			name: "Should fill inner template data when template name is not provided",
 			init: func() {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
-					coreInstance, core.AssistantRole, `--{{template "welcome"}}`, "",
+					coreInstance,
+					core.AssistantRole,
+					`--{{template "welcome"}}`,
+					"",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					mockCompletion,
 				)
 			},
 			shouldError: false,
@@ -88,7 +104,12 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 			name: "Should fill inner template data and provided template name data",
 			init: func() {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
-					coreInstance, core.AssistantRole, `--{{template "welcome"}}`, "wrapper",
+					coreInstance,
+					core.AssistantRole,
+					`--{{template "welcome"}}`,
+					"wrapper",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					mockCompletion,
 				)
 			},
 			shouldError: false,
@@ -103,7 +124,12 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 			name: "Should error if given template name does not exist",
 			init: func() {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
-					coreInstance, core.AssistantRole, `--{{template "welcome"}}`, "does not exist",
+					coreInstance,
+					core.AssistantRole,
+					`--{{template "welcome"}}`,
+					"does not exist",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					mockCompletion,
 				)
 			},
 			shouldError:    true,
@@ -113,7 +139,12 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 			name: "Should process string input and fill template data",
 			init: func() {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
-					coreInstance, core.AssistantRole, "hello world!", "wrapper",
+					coreInstance,
+					core.AssistantRole,
+					"hello world!",
+					"wrapper",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					mockCompletion,
 				)
 			},
 			shouldError: false,
@@ -128,7 +159,12 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 			name: "Should error on circular templates with provided template",
 			init: func() {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
-					coreInstance, core.AssistantRole, "will blow up", "loop1",
+					coreInstance,
+					core.AssistantRole,
+					"will blow up",
+					"loop1",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					mockCompletion,
 				)
 			},
 			shouldError:    true,
@@ -138,7 +174,12 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 			name: "Should error on circular templates with inputted template",
 			init: func() {
 				currentCommand = core.NewCreateChatAndCompletionCommand(
-					coreInstance, core.AssistantRole, `will blow up --{{template "loop1" . }} `, "",
+					coreInstance,
+					core.AssistantRole,
+					`will blow up --{{template "loop1" . }} `,
+					"",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					mockCompletion,
 				)
 			},
 			shouldError:    true,
@@ -152,6 +193,8 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 					core.AssistantRole,
 					`will blow up --{{template "loop1" . }} `,
 					"loop2",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					mockCompletion,
 				)
 			},
 			shouldError:    true,
@@ -165,6 +208,8 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 					core.AssistantRole,
 					`should fill welcome (--{{template "welcome"}})(--{{template "welcome"}})`,
 					"",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					mockCompletion,
 				)
 			},
 			shouldError: false,
@@ -183,6 +228,8 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 					core.AssistantRole,
 					`should fill welcome (--{{template "welcome"}})(--{{template "welcome"}})`,
 					"wrapper",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					mockCompletion,
 				)
 			},
 			shouldError: false,
@@ -243,7 +290,13 @@ func TestCreateCompletionCommand(t *testing.T) {
 			name: "Should create simple response",
 			init: func() {
 				currentCommand = core.NewCreateCompletionCommand(
-					coreInstance, 1, core.AssistantRole, "hello world", "",
+					coreInstance,
+					1,
+					core.AssistantRole,
+					"hello world",
+					"",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					mockCompletion,
 				)
 			},
 			shouldError: false,

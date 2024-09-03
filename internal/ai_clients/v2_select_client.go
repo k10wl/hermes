@@ -31,8 +31,7 @@ func selectClient(input string, providers *settings.Providers) (client, error) {
 		break
 	case "claude":
 		if cachedClientClaude == nil {
-			// TODO pass in settings
-			cachedClientClaude = newClientClaude("store claude key in provider")
+			cachedClientClaude = newClientClaude(providers.AnthropicKey)
 		}
 		client = cachedClientClaude
 		break

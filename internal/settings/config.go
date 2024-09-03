@@ -38,7 +38,8 @@ type Settings struct {
 }
 
 type Providers struct {
-	OpenAIKey string
+	OpenAIKey    string
+	AnthropicKey string
 }
 
 type CLIFlags struct {

@@ -7,6 +7,12 @@ import (
 	"github.com/k10wl/hermes/internal/settings"
 )
 
+type Completion func(
+	messages []*Message,
+	parameters *Parameters,
+	providers *settings.Providers,
+) (*AIResponse, error)
+
 type getter func(
 	url string,
 	body io.Reader,
@@ -16,9 +22,14 @@ type getter func(
 type client interface {
 	complete(
 		messages []*Message,
-		parameters Parameters,
+		parameters *Parameters,
 		get getter,
 	) (*AIResponse, error)
+}
+
+type Message struct {
+	Role    string
+	Content string
 }
 
 type TokensUsage struct {
@@ -33,13 +44,13 @@ type Parameters struct {
 }
 
 type AIResponse struct {
-	Messages []*Message
+	Message
 	TokensUsage
 }
 
 func Complete(
 	messages []*Message,
-	parameters Parameters,
+	parameters *Parameters,
 	providers *settings.Providers,
 ) (*AIResponse, error) {
 	client, err := selectClient(parameters.Model, providers)

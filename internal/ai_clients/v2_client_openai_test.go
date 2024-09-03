@@ -13,7 +13,7 @@ import (
 
 func TestOpenAICompletion(t *testing.T) {
 	inputMessages := []*Message{{Role: "user", Content: "stuff"}}
-	outputMessages := []*Message{{Role: "assistant", Content: "response"}}
+	outputMessage := Message{Role: "assistant", Content: "response"}
 	temperature := float64(1)
 	maxTokens := int64(1000)
 
@@ -84,7 +84,7 @@ func TestOpenAICompletion(t *testing.T) {
 				"Authorization": "Bearer SECRET",
 			},
 			expectedResponse: AIResponse{
-				Messages: outputMessages,
+				Message: outputMessage,
 				TokensUsage: TokensUsage{
 					Input:  200,
 					Output: 20,
@@ -167,7 +167,7 @@ out:
 	for _, test := range table {
 		actual, err := newClientOpenAI(test.apiKey).complete(
 			test.input.messages,
-			test.input.parameters,
+			&test.input.parameters,
 			test.input.getter,
 		)
 		if test.expectErr {

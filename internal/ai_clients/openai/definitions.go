@@ -11,12 +11,12 @@ type ChatCompletionRequest struct {
 	MaxTokens         int64            `json:"max_tokens,omitempty"`
 	N                 int64            `json:"n,omitempty"`
 	PresencePenalty   float64          `json:"presence_penalty,omitempty"`
-	ResponseFormat    ResponseFormat   `json:"response_format,omitempty"`
+	ResponseFormat    *ResponseFormat  `json:"response_format,omitempty"`
 	Seed              int64            `json:"seed,omitempty"`
 	ServiceTier       string           `json:"service_tier,omitempty"`
 	Stop              interface{}      `json:"stop,omitempty"`
 	Stream            bool             `json:"stream,omitempty"`
-	StreamOptions     StreamOptions    `json:"stream_options,omitempty"`
+	StreamOptions     *StreamOptions   `json:"stream_options,omitempty"`
 	Temperature       float64          `json:"temperature,omitempty"`
 	TopP              float64          `json:"top_p,omitempty"`
 	Tools             []string         `json:"tools,omitempty"`
@@ -31,7 +31,7 @@ type Message struct {
 }
 
 type ResponseFormat struct {
-	Type string `json:"type"`
+	Type string `json:"type,omitempty"`
 	// NOTE I don't care at the moment
 	JsonSchema interface{} `json:"json_schema,omitempty"`
 }

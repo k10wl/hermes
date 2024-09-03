@@ -12,7 +12,7 @@ import (
 
 func TestClaudeCompletion(t *testing.T) {
 	inputMessages := []*Message{{Role: "user", Content: "stuff"}}
-	outputMessages := []*Message{{Role: "assistant", Content: "response"}}
+	outputMessage := Message{Role: "assistant", Content: "response"}
 	temperature := float64(1)
 	maxTokens := int64(1000)
 
@@ -81,7 +81,7 @@ func TestClaudeCompletion(t *testing.T) {
 				"content-type":      "application/json",
 			},
 			expectedResponse: AIResponse{
-				Messages: outputMessages,
+				Message: outputMessage,
 				TokensUsage: TokensUsage{
 					Input:  200,
 					Output: 20,
@@ -161,7 +161,7 @@ out:
 	for _, test := range table {
 		actual, err := newClientClaude(test.apiKey).complete(
 			test.input.messages,
-			test.input.parameters,
+			&test.input.parameters,
 			test.input.getter,
 		)
 		if test.expectErr {

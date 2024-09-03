@@ -140,5 +140,5 @@ func __createCoreAndDB() (*Core, db.Client) {
 	if err != nil {
 		panic(err)
 	}
-	return NewCore(MockAIClient{}, db), db
+	return NewCore(db, &settings.Config{}), db
 }
