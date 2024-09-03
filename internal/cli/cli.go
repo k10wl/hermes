@@ -19,7 +19,9 @@ func (cli *CLIStrategies) NewChat(c *core.Core, config *settings.Config) error {
 		config.Content,
 		config.Template,
 		&ai_clients.Parameters{
-			Model: config.Model,
+			Model:       config.Model,
+			MaxTokens:   config.MaxTokens,
+			Temperature: config.Temperature,
 		},
 		ai_clients.Complete,
 	)
@@ -44,7 +46,9 @@ func (cli *CLIStrategies) LastChat(c *core.Core, config *settings.Config) error 
 		config.Content,
 		config.Template,
 		&ai_clients.Parameters{
-			Model: config.Model,
+			Model:       config.Model,
+			MaxTokens:   config.MaxTokens,
+			Temperature: config.Temperature,
 		},
 		ai_clients.Complete,
 	)

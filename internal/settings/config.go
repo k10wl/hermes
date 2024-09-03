@@ -43,9 +43,11 @@ type Providers struct {
 }
 
 type CLIFlags struct {
-	Model   string
-	Content string
-	Last    bool
+	Model       string
+	Content     string
+	Last        bool
+	MaxTokens   *int64
+	Temperature *float64
 }
 
 type WebFlags struct {

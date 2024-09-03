@@ -8,6 +8,7 @@ import (
 )
 
 func loadFlags(config *Config) {
+	emptyNumericValue := -1
 	template := flagStringWithShorthand(
 		"template",
 		"t",
@@ -75,6 +76,16 @@ Interactions with other flags:
 		DefaultDatabaseName,
 		"Sets (d)ata(b)ase name. Used in tests to create in memory db",
 	)
+	temperature := flag.Float64(
+		"temperature",
+		float64(emptyNumericValue),
+		"The degree of randomness or exploration in the decision-making process of an AI system.",
+	)
+	maxTokens := flag.Int64(
+		"max-tokens",
+		int64(emptyNumericValue),
+		"Max tokens refer to the maximum number of words or parts of words that an AI model can use in a single output",
+	)
 
 	flag.Parse()
 	config.Template = *template
@@ -89,6 +100,12 @@ Interactions with other flags:
 	config.Host = *host
 	config.Last = *last
 	config.DatabaseName = *databaseName
+	if *temperature != -1 {
+		config.Temperature = temperature
+	}
+	if *maxTokens != -1 {
+		config.MaxTokens = maxTokens
+	}
 }
 
 func readInput(message string) string {
