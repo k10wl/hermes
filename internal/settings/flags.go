@@ -78,7 +78,7 @@ Interactions with other flags:
 	)
 	temperature := flag.Float64(
 		"temperature",
-		float64(emptyNumericValue),
+		1,
 		"The degree of randomness or exploration in the decision-making process of an AI system.",
 	)
 	maxTokens := flag.Int64(
@@ -100,10 +100,8 @@ Interactions with other flags:
 	config.Host = *host
 	config.Last = *last
 	config.DatabaseName = *databaseName
-	if *temperature != -1 {
-		config.Temperature = temperature
-	}
-	if *maxTokens != -1 {
+	config.Temperature = temperature
+	if *maxTokens != int64(emptyNumericValue) {
 		config.MaxTokens = maxTokens
 	}
 }
