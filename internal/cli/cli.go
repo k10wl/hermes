@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/settings"
 )
@@ -17,6 +18,12 @@ func (cli *CLIStrategies) NewChat(c *core.Core, config *settings.Config) error {
 		core.UserRole,
 		config.Content,
 		config.Template,
+		&ai_clients.Parameters{
+			Model:       config.Model,
+			MaxTokens:   config.MaxTokens,
+			Temperature: config.Temperature,
+		},
+		ai_clients.Complete,
 	)
 	if err := sendMessage.Execute(context.Background()); err != nil {
 		return err
@@ -38,6 +45,12 @@ func (cli *CLIStrategies) LastChat(c *core.Core, config *settings.Config) error 
 		core.UserRole,
 		config.Content,
 		config.Template,
+		&ai_clients.Parameters{
+			Model:       config.Model,
+			MaxTokens:   config.MaxTokens,
+			Temperature: config.Temperature,
+		},
+		ai_clients.Complete,
 	)
 	if err := completionCommand.Execute(ctx); err != nil {
 		return err

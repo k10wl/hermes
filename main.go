@@ -5,26 +5,16 @@ import (
 	"io"
 	"os"
 
-	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/launch"
 	"github.com/k10wl/hermes/internal/settings"
 	"github.com/k10wl/hermes/internal/sqlite3"
-	client "github.com/k10wl/openai-client"
 )
 
 var getConfig = settings.GetConfig
-var newOpenAIAdapter = ai_clients.NewOpenAIAdapter
 
 func run(stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
 	config, err := getConfig(stdin, stdout, stderr)
-	if err != nil {
-		return err
-	}
-	openai := newOpenAIAdapter(
-		client.NewOpenAIClient(config.OpenAIKey),
-	)
-	err = openai.SetModel(config.Model)
 	if err != nil {
 		return err
 	}
@@ -33,7 +23,7 @@ func run(stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
 		return err
 	}
 	defer sqlite.Close()
-	hermesCore := core.NewCore(openai, sqlite)
+	hermesCore := core.NewCore(sqlite, config)
 	return launch.PickStrategy(config).Execute(hermesCore, config)
 }
 

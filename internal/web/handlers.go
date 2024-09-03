@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/models"
 )
@@ -74,6 +75,10 @@ func handleMessage(c *core.Core, t *template.Template) http.HandlerFunc {
 				core.UserRole,
 				content,
 				"",
+				&ai_clients.Parameters{
+					Model: "gpt-4o-mini",
+				},
+				ai_clients.Complete,
 			)
 			command.Execute(r.Context())
 			m.Content = command.Result.Content
@@ -97,7 +102,15 @@ func handleMessage(c *core.Core, t *template.Template) http.HandlerFunc {
 				panic(err)
 			}
 			command := core.NewCreateCompletionCommand(
-				c, id, core.UserRole, content, "",
+				c,
+				id,
+				core.UserRole,
+				content,
+				"",
+				&ai_clients.Parameters{
+					Model: "gpt-4o-mini",
+				},
+				ai_clients.Complete,
 			)
 			command.Execute(context.Background())
 			m.Content = command.Result.Content

@@ -16,18 +16,9 @@ type CompletionParameters struct {
 	Temperature int64
 }
 
-// TODO implement model and provider handling
-type Model struct {
-	ID        int64
-	Provider  string
-	Name      string
-	MaxTokens int64
-	Timestamps
-}
-
 type Chat struct {
 	ID    int64
-	Model *Model
+	Model string
 	Name  string
 	CompletionParameters
 	Timestamps

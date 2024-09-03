@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
+	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/db"
 	"github.com/k10wl/hermes/internal/settings"
 	"github.com/k10wl/hermes/internal/sqlite3"
@@ -140,5 +140,5 @@ func __createCoreAndDB() (*Core, db.Client) {
 	if err != nil {
 		panic(err)
 	}
-	return NewCore(MockAIClient{}, db), db
+	return NewCore(db, &settings.Config{}), db
 }

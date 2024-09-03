@@ -16,9 +16,6 @@ type GetChatsQuery struct {
 }
 
 func (q *GetChatsQuery) Execute(ctx context.Context) error {
-	if err := q.Core.assertAI(); err != nil {
-		return err
-	}
 	chats, err := q.Core.db.GetChats(ctx)
 	if err != nil {
 		return err
@@ -34,9 +31,6 @@ type GetChatMessagesQuery struct {
 }
 
 func (q *GetChatMessagesQuery) Execute(ctx context.Context) error {
-	if err := q.Core.assertAI(); err != nil {
-		return err
-	}
 	messages, err := q.Core.db.GetChatMessages(ctx, q.ChatID)
 	if err != nil {
 		return err
@@ -51,9 +45,6 @@ type WebSettingsQuery struct {
 }
 
 func (q *WebSettingsQuery) Execute(ctx context.Context) error {
-	if err := q.Core.assertAI(); err != nil {
-		return err
-	}
 	setting, err := q.Core.db.GetWebSettings(ctx)
 	q.Result = setting
 	return err

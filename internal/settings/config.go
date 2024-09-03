@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-const Version = "3.3.1"
+const Version = "3.4.0"
 const DefaultHostname = "127.0.0.1"
 
 var DefaultPort = "8123"            // changes in ldflag for dev mode
@@ -38,13 +38,16 @@ type Settings struct {
 }
 
 type Providers struct {
-	OpenAIKey string
+	OpenAIKey    string
+	AnthropicKey string
 }
 
 type CLIFlags struct {
-	Model   string
-	Content string
-	Last    bool
+	Model       string
+	Content     string
+	Last        bool
+	MaxTokens   *int64
+	Temperature *float64
 }
 
 type WebFlags struct {

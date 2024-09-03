@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/cli"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/settings"
@@ -18,11 +19,16 @@ type launchWeb struct{}
 
 func (l *launchWeb) Execute(c *core.Core, config *settings.Config) error {
 	if config.Content != "" {
-		sendMessage := core.CreateChatAndCompletionCommand{
-			Core:    c,
-			Message: config.Content,
-			Role:    "user",
-		}
+		sendMessage := core.NewCreateChatAndCompletionCommand(
+			c,
+			core.UserRole,
+			config.Content,
+			config.Template,
+			&ai_clients.Parameters{
+				Model: "gpt-4o-mini",
+			},
+			ai_clients.Complete,
+		)
 		if err := sendMessage.Execute(context.Background()); err != nil {
 			return err
 		}
