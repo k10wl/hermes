@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
+	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/db"
 	"github.com/k10wl/hermes/internal/settings"
 	"github.com/k10wl/hermes/internal/sqlite3"

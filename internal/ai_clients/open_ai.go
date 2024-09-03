@@ -4,9 +4,14 @@ import (
 	"errors"
 	"slices"
 
-	client "github.com/k10wl/openai-client"
+	opneai_client "github.com/k10wl/openai-client"
 	"github.com/tiktoken-go/tokenizer"
 )
+
+type Message struct {
+	Role    string
+	Content string
+}
 
 type OpenAIClient interface {
 }
@@ -15,8 +20,8 @@ type OpenAICompletionModel interface {
 }
 
 type OpenAIAdapter struct {
-	model  *client.ChatCompletionModel
-	client *client.OpenAIClient
+	model  *opneai_client.ChatCompletionModel
+	client *opneai_client.OpenAIClient
 }
 
 type OpenAIAdapterInterface interface {
@@ -24,7 +29,7 @@ type OpenAIAdapterInterface interface {
 	SetModel(model string) error
 }
 
-func NewOpenAIAdapter(client *client.OpenAIClient) OpenAIAdapterInterface {
+func NewOpenAIAdapter(client *opneai_client.OpenAIClient) OpenAIAdapterInterface {
 	return &OpenAIAdapter{client: client}
 }
 
@@ -37,7 +42,7 @@ func (a *OpenAIAdapter) ChatCompletion(messages []Message) (Message, int, error)
 	if a.model == nil {
 		return res, 0, errors.New("model was not provided")
 	}
-	history := []client.Message{}
+	history := []opneai_client.Message{}
 	usedMessages := 0
 	tokens := 0
 	for i := len(messages) - 1; i >= 0; i-- {
@@ -58,7 +63,7 @@ func (a *OpenAIAdapter) ChatCompletion(messages []Message) (Message, int, error)
 }
 
 func (a *OpenAIAdapter) SetModel(model string) error {
-	m, err := client.NewChatCompletionModel(a.client, model)
+	m, err := opneai_client.NewChatCompletionModel(a.client, model)
 	if err != nil {
 		return err
 	}
@@ -66,15 +71,15 @@ func (a *OpenAIAdapter) SetModel(model string) error {
 	return nil
 }
 
-func (a *OpenAIAdapter) messageDecoder(message client.Message) Message {
+func (a *OpenAIAdapter) messageDecoder(message opneai_client.Message) Message {
 	return Message{
 		Role:    message.Role,
 		Content: message.Content,
 	}
 }
 
-func (a *OpenAIAdapter) messageEncoder(message Message) client.Message {
-	return client.Message{
+func (a *OpenAIAdapter) messageEncoder(message Message) opneai_client.Message {
+	return opneai_client.Message{
 		Role:    message.Role,
 		Content: message.Content,
 	}

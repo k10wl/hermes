@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
+	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/cli"
 	"github.com/k10wl/hermes/internal/settings"
 	client "github.com/k10wl/openai-client"

@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
+	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/launch"
 	"github.com/k10wl/hermes/internal/settings"
@@ -21,9 +21,11 @@ func run(stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
+	// FIXME we don't need fucking adapter here
 	openai := newOpenAIAdapter(
 		client.NewOpenAIClient(config.OpenAIKey),
 	)
+	// FIXME do not set model
 	err = openai.SetModel(config.Model)
 	if err != nil {
 		return err

@@ -1,7 +1,7 @@
 package core_test
 
 import (
-	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
+	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/db"
 	"github.com/k10wl/hermes/internal/settings"

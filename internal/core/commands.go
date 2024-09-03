@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	ai_clients "github.com/k10wl/hermes/internal/ai-clients"
+	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/models"
 )
 
+// FIXME I think command should receive correct model
 type Command interface {
 	Execute(context.Context) error
 }
