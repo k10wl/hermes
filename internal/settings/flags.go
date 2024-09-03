@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-
-	client "github.com/k10wl/openai-client"
 )
 
 func loadFlags(config *Config) {
@@ -43,7 +41,7 @@ func loadFlags(config *Config) {
 		`(E)dits (t)emplate with diven name`,
 	)
 
-	model := flagStringWithShorthand("model", "m", client.GPT3_5Turbo, "Completion (m)odel name")
+	model := flagStringWithShorthand("model", "m", "gpt-4o-mini", "Completion (m)odel name")
 	content := flagStringWithShorthand(
 		"content",
 		"c",
