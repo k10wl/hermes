@@ -1,6 +1,7 @@
 package ai_clients
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -22,5 +23,12 @@ func callApi(
 	if err != nil {
 		return nil, err
 	}
-	return io.ReadAll(res.Body)
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	if res.StatusCode < 200 || 399 < res.StatusCode {
+		return nil, fmt.Errorf("API error - %s\n", data)
+	}
+	return data, nil
 }

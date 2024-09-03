@@ -7,7 +7,7 @@ import (
 	"github.com/k10wl/hermes/internal/settings"
 )
 
-type Completion func(
+type CompletionFn func(
 	messages []*Message,
 	parameters *Parameters,
 	providers *settings.Providers,
@@ -45,7 +45,7 @@ type Parameters struct {
 
 type AIResponse struct {
 	Message
-	TokensUsage
+	TokensUsage TokensUsage
 }
 
 func Complete(

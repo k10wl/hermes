@@ -5,12 +5,10 @@ go 1.22.2
 require (
 	github.com/golang-migrate/migrate/v4 v4.17.1
 	github.com/k10wl/openai-client v0.1.0
-	github.com/tiktoken-go/tokenizer v0.1.1
 	modernc.org/sqlite v1.32.0
 )
 
 require (
-	github.com/dlclark/regexp2 v1.9.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect

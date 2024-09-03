@@ -30,13 +30,11 @@ func (client clientOpenAI) complete(
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("openai data: %v\n", string(data))
 	res, err := get(
 		client.apiUrl,
 		bytes.NewBuffer(data),
 		client.fillHeaders,
 	)
-	fmt.Printf("res: %v\n", string(res))
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +81,6 @@ func (client clientOpenAI) decodeMessage(messages openai.Message) *Message {
 func (client clientOpenAI) decodeResponse(
 	response *openai.ChatCompletionResponse,
 ) (*AIResponse, error) {
-	fmt.Printf("response: %v\n", response)
 	if len(response.Choices) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}

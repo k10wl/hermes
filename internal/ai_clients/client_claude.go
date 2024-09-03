@@ -11,14 +11,16 @@ import (
 )
 
 type clientClaude struct {
-	apiKey string
-	apiUrl string
+	apiKey            string
+	apiUrl            string
+	maxTokensFallback int64
 }
 
 func newClientClaude(apiKey string) *clientClaude {
 	return &clientClaude{
-		apiKey: apiKey,
-		apiUrl: "https://api.anthropic.com/v1/messages",
+		apiKey:            apiKey,
+		apiUrl:            "https://api.anthropic.com/v1/messages",
+		maxTokensFallback: 4096,
 	}
 }
 
@@ -42,7 +44,9 @@ func (client clientClaude) complete(
 		bytes.NewReader(data),
 		client.fillHeaders,
 	)
-	fmt.Printf("claude data: %v\n", string(data))
+	if err != nil {
+		return nil, err
+	}
 	var response claude.MessagesResponse
 	err = json.Unmarshal(data, &response)
 	if err != nil {
@@ -64,7 +68,7 @@ func (client clientClaude) prepare(
 		Model:     model,
 		Messages:  encodedMessages,
 		System:    systemPrompt,
-		MaxTokens: 4096,
+		MaxTokens: client.maxTokensFallback,
 	}
 	if parameters.MaxTokens != nil {
 		data.MaxTokens = *parameters.MaxTokens
@@ -94,7 +98,6 @@ func (client clientClaude) encodeMessages(
 }
 
 func (client clientClaude) decodeResult(response *claude.MessagesResponse) (*AIResponse, error) {
-	fmt.Printf("response: %v\n", response)
 	if len(response.Content) == 0 {
 		return nil, fmt.Errorf("empty response content")
 	}

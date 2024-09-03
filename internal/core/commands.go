@@ -18,7 +18,7 @@ type CreateChatAndCompletionCommand struct {
 	message    string
 	template   string
 	parameters *ai_clients.Parameters
-	completion ai_clients.Completion
+	completion ai_clients.CompletionFn
 	Result     *models.Message
 }
 
@@ -28,7 +28,7 @@ func NewCreateChatAndCompletionCommand(
 	message string,
 	template string,
 	parameters *ai_clients.Parameters,
-	completion ai_clients.Completion,
+	completion ai_clients.CompletionFn,
 ) *CreateChatAndCompletionCommand {
 	return &CreateChatAndCompletionCommand{
 		core:       core,
@@ -79,7 +79,7 @@ type CreateCompletionCommand struct {
 	role       string
 	chatID     int64
 	parameters *ai_clients.Parameters
-	completion ai_clients.Completion
+	completion ai_clients.CompletionFn
 	Result     *models.Message
 }
 
@@ -90,7 +90,7 @@ func NewCreateCompletionCommand(
 	message string,
 	template string,
 	parameters *ai_clients.Parameters,
-	completion ai_clients.Completion,
+	completion ai_clients.CompletionFn,
 ) *CreateCompletionCommand {
 	return &CreateCompletionCommand{
 		core:       core,
