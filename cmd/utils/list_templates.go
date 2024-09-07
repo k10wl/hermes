@@ -1,4 +1,4 @@
-package cli
+package utils
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/k10wl/hermes/internal/models"
 )
 
-func listTemplates(templates []*models.Template, w io.Writer) error {
+func ListTemplates(templates []*models.Template, w io.Writer) error {
 	if len(templates) == 0 {
 		_, err := fmt.Fprintf(
 			w,

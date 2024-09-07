@@ -472,10 +472,11 @@ func TestDeleteTemplateByName(t *testing.T) {
 
 func TestEditTemplateByName(t *testing.T) {
 	type testCase struct {
-		name         string
-		init         func() string
-		templateName string
-		shouldError  bool
+		name                string
+		init                func() string
+		templateName        string
+		shouldError         bool
+		deletedTemplateName string
 	}
 
 	coreInstance, _ := createCoreAndDB()
@@ -496,7 +497,7 @@ func TestEditTemplateByName(t *testing.T) {
 			name: "should edit existing template",
 			init: func() string {
 				content := `--{{define "welcome"}}hi--{{end}}`
-				command = *core.NewEditTemplateByName(coreInstance, "welcome", content)
+				command = *core.NewEditTemplateByName(coreInstance, "welcome", content, false)
 				return content
 			},
 			templateName: "welcome",
@@ -505,7 +506,7 @@ func TestEditTemplateByName(t *testing.T) {
 			name: "should allow block definition",
 			init: func() string {
 				content := `--{{block "welcome" .}}hi--{{end}}`
-				command = *core.NewEditTemplateByName(coreInstance, "welcome", content)
+				command = *core.NewEditTemplateByName(coreInstance, "welcome", content, false)
 				return content
 			},
 			templateName: "welcome",
@@ -514,7 +515,7 @@ func TestEditTemplateByName(t *testing.T) {
 			name: "should error if template does not exist",
 			init: func() string {
 				content := `--{{define "welcome"}}hi--{{end}}`
-				command = *core.NewEditTemplateByName(coreInstance, "does not exist", content)
+				command = *core.NewEditTemplateByName(coreInstance, "does not exist", content, false)
 				return content
 			},
 			templateName: "does not exist",
@@ -524,20 +525,39 @@ func TestEditTemplateByName(t *testing.T) {
 			name: "should error if template has corrupted content",
 			init: func() string {
 				content := `--{{define "welco`
-				command = *core.NewEditTemplateByName(coreInstance, "welcome", content)
+				command = *core.NewEditTemplateByName(coreInstance, "welcome", content, false)
 				return content
 			},
 			templateName: "welcome",
 			shouldError:  true,
 		},
 		{
-			name: "should error if new name does not match existing name",
+			name: "should rename template if new name does not match existing name and clone is false",
 			init: func() string {
 				content := `--{{define "missmatch"}}stuff--{{end}}`
-				command = *core.NewEditTemplateByName(coreInstance, "welcome", content)
+				command = *core.NewEditTemplateByName(coreInstance, "welcome", content, false)
 				return content
 			},
-			templateName: "missmatch",
+			templateName:        "missmatch",
+			deletedTemplateName: "welcome",
+		},
+		{
+			name: "should create new template if cloning is true and new name is unique",
+			init: func() string {
+				content := `--{{define "missmatch2"}}stuff--{{end}}`
+				command = *core.NewEditTemplateByName(coreInstance, "welcome", content, true)
+				return content
+			},
+			templateName: "missmatch2",
+		},
+		{
+			name: "should fail if cloning is true but new name is not unique",
+			init: func() string {
+				content := `--{{define "missmatch2"}}stuff--{{end}}`
+				command = *core.NewEditTemplateByName(coreInstance, "missmatch", content, true)
+				return content
+			},
+			templateName: "missmatch2",
 			shouldError:  true,
 		},
 	}
@@ -572,6 +592,20 @@ func TestEditTemplateByName(t *testing.T) {
 				actual,
 			)
 			continue
+		}
+		if test.deletedTemplateName != "" {
+			query := core.NewGetTemplatesByNamesQuery(
+				coreInstance,
+				[]string{test.deletedTemplateName},
+			)
+			if len(query.Result) != 0 {
+				t.Errorf(
+					"%q did not remove original template - %q",
+					test.name,
+					test.deletedTemplateName,
+				)
+				continue
+			}
 		}
 	}
 }

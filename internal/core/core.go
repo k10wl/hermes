@@ -25,6 +25,14 @@ func NewCore(db db.Client, config *settings.Config) *Core {
 	}
 }
 
+func (c Core) GetConfig() *settings.Config {
+	return c.config
+}
+
+func (c Core) GetDB() db.Client {
+	return c.db
+}
+
 func messageToAIMessage(m *models.Message) *ai_clients.Message {
 	return &ai_clients.Message{
 		Content: m.Content,

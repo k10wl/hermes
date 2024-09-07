@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/k10wl/hermes/internal/ai_clients"
-	"github.com/k10wl/hermes/internal/cli"
 	"github.com/k10wl/hermes/internal/settings"
 )
 
@@ -55,7 +54,7 @@ func TestApp(t *testing.T) {
 					return c, err
 				}
 			},
-			expected: expected{stdout: cli.GetHelpString(settings.Version) + "\n"},
+			expected: expected{stdout: ""},
 		},
 
 		{
@@ -110,7 +109,7 @@ func TestApp(t *testing.T) {
 
 	for _, test := range table {
 		test.prepare()
-		err := run(&stdin, &stdout, &stderr)
+		_, err := run(&stdin, &stdout, &stderr)
 		if test.shouldError && err == nil {
 			t.Errorf("Completed, but expected error: %s", test.name)
 		}
