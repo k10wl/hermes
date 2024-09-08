@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 
+	"github.com/k10wl/hermes/cmd/serve"
 	"github.com/k10wl/hermes/cmd/templates"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/spf13/cobra"
@@ -25,6 +26,7 @@ Example:
 
 func init() {
 	rootCmd.AddCommand(templates.TemplatesCommand)
+	rootCmd.AddCommand(serve.ServeCommand)
 }
 
 func Execute(core *core.Core) error {
