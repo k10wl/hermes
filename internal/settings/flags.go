@@ -70,12 +70,6 @@ Interactions with other flags:
 		DefaultPort,
 		fmt.Sprintf("Specify (p)ort for web server. Default to %q", DefaultPort),
 	)
-	databaseName := flagStringWithShorthand(
-		"database-name",
-		"db",
-		DefaultDatabaseName,
-		"Sets (d)ata(b)ase name. Used in tests to create in memory db",
-	)
 	temperature := flag.Float64(
 		"temperature",
 		1,
@@ -99,7 +93,6 @@ Interactions with other flags:
 	config.Web = *web
 	config.Host = *host
 	config.Last = *last
-	config.DatabaseName = *databaseName
 	config.Temperature = temperature
 	if *maxTokens != int64(emptyNumericValue) {
 		config.MaxTokens = maxTokens

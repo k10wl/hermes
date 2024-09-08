@@ -18,7 +18,7 @@ Provies templating, chat persistense, local database and more.
 Offers access to OpenAI and Anthropic (Claude) completion API by personal keys.
 
 Example:
-    $ HERMES_OPENAI_API_KEY=your-own-key; hermes chat <<< "who are you?"
+    $ HERMES_OPENAI_API_KEY=your-own-key hermes chat <<< "who are you?"
     I am a language model AI designed to assist with answering questions and
     providing information to the best of my knowledge and abilities.`,
 }

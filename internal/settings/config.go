@@ -29,7 +29,6 @@ type Settings struct {
 	Version         string
 	AppName         string
 	ConfigDir       string
-	DatabaseName    string
 	DatabaseDSN     string
 	ShutdownContext context.Context
 	Stdin           io.Reader
@@ -75,9 +74,8 @@ func GetConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, er
 func loadConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, error) {
 	var c Config
 	c.AppName = appName
-	loadFlags(&c)
 	loadEnv(&c)
-	if err := prepareDBData(&c); err != nil {
+	if err := prepareDNS(&c); err != nil {
 		return &c, err
 	}
 	c.Version = Version
@@ -88,9 +86,8 @@ func loadConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, e
 	return &c, nil
 }
 
-func prepareDBData(c *Config) error {
-	if c.DatabaseName == ":memory:" {
-		c.DatabaseDSN = c.DatabaseName
+func prepareDNS(c *Config) error {
+	if c.DatabaseDSN == ":memory:" || c.DatabaseDSN != "" {
 		return nil
 	}
 	sharedConfigDir, err := os.UserConfigDir()
@@ -99,7 +96,7 @@ func prepareDBData(c *Config) error {
 	}
 	hermesConfigDir := path.Join(sharedConfigDir, c.AppName)
 	c.ConfigDir = hermesConfigDir
-	c.DatabaseDSN = path.Join(hermesConfigDir, c.DatabaseName)
+	c.DatabaseDSN = path.Join(hermesConfigDir, "main.db")
 	err = ensureExists(hermesConfigDir)
 	return err
 }
