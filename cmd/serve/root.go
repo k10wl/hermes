@@ -74,6 +74,7 @@ $ hermes serve --open --latest`,
 }
 
 func init() {
+	ServeCommand.Flags().SortFlags = false
 	ServeCommand.Flags().StringP(
 		"hostname",
 		"H",

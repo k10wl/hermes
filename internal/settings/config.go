@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-const Version = "4.0.1"
+const Version = "4.1.1"
 
 var DefaultDatabaseName = "main.db" // changes in ldflag for dev mode
 var appName = "hermes"              // changes in ldflag for dev mode
