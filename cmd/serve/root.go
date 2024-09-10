@@ -8,7 +8,7 @@ import (
 
 var ServeCommand = &cobra.Command{
 	Use:   "serve",
-	Short: "serve http client",
+	Short: "Serve http client",
 	Long:  "Serve as a HTTP web server.",
 	Example: `$ hermes serve
 $ hermes server --hostname 192.168.1.1 --port 8080`,
@@ -37,6 +37,16 @@ $ hermes server --hostname 192.168.1.1 --port 8080`,
 }
 
 func init() {
-	ServeCommand.Flags().StringP("hostname", "H", "127.0.0.1", "Specify the hostname")
-	ServeCommand.Flags().StringP("port", "p", "8123", "Set the port")
+	ServeCommand.Flags().StringP(
+		"hostname",
+		"H",
+		"127.0.0.1",
+		"Specify the hostname",
+	)
+	ServeCommand.Flags().StringP(
+		"port",
+		"p",
+		"8123",
+		"Set the port",
+	)
 }

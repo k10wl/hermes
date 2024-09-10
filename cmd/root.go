@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 
+	"github.com/k10wl/hermes/cmd/chat"
 	"github.com/k10wl/hermes/cmd/serve"
 	"github.com/k10wl/hermes/cmd/templates"
 	"github.com/k10wl/hermes/internal/core"
@@ -27,6 +28,7 @@ Example:
 func init() {
 	rootCmd.AddCommand(templates.TemplatesCommand)
 	rootCmd.AddCommand(serve.ServeCommand)
+	rootCmd.AddCommand(chat.ChatCommand)
 }
 
 func Execute(core *core.Core) error {
