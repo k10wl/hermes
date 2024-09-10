@@ -8,10 +8,8 @@ import (
 	"sync"
 )
 
-const Version = "4.0.0"
-const DefaultHostname = "127.0.0.1"
+const Version = "4.0.1"
 
-var DefaultPort = "8123"            // changes in ldflag for dev mode
 var DefaultDatabaseName = "main.db" // changes in ldflag for dev mode
 var appName = "hermes"              // changes in ldflag for dev mode
 var config *Config
@@ -20,9 +18,6 @@ var once sync.Once
 type Config struct {
 	Settings
 	Providers
-	TemplateFlags
-	CLIFlags
-	WebFlags
 }
 
 type Settings struct {
@@ -39,28 +34,6 @@ type Settings struct {
 type Providers struct {
 	OpenAIKey    string
 	AnthropicKey string
-}
-
-type CLIFlags struct {
-	Model       string
-	Content     string
-	Last        bool
-	MaxTokens   *int64
-	Temperature *float64
-}
-
-type WebFlags struct {
-	Web  bool
-	Host string
-	Port string
-}
-
-type TemplateFlags struct {
-	Template       string
-	ListTemplates  string
-	UpsertTemplate string
-	DeleteTemplate string
-	EditTemplate   string
 }
 
 func GetConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, error) {

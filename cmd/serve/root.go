@@ -6,30 +6,67 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	port     string
+	hostname string
+	open     bool
+	latest   bool
+)
+
 var ServeCommand = &cobra.Command{
 	Use:   "serve",
 	Short: "Serve http client",
 	Long:  "Serve as a HTTP web server.",
 	Example: `$ hermes serve
-$ hermes server --hostname 192.168.1.1 --port 8080`,
-	PreRun: func(cmd *cobra.Command, args []string) {
+$ hermes serve --hostname 192.168.1.1 --port 8080
+$ hermes serve --open --latest`,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
 		core := utils.GetCore(cmd)
 		config := core.GetConfig()
-		hostname, err := cmd.Flags().GetString("hostname")
+		h, err := cmd.Flags().GetString("hostname")
 		if err != nil {
 			utils.LogError(config.Stderr, err)
+			return err
 		}
-		port, err := cmd.Flags().GetString("port")
+		p, err := cmd.Flags().GetString("port")
 		if err != nil {
 			utils.LogError(config.Stderr, err)
+			return err
 		}
-		config.Port = port
-		config.Host = hostname
+		o, err := cmd.Flags().GetBool("open")
+		if err != nil {
+			utils.LogError(config.Stderr, err)
+			return err
+		}
+		l, err := cmd.Flags().GetBool("latest")
+		if err != nil {
+			utils.LogError(config.Stderr, err)
+			return err
+		}
+		if l && !o {
+			utils.LogFail(config.Stderr, "cannot use --latest without --open")
+			return err
+		}
+		port = p
+		hostname = h
+		open = o
+		latest = l
+		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		core := utils.GetCore(cmd)
 		config := core.GetConfig()
-		err := web.Serve(core, config)
+		if open {
+			web.OpenBrowser(
+				web.GetUrl(
+					web.BuildAddr(hostname, port),
+					core,
+					config,
+					latest,
+				),
+			)
+		}
+		err := web.Serve(core, config, hostname, port)
 		if err != nil {
 			utils.LogError(config.Stderr, err)
 		}
@@ -41,12 +78,19 @@ func init() {
 		"hostname",
 		"H",
 		"127.0.0.1",
-		"Specify the hostname",
+		"specify the hostname",
 	)
 	ServeCommand.Flags().StringP(
 		"port",
 		"p",
 		"8123",
-		"Set the port",
+		"set the port",
+	)
+	ServeCommand.Flags().BoolP("open", "o", false, "opens server in browser")
+	ServeCommand.Flags().BoolP(
+		"latest",
+		"l",
+		false,
+		"will open latest chat if --open was provided",
 	)
 }
