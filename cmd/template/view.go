@@ -1,4 +1,4 @@
-package templates
+package template
 
 import (
 	"fmt"
@@ -11,14 +11,14 @@ import (
 var viewCommand = &cobra.Command{
 	Use:   "view",
 	Short: "Display the contents of a specified template.",
-	Long: `Retreives templates from database and shows what is stored.
+	Long: `Retreives template from database and shows what is stored.
 Accepts optional --name -n param - string with SQL regexp for name of template.
 If only one stored template matches regexp string - shows content.
 If regexp has multiple matches - returns list of matches.
-If name was not provided - returns list all templates.`,
-	Example: `$ hermes templates view
-$ hermes templates view -n tldr
-$ hermes templates view -n %`,
+If name was not provided - returns list all template.`,
+	Example: `$ hermes template view
+$ hermes template view -n tldr
+$ hermes template view -n %`,
 	Run: func(cmd *cobra.Command, args []string) {
 		name, err := cmd.Flags().GetString("name")
 		if err != nil {

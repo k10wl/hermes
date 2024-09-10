@@ -1,4 +1,4 @@
-package templates
+package template
 
 import (
 	"context"
@@ -15,10 +15,10 @@ var deleteCommand = &cobra.Command{
 	Long: `Mark template with given name as deleted.
 Ensure that the template you wish to delete is not currently in use.
 Expects --name -n flag to indicate what template must be deleted.`,
-	Example: `$ hermes templates delete -n tldr
+	Example: `$ hermes template delete -n tldr
 Template "test2" successfully deleted.
 
-$ hermes templates delete -n tldr
+$ hermes template delete -n tldr
 Failed. Template "test2" not found. `,
 	Run: func(cmd *cobra.Command, args []string) {
 		c := utils.GetCore(cmd)

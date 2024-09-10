@@ -1,4 +1,4 @@
-package templates
+package template
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 var editCommand = &cobra.Command{
 	Use:   "edit",
 	Short: "Modify an existing template by its name",
-	Long: `Allows to edit stored templates. This command finds a template with the name provided in the flag --name (-n) and opens your preferred editor with its content. Upon saving and closing file edit will be stored in database.
+	Long: `Allows to edit stored template. This command finds a template with the name provided in the flag --name (-n) and opens your preferred editor with its content. Upon saving and closing file edit will be stored in database.
 
 Behavior:
 1. If the edited content is identical to the original, no changes are made.
@@ -22,8 +22,8 @@ Behavior:
     - If ` + "`--clone`" + ` is false, and new name is unique, template gets renamed.
     - If a name conflict arises, an error will be returned.
 3. If the edited content is invalid, an error will be returned.`,
-	Example: `$ hermes templates edit --name tldr
-$ hermes templates edit --name tldr --clone`,
+	Example: `$ hermes template edit --name tldr
+$ hermes template edit --name tldr --clone`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()

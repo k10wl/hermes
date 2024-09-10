@@ -1,4 +1,4 @@
-package templates
+package template
 
 import (
 	"context"
@@ -38,13 +38,13 @@ var upsertCommand = &cobra.Command{
 If -c (--content) flag is not provided - default text editor will be opened.
 Name of the template will derive from definition/block name.
 Template must comply golang text template rules.
-NOTE: delimiters differ from golang text templates:
+NOTE: delimiters differ from golang text template:
     - left delimiter  - '--{{';
     - right delimiter - '}}';
 `,
-	Example: `$ hermes templates upsert
-$ hermes templates upsert -c "--{{define "template"}}(instruction)--{{end}}
-$ hermes templates upsert --content "--{{define "template"}}(instruction)--{{end}} `,
+	Example: `$ hermes template upsert
+$ hermes template upsert -c "--{{define "template"}}(instruction)--{{end}}
+$ hermes template upsert --content "--{{define "template"}}(instruction)--{{end}} `,
 	Run: func(cmd *cobra.Command, args []string) {
 		c := utils.GetCore(cmd)
 		config := c.GetConfig()

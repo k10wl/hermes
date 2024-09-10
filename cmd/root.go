@@ -5,7 +5,7 @@ import (
 
 	"github.com/k10wl/hermes/cmd/chat"
 	"github.com/k10wl/hermes/cmd/serve"
-	"github.com/k10wl/hermes/cmd/templates"
+	"github.com/k10wl/hermes/cmd/template"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +26,7 @@ Example:
 }
 
 func init() {
-	rootCmd.AddCommand(templates.TemplatesCommand)
+	rootCmd.AddCommand(template.TemplateCommand)
 	rootCmd.AddCommand(serve.ServeCommand)
 	rootCmd.AddCommand(chat.ChatCommand)
 }
