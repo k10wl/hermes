@@ -7,25 +7,22 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/k10wl/hermes/cmd/utils"
 	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/models"
 	"github.com/spf13/cobra"
 )
 
-var (
-	stdin        string
-	c            *core.Core
-	aiParameters ai_clients.Parameters
-)
+func CreateChatCommand(c *core.Core) *cobra.Command {
+	stdin := ""
+	aiParameters := ai_clients.Parameters{}
 
-var ChatCommand = &cobra.Command{
-	Use:   "chat [flags] (will error upon empty content)",
-	Short: "Send chat message for completion",
-	Long: `Sends messages for AI completion. You can provide your message directly with the ` + "`--content`" + ` flag or pipe in text. Options include model selection, randomness adjustment, and template usage.
+	chatCommand := &cobra.Command{
+		Use:   "chat [flags] (will error upon empty content)",
+		Short: "Send chat message for completion",
+		Long: `Sends messages for AI completion. You can provide your message directly with the ` + "`--content`" + ` flag or pipe in text. Options include model selection, randomness adjustment, and template usage.
 `,
-	Example: `$ cat crash.log | hermes chat
+		Example: `$ cat crash.log | hermes chat
 $ hermes chat --content "hello world"
 
 $ cat crash.log | hermes chat --content "what happened here?"
@@ -38,85 +35,95 @@ $ hermes chat \
     --max-tokens 10 \
     --temperature 0.2 \
     --content "is there a security risk in this message?" < risky_message.json`,
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		preloadParams(cmd, &aiParameters)
-		c = utils.GetCore(cmd)
-		config := c.GetConfig()
-		stat, _ := os.Stdin.Stat()
-		if (stat.Mode() & os.ModeCharDevice) != 0 {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			preloadParams(cmd, &aiParameters)
+			config := c.GetConfig()
+			stat, _ := os.Stdin.Stat()
+			if (stat.Mode() & os.ModeCharDevice) != 0 {
+				return nil
+			}
+			p, err := io.ReadAll(config.Stdin)
+			if err != nil {
+				return err
+			}
+			stdin = string(p)
 			return nil
-		}
-		p, err := io.ReadAll(config.Stdin)
-		if err != nil {
-			return err
-		}
-		stdin = string(p)
-		return nil
-	},
-	RunE: func(cmd *cobra.Command, args []string) error {
-		content, err := cmd.Flags().GetString("content")
-		if err != nil {
-			return err
-		}
-		template, err := cmd.Flags().GetString("template")
-		if err != nil {
-			return err
-		}
-		ok, err := cmd.Flags().GetBool("latest")
-		if err != nil {
-			return err
-		}
-		var complete func(content string, template string) error
-		if ok {
-			complete = completeInChat
-		} else {
-			complete = createChatAndComplete
-		}
-		if stdin != "" {
-			content = fmt.Sprintf("%s\n\n%s", stdin, content)
-		}
-		if strings.Trim(content, " \n\t") == "" {
-			return fmt.Errorf("input message was empty")
-		}
-		return complete(content, template)
-	},
-}
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			content, err := cmd.Flags().GetString("content")
+			if err != nil {
+				return err
+			}
+			template, err := cmd.Flags().GetString("template")
+			if err != nil {
+				return err
+			}
+			ok, err := cmd.Flags().GetBool("latest")
+			if err != nil {
+				return err
+			}
+			var complete func(
+				c *core.Core,
+				aiParameters *ai_clients.Parameters,
+				content string,
+				template string,
+			) error
+			if ok {
+				complete = completeInChat
+			} else {
+				complete = createChatAndComplete
+			}
+			if stdin != "" {
+				content = fmt.Sprintf("%s\n\n%s", stdin, content)
+			}
+			if strings.Trim(content, " \n\t") == "" {
+				return fmt.Errorf("input message was empty")
+			}
+			return complete(c, &aiParameters, content, template)
+		},
+	}
 
-func init() {
-	ChatCommand.Flags().SortFlags = false
-	ChatCommand.Flags().StringP(
+	chatCommand.Flags().SortFlags = false
+	chatCommand.Flags().StringP(
 		"content",
 		"c",
 		"",
 		"completion content, can be combined with stdin",
 	)
-	ChatCommand.Flags().StringP(
+	chatCommand.Flags().StringP(
 		"template",
 		"t",
 		"",
 		"name of predefined template to be applied (see `hermes template --help)",
 	)
-	ChatCommand.Flags().BoolP(
+	chatCommand.Flags().BoolP(
 		"latest",
 		"l",
 		false,
 		"continues conversation in latest chat",
 	)
-	ChatCommand.Flags().StringP("model", "m", "gpt-4o-mini", "completion model")
-	ChatCommand.Flags().
+	chatCommand.Flags().StringP("model", "m", "gpt-4o-mini", "completion model")
+	chatCommand.Flags().
 		String(
 			"temperature",
 			"",
 			"degree of randomness of AI answer (higher number - more chaotic)",
 		)
-	ChatCommand.Flags().String(
+	chatCommand.Flags().String(
 		"max-tokens",
 		"",
 		"maximum number of tokens used in output",
 	)
+
+	return chatCommand
 }
 
-func completeInChat(content string, template string) error {
+func completeInChat(
+	c *core.Core,
+	aiParameters *ai_clients.Parameters,
+	content string,
+	template string,
+) error {
 	config := c.GetConfig()
 	chatQuery := core.LatestChatQuery{Core: c}
 	if err := chatQuery.Execute(config.ShutdownContext); err != nil {
@@ -128,7 +135,7 @@ func completeInChat(content string, template string) error {
 		core.UserRole,
 		content,
 		template,
-		&aiParameters,
+		aiParameters,
 		ai_clients.Complete,
 	)
 	err := cmd.Execute(config.ShutdownContext)
@@ -139,14 +146,19 @@ func completeInChat(content string, template string) error {
 	return nil
 }
 
-func createChatAndComplete(content string, template string) error {
+func createChatAndComplete(
+	c *core.Core,
+	aiParameters *ai_clients.Parameters,
+	content string,
+	template string,
+) error {
 	config := c.GetConfig()
 	cmd := core.NewCreateChatAndCompletionCommand(
 		c,
 		core.UserRole,
 		content,
 		template,
-		&aiParameters,
+		aiParameters,
 		ai_clients.Complete,
 	)
 	err := cmd.Execute(c.GetConfig().ShutdownContext)

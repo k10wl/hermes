@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"context"
-
 	"github.com/k10wl/hermes/cmd/chat"
 	"github.com/k10wl/hermes/cmd/serve"
 	"github.com/k10wl/hermes/cmd/template"
@@ -11,25 +9,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var rootCmd = &cobra.Command{
-	Use:   "hermes",
-	Short: "Tool for communication with LLM and completion instructions management",
-	Long: `Host-based Extensible Response Management System
+func Execute(core *core.Core) error {
+	rootCmd := &cobra.Command{
+		Use:   "hermes",
+		Short: "Tool for communication with LLM and completion instructions management",
+		Long: `Host-based Extensible Response Management System
 Hermes is a tool created to boost AI user experience from the terminal and browser.
 It provides templating, chat persistence, and a local database.`,
-	Example: ` $ hermes chat --content "Hello world!"
+		Example: ` $ hermes chat --content "Hello world!"
 Hello! How can I assist you today?`,
-}
+	}
 
-func init() {
-	rootCmd.AddCommand(template.TemplateCommand)
-	rootCmd.AddCommand(serve.ServeCommand)
-	rootCmd.AddCommand(chat.ChatCommand)
-	rootCmd.AddCommand(version.VersionCommand)
-}
+	rootCmd.AddCommand(version.CreateVersionCommand(core))
+	rootCmd.AddCommand(serve.CreateServeCommand(core))
+	rootCmd.AddCommand(template.CreateTemplateCommand(core))
+	rootCmd.AddCommand(chat.CreateChatCommand(core))
 
-func Execute(core *core.Core) error {
-	ctx := context.WithValue(context.Background(), "core", core)
-	rootCmd.SetContext(ctx)
 	return rootCmd.Execute()
 }
