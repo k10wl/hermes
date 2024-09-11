@@ -8,7 +8,8 @@ import (
 	"sync"
 )
 
-const Version = "4.1.3"
+const Version = "4.2.0"
+const VersionDate = "2024-09-11"
 
 var DefaultDatabaseName = "main.db" // changes in ldflag for dev mode
 var appName = "hermes"              // changes in ldflag for dev mode
@@ -22,6 +23,7 @@ type Config struct {
 
 type Settings struct {
 	Version         string
+	VersionDate     string
 	AppName         string
 	ConfigDir       string
 	DatabaseDSN     string
@@ -52,6 +54,7 @@ func loadConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, e
 		return &c, err
 	}
 	c.Version = Version
+	c.VersionDate = VersionDate
 	c.Stdin = stdin
 	c.Stdoout = stdout
 	c.Stderr = stderr

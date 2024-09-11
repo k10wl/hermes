@@ -6,6 +6,7 @@ import (
 	"github.com/k10wl/hermes/cmd/chat"
 	"github.com/k10wl/hermes/cmd/serve"
 	"github.com/k10wl/hermes/cmd/template"
+	"github.com/k10wl/hermes/cmd/version"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/spf13/cobra"
 )
@@ -24,6 +25,7 @@ func init() {
 	rootCmd.AddCommand(template.TemplateCommand)
 	rootCmd.AddCommand(serve.ServeCommand)
 	rootCmd.AddCommand(chat.ChatCommand)
+	rootCmd.AddCommand(version.VersionCommand)
 }
 
 func Execute(core *core.Core) error {
