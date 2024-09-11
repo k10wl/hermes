@@ -45,13 +45,12 @@ NOTE: delimiters differ from golang text template:
 	Example: `$ hermes template upsert
 $ hermes template upsert -c "--{{define "template"}}(instruction)--{{end}}
 $ hermes template upsert --content "--{{define "template"}}(instruction)--{{end}} `,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		c := utils.GetCore(cmd)
 		config := c.GetConfig()
 		content, err := cmd.Flags().GetString("content")
 		if err != nil {
-			fmt.Fprintf(config.Stderr, "%v\n", err)
-			return
+			return err
 		}
 		if content == "" {
 			content, err = utils.OpenInEditor(
@@ -61,25 +60,20 @@ $ hermes template upsert --content "--{{define "template"}}(instruction)--{{end}
 				config.Stderr,
 			)
 			if content == upsertTemplate {
-				utils.LogFail(
-					config.Stderr,
-					"do not save example template, make some changes",
-				)
-				return
+				return fmt.Errorf("do not save example template, make some changes\n")
 			}
 			if err != nil {
-				utils.LogError(config.Stderr, err)
-				return
+				return err
 			}
 		}
 		if err := core.NewUpsertTemplateCommand(
 			c,
 			content,
 		).Execute(context.Background()); err != nil {
-			utils.LogError(config.Stderr, err)
-			return
+			return err
 		}
 		fmt.Fprintf(config.Stdoout, "Template upserted successfully\n")
+		return nil
 	},
 }
 

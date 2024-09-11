@@ -19,21 +19,22 @@ If name was not provided - returns list all template.`,
 	Example: `$ hermes template view
 $ hermes template view -n tldr
 $ hermes template view -n %`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		name, err := cmd.Flags().GetString("name")
 		if err != nil {
-			panic(err)
+			return err
 		}
 		c := utils.GetCore(cmd)
 		query := core.NewGetTemplatesByRegexp(c, name)
 		if err := query.Execute(cmd.Context()); err != nil {
-			panic(err)
+			return err
 		}
 		if len(query.Result) == 1 {
 			fmt.Fprintf(c.GetConfig().Stdoout, "%s", query.Result[0].Content)
-			return
+			return nil
 		}
 		utils.ListTemplates(query.Result, c.GetConfig().Stdoout)
+		return nil
 	},
 }
 

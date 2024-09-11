@@ -23,26 +23,20 @@ var ServeCommand = &cobra.Command{
 $ hermes serve --hostname 192.168.1.1 --port 8080
 $ hermes serve --open --latest`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		core := utils.GetCore(cmd)
-		config := core.GetConfig()
 		h, err := cmd.Flags().GetString("hostname")
 		if err != nil {
-			utils.LogError(config.Stderr, err)
 			return err
 		}
 		p, err := cmd.Flags().GetString("port")
 		if err != nil {
-			utils.LogError(config.Stderr, err)
 			return err
 		}
 		o, err := cmd.Flags().GetBool("open")
 		if err != nil {
-			utils.LogError(config.Stderr, err)
 			return err
 		}
 		l, err := cmd.Flags().GetBool("latest")
 		if err != nil {
-			utils.LogError(config.Stderr, err)
 			return err
 		}
 		port = p
@@ -68,9 +62,7 @@ $ hermes serve --open --latest`,
 			)
 		}
 		err := web.Serve(core, config, hostname, port)
-
 		if err != nil {
-			utils.LogError(config.Stderr, err)
 			return err
 		}
 		return nil

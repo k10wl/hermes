@@ -15,25 +15,20 @@ var deleteCommand = &cobra.Command{
 	Long: `Mark template with given name as deleted.
 Ensure that the template you wish to delete is not currently in use.
 Expects --name -n flag to indicate what template must be deleted.`,
-	Example: `$ hermes template delete -n tldr
-Template "test2" successfully deleted.
-
-$ hermes template delete -n tldr
-Failed. Template "test2" not found. `,
-	Run: func(cmd *cobra.Command, args []string) {
+	Example: `$ hermes template delete -n tldr`,
+	RunE: func(cmd *cobra.Command, args []string) error {
 		c := utils.GetCore(cmd)
 		config := c.GetConfig()
 		name, err := cmd.Flags().GetString("name")
 		if err != nil {
-			utils.LogError(config.Stderr, err)
-			return
+			return err
 		}
 		command := core.NewDeleteTemplateByName(c, name)
 		if err := command.Execute(context.Background()); err != nil {
-			utils.LogError(config.Stderr, err)
-			return
+			return err
 		}
 		fmt.Fprintf(config.Stdoout, "Template %q successfully deleted.\n", name)
+		return nil
 	},
 }
 

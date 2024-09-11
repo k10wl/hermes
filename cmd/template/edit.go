@@ -24,29 +24,25 @@ Behavior:
 3. If the edited content is invalid, an error will be returned.`,
 	Example: `$ hermes template edit --name tldr
 $ hermes template edit --name tldr --clone`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		c := utils.GetCore(cmd)
 		config := c.GetConfig()
 		name, err := cmd.Flags().GetString("name")
 		if err != nil {
-			utils.LogError(config.Stderr, err)
-			return
+			return err
 		}
 		clone, err := cmd.Flags().GetBool("clone")
 		if err != nil {
-			utils.LogError(config.Stderr, err)
-			return
+			return err
 		}
 		query := core.NewGetTemplatesByNamesQuery(c, []string{name})
 		if err := query.Execute(ctx); err != nil {
-			utils.LogError(config.Stderr, err)
-			return
+			return err
 		}
 		if len(query.Result) != 1 {
-			utils.LogFail(config.Stderr, fmt.Sprintf("template %q not found", name))
-			return
+			return fmt.Errorf("template %q not found\n", name)
 		}
 		editedContent, err := utils.OpenInEditor(
 			query.Result[0].Content,
@@ -55,12 +51,10 @@ $ hermes template edit --name tldr --clone`,
 			config.Stderr,
 		)
 		if err != nil {
-			utils.LogError(config.Stderr, err)
-			return
+			return err
 		}
 		if editedContent == query.Result[0].Content {
-			utils.LogFail(config.Stderr, "edit is identical to original")
-			return
+			return fmt.Errorf("edit is identical to original\n")
 		}
 		if err := core.NewEditTemplateByName(
 			c,
@@ -68,14 +62,14 @@ $ hermes template edit --name tldr --clone`,
 			editedContent,
 			clone,
 		).Execute(ctx); err != nil {
-			utils.LogError(config.Stderr, err)
-			return
+			return err
 		}
 		if clone {
 			fmt.Fprintf(config.Stdoout, "Template cloned and edited successfully\n")
-			return
+			return nil
 		}
 		fmt.Fprintf(config.Stdoout, "Template edited successfully\n")
+		return nil
 	},
 }
 
