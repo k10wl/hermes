@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func CreateChatCommand(c *core.Core) *cobra.Command {
+func CreateChatCommand(c *core.Core, completion ai_clients.CompletionFn) *cobra.Command {
 	stdin := ""
 	aiParameters := ai_clients.Parameters{}
 
@@ -67,6 +67,7 @@ $ hermes chat \
 				aiParameters *ai_clients.Parameters,
 				content string,
 				template string,
+				completion ai_clients.CompletionFn,
 			) error
 			if ok {
 				complete = completeInChat
@@ -79,7 +80,7 @@ $ hermes chat \
 			if strings.Trim(content, " \n\t") == "" {
 				return fmt.Errorf("input message was empty")
 			}
-			return complete(c, &aiParameters, content, template)
+			return complete(c, &aiParameters, content, template, completion)
 		},
 	}
 
@@ -123,6 +124,7 @@ func completeInChat(
 	aiParameters *ai_clients.Parameters,
 	content string,
 	template string,
+	completion ai_clients.CompletionFn,
 ) error {
 	config := c.GetConfig()
 	chatQuery := core.LatestChatQuery{Core: c}
@@ -136,7 +138,7 @@ func completeInChat(
 		content,
 		template,
 		aiParameters,
-		ai_clients.Complete,
+		completion,
 	)
 	err := cmd.Execute(config.ShutdownContext)
 	if err != nil {
@@ -151,6 +153,7 @@ func createChatAndComplete(
 	aiParameters *ai_clients.Parameters,
 	content string,
 	template string,
+	completion ai_clients.CompletionFn,
 ) error {
 	config := c.GetConfig()
 	cmd := core.NewCreateChatAndCompletionCommand(
