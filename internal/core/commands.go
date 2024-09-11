@@ -197,7 +197,7 @@ func NewDeleteTemplateByName(core *Core, name string) *DeleteTemplateByName {
 func (c DeleteTemplateByName) Execute(ctx context.Context) error {
 	ok, err := c.core.db.DeleteTemplateByName(ctx, c.name)
 	if !ok {
-		return fmt.Errorf("did not remove any records")
+		return fmt.Errorf("Failed. Template %q not found.", c.name)
 	}
 	return err
 }
@@ -206,13 +206,20 @@ type EditTemplateByName struct {
 	core    *Core
 	name    string
 	content string
+	clone   bool
 }
 
-func NewEditTemplateByName(core *Core, name string, content string) *EditTemplateByName {
+func NewEditTemplateByName(
+	core *Core,
+	name string,
+	content string,
+	clone bool,
+) *EditTemplateByName {
 	return &EditTemplateByName{
 		core:    core,
 		name:    name,
 		content: content,
+		clone:   clone,
 	}
 }
 
@@ -227,12 +234,41 @@ func (c EditTemplateByName) Execute(ctx context.Context) error {
 	if len(names) != 1 {
 		return fmt.Errorf("content contains multiple templates")
 	}
-	if names[0] != c.name {
-		return fmt.Errorf("content has different name than original")
+	newName := names[0]
+	if newName != c.name && c.clone {
+		return c.handleClone(ctx, newName, c.content)
+	}
+	return c.handleEdit(ctx, newName)
+}
+
+func (c EditTemplateByName) handleClone(ctx context.Context, newName string, content string) error {
+	templatesQuery := NewGetTemplatesByNamesQuery(c.core, []string{newName})
+	if err := templatesQuery.Execute(ctx); err != nil {
+		return err
+	}
+	if len(templatesQuery.Result) != 0 {
+		return fmt.Errorf("template with given name already exists")
+	}
+	return NewUpsertTemplateCommand(c.core, content).Execute(ctx)
+}
+
+func (c EditTemplateByName) handleEdit(ctx context.Context, newName string) error {
+	if newName != c.name {
+		return c.renameAndDelete(ctx)
 	}
 	ok, err := c.core.db.EditTemplateByName(ctx, c.name, c.content)
 	if !ok {
 		return fmt.Errorf("did not update template, please make sure it exists")
 	}
 	return err
+}
+
+func (c EditTemplateByName) renameAndDelete(ctx context.Context) error {
+	if err := NewUpsertTemplateCommand(
+		c.core,
+		c.content,
+	).Execute(ctx); err != nil {
+		return err
+	}
+	return NewDeleteTemplateByName(c.core, c.name).Execute(ctx)
 }

@@ -21,9 +21,9 @@ var assetsEmbed embed.FS
 //go:embed views
 var viewsEmbed embed.FS
 
-func Serve(core *core.Core, config *settings.Config) error {
+func Serve(core *core.Core, config *settings.Config, hostname string, port string) error {
 	server := NewServer(core)
-	addr := fmt.Sprintf("%s:%s", config.Host, config.Port)
+	addr := BuildAddr(hostname, port)
 	httpServer := http.Server{
 		Addr:    addr,
 		Handler: server,
@@ -68,7 +68,6 @@ func NewTemplate() *template.Template {
 }
 
 func OpenBrowser(url string) {
-	return
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "linux":
@@ -89,10 +88,10 @@ func OpenBrowser(url string) {
 	}
 }
 
-func GetUrl(addr string, c *core.Core, config *settings.Config) string {
+func GetUrl(addr string, c *core.Core, config *settings.Config, latest bool) string {
 	var str strings.Builder
 	str.WriteString(fmt.Sprintf("http://%s", addr))
-	if !config.Last && config.Content == "" {
+	if !latest {
 		return str.String()
 	}
 	q := core.LatestChatQuery{
@@ -105,4 +104,8 @@ func GetUrl(addr string, c *core.Core, config *settings.Config) string {
 	}
 	str.WriteString(fmt.Sprintf("/chats/%d", q.Result.ID))
 	return str.String()
+}
+
+func BuildAddr(hostname string, port string) string {
+	return fmt.Sprintf("%s:%s", hostname, port)
 }

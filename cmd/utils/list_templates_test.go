@@ -1,9 +1,10 @@
-package cli
+package utils_test
 
 import (
 	"strings"
 	"testing"
 
+	"github.com/k10wl/hermes/cmd/utils"
 	"github.com/k10wl/hermes/internal/models"
 )
 
@@ -47,7 +48,7 @@ func TestListTemplates(t *testing.T) {
 	sb := &strings.Builder{}
 	for _, test := range table {
 		sb.Reset()
-		err := listTemplates(test.input, sb)
+		err := utils.ListTemplates(test.input, sb)
 		if err != nil {
 			t.Errorf("%q - unexpected error: %v\n\n", test.name, err)
 			continue

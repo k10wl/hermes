@@ -8,10 +8,9 @@ import (
 	"sync"
 )
 
-const Version = "3.4.0"
-const DefaultHostname = "127.0.0.1"
+const Version = "4.2.5"
+const VersionDate = "2024-09-11"
 
-var DefaultPort = "8123"            // changes in ldflag for dev mode
 var DefaultDatabaseName = "main.db" // changes in ldflag for dev mode
 var appName = "hermes"              // changes in ldflag for dev mode
 var config *Config
@@ -20,16 +19,13 @@ var once sync.Once
 type Config struct {
 	Settings
 	Providers
-	TemplateFlags
-	CLIFlags
-	WebFlags
 }
 
 type Settings struct {
 	Version         string
+	VersionDate     string
 	AppName         string
 	ConfigDir       string
-	DatabaseName    string
 	DatabaseDSN     string
 	ShutdownContext context.Context
 	Stdin           io.Reader
@@ -40,28 +36,6 @@ type Settings struct {
 type Providers struct {
 	OpenAIKey    string
 	AnthropicKey string
-}
-
-type CLIFlags struct {
-	Model       string
-	Content     string
-	Last        bool
-	MaxTokens   *int64
-	Temperature *float64
-}
-
-type WebFlags struct {
-	Web  bool
-	Host string
-	Port string
-}
-
-type TemplateFlags struct {
-	Template       string
-	ListTemplates  string
-	UpsertTemplate string
-	DeleteTemplate string
-	EditTemplate   string
 }
 
 func GetConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, error) {
@@ -75,12 +49,12 @@ func GetConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, er
 func loadConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, error) {
 	var c Config
 	c.AppName = appName
-	loadFlags(&c)
 	loadEnv(&c)
-	if err := prepareDBData(&c); err != nil {
+	if err := prepareDNS(&c); err != nil {
 		return &c, err
 	}
 	c.Version = Version
+	c.VersionDate = VersionDate
 	c.Stdin = stdin
 	c.Stdoout = stdout
 	c.Stderr = stderr
@@ -88,9 +62,8 @@ func loadConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, e
 	return &c, nil
 }
 
-func prepareDBData(c *Config) error {
-	if c.DatabaseName == ":memory:" {
-		c.DatabaseDSN = c.DatabaseName
+func prepareDNS(c *Config) error {
+	if c.DatabaseDSN == ":memory:" || c.DatabaseDSN != "" {
 		return nil
 	}
 	sharedConfigDir, err := os.UserConfigDir()
@@ -99,7 +72,7 @@ func prepareDBData(c *Config) error {
 	}
 	hermesConfigDir := path.Join(sharedConfigDir, c.AppName)
 	c.ConfigDir = hermesConfigDir
-	c.DatabaseDSN = path.Join(hermesConfigDir, c.DatabaseName)
+	c.DatabaseDSN = path.Join(hermesConfigDir, "main.db")
 	err = ensureExists(hermesConfigDir)
 	return err
 }

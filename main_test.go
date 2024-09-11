@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/k10wl/hermes/internal/ai_clients"
-	"github.com/k10wl/hermes/internal/cli"
 	"github.com/k10wl/hermes/internal/settings"
 )
 
@@ -55,7 +54,7 @@ func TestApp(t *testing.T) {
 					return c, err
 				}
 			},
-			expected: expected{stdout: cli.GetHelpString(settings.Version) + "\n"},
+			expected: expected{stdout: ""},
 		},
 
 		{
@@ -68,7 +67,6 @@ func TestApp(t *testing.T) {
 				) (*settings.Config, error) {
 					c, err := oldConfig(stdin, stdout, stderr)
 					c.DatabaseDSN = ":memory:"
-					c.Content = "complete prompt"
 					return c, err
 				}
 			},
@@ -84,10 +82,7 @@ func TestApp(t *testing.T) {
 					stderr io.Writer,
 				) (*settings.Config, error) {
 					c, err := oldConfig(stdin, stdout, stderr)
-					c.Port = "8124"
 					c.DatabaseDSN = ":memory:"
-					c.Content = "complete prompt"
-					c.Web = true
 					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 					defer cancel()
 					c.ShutdownContext = ctx
@@ -110,7 +105,7 @@ func TestApp(t *testing.T) {
 
 	for _, test := range table {
 		test.prepare()
-		err := run(&stdin, &stdout, &stderr)
+		_, err := run(&stdin, &stdout, &stderr)
 		if test.shouldError && err == nil {
 			t.Errorf("Completed, but expected error: %s", test.name)
 		}

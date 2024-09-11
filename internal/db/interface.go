@@ -49,4 +49,6 @@ type Client interface {
 		name string,
 		content string,
 	) (bool, error)
+
+	Close() error
 }
