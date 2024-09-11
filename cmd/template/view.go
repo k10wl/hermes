@@ -11,11 +11,8 @@ import (
 var viewCommand = &cobra.Command{
 	Use:   "view",
 	Short: "Display the contents of a specified template.",
-	Long: `Retreives template from database and shows what is stored.
-Accepts optional --name -n param - string with SQL regexp for name of template.
-If only one stored template matches regexp string - shows content.
-If regexp has multiple matches - returns list of matches.
-If name was not provided - returns list all template.`,
+	Long: `Retrieves template from the database and shows what is stored. Accepts an optional ` + "`--name`" + ` ` + "(`-n`)" + ` parameter - a string with SQL regex for the name of the template. If only one stored template matches the regex string, it shows the content. If the regex has multiple matches, it returns a list of matches. If the name was not provided, it returns a list of all templates.
+`,
 	Example: `$ hermes template view
 $ hermes template view -n tldr
 $ hermes template view -n %`,

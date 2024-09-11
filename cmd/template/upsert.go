@@ -34,14 +34,9 @@ Quick info about template capabilities:
 var upsertCommand = &cobra.Command{
 	Use:   `upsert`,
 	Short: "Update an existing template or create a new one if it does not exist.",
-	Long: `Receives template, parses, verifies and saves content into database.
-If -c (--content) flag is not provided - default text editor will be opened.
-Name of the template will derive from definition/block name.
-Template must comply golang text template rules.
-NOTE: delimiters differ from golang text template:
-    - left delimiter  - '--{{';
-    - right delimiter - '}}';
-`,
+	Long: `Receives template, parses, verifies, and saves content into the database. If the ` + "`--content`" + ` (` + "`-c`" + `) flag is not provided, the default text editor will be opened. The name of the template will derive from the definition/block name. The template must comply with Golang text template rules. NOTE: Delimiters differ from Golang text template:
+    - Left delimiter - '--{{';
+    - Right delimiter - '}}';`,
 	Example: `$ hermes template upsert
 $ hermes template upsert -c "--{{define "template"}}(instruction)--{{end}}
 $ hermes template upsert --content "--{{define "template"}}(instruction)--{{end}} `,
@@ -82,6 +77,6 @@ func init() {
 		"content",
 		"c",
 		"",
-		"template content, if not provided - text editor will be opened",
+		"template content; if not provided, the text editor will be opened",
 	)
 }

@@ -15,8 +15,8 @@ var rootCmd = &cobra.Command{
 	Use:   "hermes",
 	Short: "Tool for communication with LLM and completion instructions management",
 	Long: `Host-based Extensible Response Management System
-hermes is a tool created to boost AI user experience from terminal and browser.
-Provides templating, chat persistense and local database.`,
+Hermes is a tool created to boost AI user experience from the terminal and browser.
+It provides templating, chat persistence, and a local database.`,
 	Example: ` $ hermes chat --content "Hello world!"
 Hello! How can I assist you today?`,
 }

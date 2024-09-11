@@ -10,7 +10,6 @@ import (
 var VersionCommand = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of hermes",
-	Long:  "All software has versions. This is Hugo's",
 	Run: func(cmd *cobra.Command, args []string) {
 		c := utils.GetCore(cmd)
 		fmt.Fprintf(

@@ -13,15 +13,16 @@ import (
 var editCommand = &cobra.Command{
 	Use:   "edit",
 	Short: "Modify an existing template by its name",
-	Long: `Allows to edit stored template. This command finds a template with the name provided in the flag --name (-n) and opens your preferred editor with its content. Upon saving and closing file edit will be stored in database.
+	Long: `Allows you to edit the stored template. This command finds a template with the name provided in the flag --name (-n) and opens your preferred editor with its content. Upon saving and closing the file, the edit will be stored in the database.
 
 Behavior:
 1. If the edited content is identical to the original, no changes are made.
 2. If the edited template's name differs:
     - If ` + "`--clone`" + ` is true and the new name is unique, a new template is created, retaining the original.
-    - If ` + "`--clone`" + ` is false, and new name is unique, template gets renamed.
+    - If ` + "`--clone`" + ` is false, and the new name is unique, the template gets renamed.
     - If a name conflict arises, an error will be returned.
-3. If the edited content is invalid, an error will be returned.`,
+3. If the edited content is invalid, an error will be returned.
+`,
 	Example: `$ hermes template edit --name tldr
 $ hermes template edit --name tldr --clone`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -78,7 +79,7 @@ func init() {
 		"name",
 		"n",
 		"",
-		"exact name of template to be edited",
+		"exact name of the template to be edited",
 	)
 	err := editCommand.MarkFlagRequired("name")
 	if err != nil {

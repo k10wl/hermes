@@ -10,11 +10,9 @@ import (
 )
 
 var deleteCommand = &cobra.Command{
-	Use:   "delete",
-	Short: "Remove a template by the specified name.",
-	Long: `Mark template with given name as deleted.
-Ensure that the template you wish to delete is not currently in use.
-Expects --name -n flag to indicate what template must be deleted.`,
+	Use:     "delete",
+	Short:   "Remove a template by the specified name.",
+	Long:    `Mark the template with the given name as deleted. Ensure that the template you wish to delete is not currently in use. It expects the ` + "`--name`" + ` or ` + "`-n`" + ` flag to indicate which template must be deleted.`,
 	Example: `$ hermes template delete -n tldr`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := utils.GetCore(cmd)
@@ -37,7 +35,7 @@ func init() {
 		"name",
 		"n",
 		"",
-		"exact name of template to be deleted **required**",
+		"exact name of the template to be deleted",
 	)
 	err := deleteCommand.MarkFlagRequired("name")
 	if err != nil {
