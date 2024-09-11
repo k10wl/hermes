@@ -1,6 +1,8 @@
 package serve
 
 import (
+	"fmt"
+
 	"github.com/k10wl/hermes/cmd/utils"
 	"github.com/k10wl/hermes/internal/web"
 	"github.com/spf13/cobra"
@@ -43,17 +45,16 @@ $ hermes serve --open --latest`,
 			utils.LogError(config.Stderr, err)
 			return err
 		}
-		if l && !o {
-			utils.LogFail(config.Stderr, "cannot use --latest without --open")
-			return err
-		}
 		port = p
 		hostname = h
 		open = o
 		latest = l
 		return nil
 	},
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if latest && !open {
+			return fmt.Errorf("cannot use --latest without --open\n")
+		}
 		core := utils.GetCore(cmd)
 		config := core.GetConfig()
 		if open {
@@ -67,9 +68,12 @@ $ hermes serve --open --latest`,
 			)
 		}
 		err := web.Serve(core, config, hostname, port)
+
 		if err != nil {
 			utils.LogError(config.Stderr, err)
+			return err
 		}
+		return nil
 	},
 }
 

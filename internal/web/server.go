@@ -91,7 +91,7 @@ func OpenBrowser(url string) {
 func GetUrl(addr string, c *core.Core, config *settings.Config, latest bool) string {
 	var str strings.Builder
 	str.WriteString(fmt.Sprintf("http://%s", addr))
-	if latest {
+	if !latest {
 		return str.String()
 	}
 	q := core.LatestChatQuery{
