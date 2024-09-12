@@ -252,7 +252,7 @@ func getTemplatesByNames(
 
 const getTemplatesByRegexpQuery = `
 SELECT id, name, content, created_at, updated_at, deleted_at FROM templates
-WHERE name LIKE $1;
+WHERE name LIKE $1 AND deleted_at IS NULL;
 `
 
 func getTemplatesByRegexp(
@@ -285,7 +285,10 @@ func getTemplatesByRegexp(
 
 }
 
-const deleteTemplateByNameQuery = `DELETE FROM templates WHERE name = $1;`
+const deleteTemplateByNameQuery = `
+UPDATE templates
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE name = $1;`
 
 func deleteTemplateByName(
 	executor execute,
@@ -302,7 +305,9 @@ func deleteTemplateByName(
 
 const editTemplateByNameQuery = `
 UPDATE templates
-SET content = ?
+SET 
+    content = ?,
+    updated_at = ?
 WHERE name = ?;
 `
 
