@@ -127,7 +127,7 @@ export class ServerEvents {
         });
         webSocket.addEventListener("message", (messageEvent) => {
           try {
-            const event = ServerEvent.parse(messageEvent);
+            const event = ServerEvent.parse(messageEvent.data);
             ServerEvents.#notifySubscribers(event);
           } catch (error) {
             ServerEvents.#log("failed to hanlde message", error, messageEvent);
