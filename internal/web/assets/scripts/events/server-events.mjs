@@ -1,10 +1,35 @@
 import { config } from "/assets/scripts/config.mjs";
 import { currentUrl } from "/assets/scripts/utils/current-url.mjs";
 
+export class ServerEvent {
+  /** @type {string} */
+  type;
+  /** @param {string} type - The type of the event. */
+  constructor(type) {
+    this.type = type;
+  }
+
+  /**
+   * Parses a raw data string into a ServerEvent instance.
+   * @param {unknown} data - The raw data string from the WebSocket.
+   * @returns {ServerEvent} - An instance of ServerEvent.
+   * @throws {Error} - Throws an error if the data structure is invalid.
+   */
+  static parse(data) {
+    if (typeof data !== "string") {
+      throw new Error("Invalid data type, expected a string.");
+    }
+    const obj = JSON.parse(data);
+    if (typeof obj !== "object" || obj === null || !obj.type) {
+      throw new Error(`Invalid message: ${data}`);
+    }
+    return new ServerEvent(obj.type);
+  }
+}
+
 export class ServerEvents {
-  /** @typedef {{type: string, payload: unknown}} ServerEvent */
   /** @typedef {{once?: boolean}} options */
-  /** @typedef {(data: {type: string, payload: unknown}) => void} callback */
+  /** @typedef {(data: ServerEvent) => void} callback */
   /** @typedef {() => void} unsubscribe */
   /** @type WebSocket | null */
   static #connection = null;
@@ -102,7 +127,8 @@ export class ServerEvents {
         });
         webSocket.addEventListener("message", (messageEvent) => {
           try {
-            ServerEvents.#receiveEvent(messageEvent.data);
+            const event = ServerEvent.parse(messageEvent);
+            ServerEvents.#notifySubscribers(event);
           } catch (error) {
             ServerEvents.#log("failed to hanlde message", error, messageEvent);
           }
@@ -112,17 +138,9 @@ export class ServerEvents {
     );
   }
 
-  /** @param {unknown} data  */
-  static #receiveEvent(data) {
-    if (typeof data !== "string") {
-      return;
-    }
-    /** @type ServerEvent */
-    const obj = JSON.parse(data);
-    if (!("type" in obj)) {
-      throw new Error("bad structure");
-    }
-    const listeners = ServerEvents.#listeners.get(obj.type);
+  /** @param {ServerEvent} event */
+  static #notifySubscribers(event) {
+    const listeners = ServerEvents.#listeners.get(event.type);
     if (!listeners) {
       return;
     }
@@ -131,9 +149,9 @@ export class ServerEvents {
       if (!handler) {
         continue;
       }
-      handler.callback(obj);
+      handler.callback(event);
       if (handler.options.once) {
-        ServerEvents.off(obj.type, handler.callback);
+        ServerEvents.off(event.type, handler.callback);
       }
     }
   }
