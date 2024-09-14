@@ -7,17 +7,30 @@ export class ServerEvents {
   /** @typedef {(data: {type: string, payload: unknown}) => void} callback */
   /** @typedef {() => void} unsubscribe */
   /** @type WebSocket | null */
-  #connection = null;
+  static #connection = null;
   /** @type Map<string, {callback: callback, options: options}[]> */
-  #listeners = new Map();
-  #reconnectTimeout = 1000;
+  static #listeners = new Map();
+  static #reconnectTimeout = 1000;
+  /** @type (() => void)[] */
+  static #onClose = [];
+  /** @type (() => void)[] */
+  static #onOpen = [];
 
-  /**
-   * @param {string} addr
-   */
-  constructor(addr) {
-    this.#connection = new WebSocket(addr);
-    this.#attach(this.#connection);
+  /** @param {string} addr */
+  static __init(addr) {
+    if (ServerEvents.#connection !== null) {
+      throw new Error("do not reinitialize server events");
+    }
+    let clientId = sessionStorage.getItem("ws") ?? crypto.randomUUID();
+    window.addEventListener("beforeunload", () => {
+      sessionStorage.setItem("ws", clientId);
+    });
+    sessionStorage.removeItem("ws");
+
+    const url = new URL(addr);
+    url.searchParams.set("id", clientId);
+    ServerEvents.#connection = new WebSocket(url.toString());
+    ServerEvents.#addListeners(ServerEvents.#connection);
   }
 
   /**
@@ -26,22 +39,22 @@ export class ServerEvents {
    * @param {options} options
    * @returns {unsubscribe} unsubscribe
    */
-  on(type, callback, options = {}) {
-    let events = this.#listeners.get(type);
+  static on(type, callback, options = {}) {
+    let events = ServerEvents.#listeners.get(type);
     if (!events) {
       events = [];
-      this.#listeners.set(type, events);
+      ServerEvents.#listeners.set(type, events);
     }
     events.push({ callback, options });
-    return () => this.off(type, callback);
+    return () => ServerEvents.off(type, callback);
   }
 
   /**
    * @param {string} type
    * @param {(data: ServerEvent) => void} callback
    */
-  off(type, callback) {
-    let events = this.#listeners.get(type);
+  static off(type, callback) {
+    let events = ServerEvents.#listeners.get(type);
     if (!events) {
       return;
     }
@@ -54,26 +67,44 @@ export class ServerEvents {
     events.splice(callbackIndex, 1);
   }
 
+  /** @param {() => void} callback  */
+  static onOpen(callback) {
+    ServerEvents.#onOpen.push(callback);
+  }
+
+  /** @param {() => void} callback  */
+  static onClose(callback) {
+    ServerEvents.#onClose.push(callback);
+  }
+
   /** @param {WebSocket} webSocket */
-  #attach(webSocket) {
+  static #addListeners(webSocket) {
     webSocket.addEventListener(
       "open",
       () => {
-        this.#log("connected");
-
+        ServerEvents.#log("connected");
+        for (let i = 0; i < ServerEvents.#onOpen.length; i++) {
+          ServerEvents.#onOpen[i]?.();
+        }
         webSocket.addEventListener("close", (closeEvent) => {
-          this.#log("connection closed", closeEvent);
-          this.#reconenct();
+          ServerEvents.#log("connection closed", closeEvent);
+          ServerEvents.#reconenct();
+          for (let i = 0; i < ServerEvents.#onClose.length; i++) {
+            ServerEvents.#onClose[i]?.();
+          }
         });
         webSocket.addEventListener("err", (errorEvent) => {
-          this.#log("connection error", errorEvent);
-          this.#reconenct();
+          ServerEvents.#log("connection error", errorEvent);
+          ServerEvents.#reconenct();
+          for (let i = 0; i < ServerEvents.#onClose.length; i++) {
+            ServerEvents.#onClose[i]?.();
+          }
         });
         webSocket.addEventListener("message", (messageEvent) => {
           try {
-            this.#receiveEvent(messageEvent.data);
+            ServerEvents.#receiveEvent(messageEvent.data);
           } catch (error) {
-            this.#log("failed to hanlde message", error, messageEvent);
+            ServerEvents.#log("failed to hanlde message", error, messageEvent);
           }
         });
       },
@@ -82,7 +113,7 @@ export class ServerEvents {
   }
 
   /** @param {unknown} data  */
-  #receiveEvent(data) {
+  static #receiveEvent(data) {
     if (typeof data !== "string") {
       return;
     }
@@ -91,7 +122,7 @@ export class ServerEvents {
     if (!("type" in obj)) {
       throw new Error("bad structure");
     }
-    const listeners = this.#listeners.get(obj.type);
+    const listeners = ServerEvents.#listeners.get(obj.type);
     if (!listeners) {
       return;
     }
@@ -102,36 +133,42 @@ export class ServerEvents {
       }
       handler.callback(obj);
       if (handler.options.once) {
-        this.off(obj.type, handler.callback);
+        ServerEvents.off(obj.type, handler.callback);
       }
     }
   }
 
   /** @param {any[]} data  */
-  #log(...data) {
+  static #log(...data) {
     console.log(`[ServerEvents]`, ...data);
   }
 
   /** @throws if connection is null */
-  async #reconenct() {
-    if (this.#connection === null) {
+  static async #reconenct() {
+    if (ServerEvents.#connection === null) {
       throw new Error("attempt to reconnect to non existing socket");
     }
-    if (this.#connection.readyState !== WebSocket.CLOSED) {
+    if (ServerEvents.#connection.readyState !== WebSocket.CLOSED) {
       return;
     }
     try {
-      this.#log("connection lost, reconnecting...");
+      ServerEvents.#log("connection lost, reconnecting...");
       const res = await fetch(currentUrl(config.server.pathnames.healthCheck));
       if (res.status == 200) {
-        this.#connection = new WebSocket(this.#connection?.url);
-        this.#attach(this.#connection);
+        const url = new URL(ServerEvents.#connection.url);
+        url.searchParams.set("reconnect", "1");
+        ServerEvents.#connection = new WebSocket(url.toString());
+        ServerEvents.#addListeners(ServerEvents.#connection);
         return;
       }
-      this.#reconenct();
+      ServerEvents.#reconenct();
     } catch {
-      await new Promise((r) => setTimeout(r, this.#reconnectTimeout));
-      this.#reconenct();
+      await new Promise((resolve) =>
+        setTimeout(resolve, ServerEvents.#reconnectTimeout),
+      );
+      ServerEvents.#reconenct();
     }
   }
 }
+
+ServerEvents.__init(currentUrl(config.server.pathnames.webSocket));

@@ -10,7 +10,7 @@ export const config = {
   server: {
     pathnames: {
       healthCheck: apiPathnameV1("health-check"),
-      events: apiPathnameV1("ws"),
+      webSocket: apiPathnameV1("ws"),
     },
   },
 };

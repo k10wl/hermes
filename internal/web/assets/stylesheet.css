@@ -36,7 +36,7 @@ main {
 
 #chats-list {
   max-height: 100vh;
-  overflow: scroll;
+  overflow: auto;
   display: grid;
   border-right: 1px solid var(--bg-1);
   grid-auto-rows: max-content;
@@ -65,7 +65,7 @@ main {
 
 #chat-content {
   max-height: 100vh;
-  overflow: scroll;
+  overflow: auto;
   display: grid;
   grid-template-rows: 1fr auto;
 }
@@ -73,7 +73,7 @@ main {
 #messages-list-wrapper {
   max-height: 100%;
   background: var(--bg-1);
-  overflow: scroll;
+  overflow: auto;
   display: flex;
   flex-direction: column-reverse;
 }
