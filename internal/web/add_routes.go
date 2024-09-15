@@ -15,6 +15,7 @@ func addRoutes(mux *http.ServeMux, core *core.Core, hub *Hub, t *template.Templa
 	mux.Handle("/assets/", handleAssets())
 	mux.Handle("PUT /settings", handlePutSettings(core))
 
-	mux.Handle("/api/v1/ws", handleServeWebSockets(core, hub))
 	mux.Handle("/api/v1/health-check", handleCheckHeath())
+	mux.Handle("/api/v1/update", handleWebhook(hub))
+	mux.Handle("/api/v1/ws", handleServeWebSockets(core, hub))
 }

@@ -51,6 +51,12 @@ type Template struct {
 	Timestamps
 }
 
+type ActiveSession struct {
+	ID          int64  `json:"id"`
+	Address     string `json:"address"`
+	DatabaseDNS string `json:"database_dns"`
+}
+
 // if you used this anywhere (any-fucking-where) outside of test function - you fucked up
 func (t *Timestamps) TimestampsToNilForTest__() {
 	t.CreatedAt = nil

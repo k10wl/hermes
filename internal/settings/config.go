@@ -8,8 +8,8 @@ import (
 	"sync"
 )
 
-const Version = "4.2.6"
-const VersionDate = "2024-09-11"
+const Version = "4.3.0"
+const VersionDate = "2024-09-15"
 
 var DefaultDatabaseName = "main.db" // changes in ldflag for dev mode
 var appName = "hermes"              // changes in ldflag for dev mode

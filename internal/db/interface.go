@@ -7,6 +7,8 @@ import (
 )
 
 type Client interface {
+	Close() error
+
 	CreateChat(context.Context, string) (*models.Chat, error)
 	CreateMessage(
 		ctx context.Context,
@@ -50,5 +52,7 @@ type Client interface {
 		content string,
 	) (bool, error)
 
-	Close() error
+	CreateActiveSession(*models.ActiveSession) error
+	RemoveActiveSession(*models.ActiveSession) error
+	GetActiveSessionByDatabaseDNS(string) (*models.ActiveSession, error)
 }

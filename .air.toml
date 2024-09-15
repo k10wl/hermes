@@ -6,7 +6,7 @@ tmp_dir = "tmp"
   bin = "./tmp/main"
   cmd = "go build -ldflags \"-X github.com/k10wl/hermes/internal/settings.appName=hermes-dev -X github.com/k10wl/hermes/internal/settings.DefaultPort=8124\" -o ./tmp/main ./main.go"
   delay = 0
-  exclude_dir = ["tmp", "dist"]
+  exclude_dir = ["tmp", "dist", "internal/web/node_modules"]
   exclude_file = []
   exclude_regex = ["_test.go"]
   exclude_unchanged = false

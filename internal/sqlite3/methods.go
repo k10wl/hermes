@@ -105,3 +105,15 @@ func (s SQLite3) EditTemplateByName(
 ) (bool, error) {
 	return editTemplateByName(s.db.ExecContext, ctx, name, content)
 }
+
+func (s SQLite3) CreateActiveSession(activeSession *models.ActiveSession) error {
+	return createActiveSession(s.db.ExecContext, context.Background(), activeSession)
+}
+
+func (s SQLite3) RemoveActiveSession(activeSession *models.ActiveSession) error {
+	return removeActiveSession(s.db.ExecContext, context.Background(), activeSession)
+}
+
+func (s SQLite3) GetActiveSessionByDatabaseDNS(databaseDNS string) (*models.ActiveSession, error) {
+	return getActiveSession(s.db.QueryRowContext, context.Background(), databaseDNS)
+}

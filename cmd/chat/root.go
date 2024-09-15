@@ -3,6 +3,7 @@ package chat
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -12,6 +13,27 @@ import (
 	"github.com/k10wl/hermes/internal/models"
 	"github.com/spf13/cobra"
 )
+
+func notifyActiveSessions(c *core.Core) {
+	config := c.GetConfig()
+	db := c.GetDB()
+	activeSession, err := db.GetActiveSessionByDatabaseDNS(config.DatabaseDSN)
+	if err != nil {
+		return
+	}
+	req, err := http.NewRequest(
+		"GET",
+		"http://"+activeSession.Address+"/api/v1/update",
+		nil,
+	)
+	if err != nil {
+		return
+	}
+	if _, err = http.DefaultClient.Do(req); err != nil {
+		db.RemoveActiveSession(activeSession) // unreachable, remove active session
+		return
+	}
+}
 
 func CreateChatCommand(c *core.Core, completion ai_clients.CompletionFn) *cobra.Command {
 	stdin := ""
@@ -80,7 +102,12 @@ $ hermes chat \
 			if strings.Trim(content, " \n\t") == "" {
 				return fmt.Errorf("input message was empty")
 			}
-			return complete(c, &aiParameters, content, template, completion)
+			err = complete(c, &aiParameters, content, template, completion)
+			if err != nil {
+				return err
+			}
+			notifyActiveSessions(c)
+			return nil
 		},
 	}
 
