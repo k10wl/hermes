@@ -7,22 +7,17 @@ function hasOfflineSufix() {
 }
 
 function onOnline() {
-  if (!hasOfflineSufix()) {
-    return;
-  }
-  window.document.body.parentElement?.classList.remove("offline");
-  window.document.title.replace(OFFLINE_SUFIX, "");
+  window.document.title = window.document.title.replace(OFFLINE_SUFIX, "");
 }
 
 function onOffline() {
   if (hasOfflineSufix()) {
     return;
   }
-  window.document.body.parentElement?.classList.add("offline");
   window.document.title += OFFLINE_SUFIX;
 }
 
 export function initConnectionIndicator() {
-  ServerEvents.onClose(onOnline);
+  ServerEvents.onOpen(onOnline);
   ServerEvents.onClose(onOffline);
 }

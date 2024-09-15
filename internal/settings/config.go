@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-const Version = "4.3.1"
+const Version = "4.3.2"
 const VersionDate = "2024-09-15"
 
 var DefaultDatabaseName = "main.db" // changes in ldflag for dev mode

@@ -91,11 +91,20 @@ export class ServerEvents {
 
   /** @param {() => void} callback  */
   static onOpen(callback) {
+    if (ServerEvents.#connection?.readyState === WebSocket.OPEN) {
+      callback();
+    }
     ServerEvents.#onOpen.push(callback);
   }
 
   /** @param {() => void} callback  */
   static onClose(callback) {
+    if (
+      ServerEvents.#connection === null ||
+      ServerEvents.#connection.readyState === WebSocket.CLOSED
+    ) {
+      callback();
+    }
     ServerEvents.#onClose.push(callback);
   }
 
