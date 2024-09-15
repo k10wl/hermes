@@ -50,7 +50,9 @@ func Serve(core *core.Core, config *settings.Config, hostname string, port strin
 func NewServer(core *core.Core) http.Handler {
 	mux := http.NewServeMux()
 	t := NewTemplate()
-	addRoutes(mux, core, t)
+	hub := newHub()
+	go hub.run()
+	addRoutes(mux, core, hub, t)
 	return mux
 }
 

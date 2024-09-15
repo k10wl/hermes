@@ -174,7 +174,7 @@ export class ServerEvents {
       const res = await fetch(currentUrl(config.server.pathnames.healthCheck));
       if (res.status == 200) {
         const url = new URL(ServerEvents.#connection.url);
-        url.searchParams.set("reconnect", "1");
+        url.searchParams.set("reconnect", "true");
         ServerEvents.#connection = new WebSocket(url.toString());
         ServerEvents.#addListeners(ServerEvents.#connection);
         return;

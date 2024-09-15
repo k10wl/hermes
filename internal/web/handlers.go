@@ -147,3 +147,10 @@ func handlePutSettings(c *core.Core) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 	}
 }
+
+func handleCheckHeath() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "OK")
+	}
+}
