@@ -58,10 +58,6 @@ $ hermes serve --open --latest`,
 			activeSession.DatabaseDNS = config.DatabaseDSN
 			return nil
 		},
-		PostRunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("post run\n")
-			return nil
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if latest && !open {
 				return fmt.Errorf("cannot use --latest without --open\n")
@@ -81,14 +77,23 @@ $ hermes serve --open --latest`,
 				fmt.Fprintf(config.Stderr, "failed to store active session record - %s\n", err)
 			}
 			quit := make(chan os.Signal, 1)
+			errChan := make(chan error, 1)
 			signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-			err = web.Serve(c, config, hostname, port)
-			if err != nil {
-				return err
+			go func() { errChan <- web.Serve(c, config, hostname, port) }()
+			for {
+				select {
+				case err := <-errChan:
+					close(quit)
+					db.RemoveActiveSession(&activeSession)
+					os.Exit(1)
+					return err
+				case <-quit:
+					close(errChan)
+					db.RemoveActiveSession(&activeSession)
+					os.Exit(0)
+					return nil
+				}
 			}
-			<-quit
-			go db.RemoveActiveSession(&activeSession)
-			return nil
 		},
 	}
 

@@ -40,20 +40,17 @@ export class ServerEvents {
   static #onClose = [];
   /** @type (() => void)[] */
   static #onOpen = [];
+  static #allowReconnect = true;
 
   /** @param {string} addr */
   static __init(addr) {
     if (ServerEvents.#connection !== null) {
       throw new Error("do not reinitialize server events");
     }
-    let clientId = sessionStorage.getItem("ws") ?? crypto.randomUUID();
     window.addEventListener("beforeunload", () => {
-      sessionStorage.setItem("ws", clientId);
+      ServerEvents.#allowReconnect = false;
     });
-    sessionStorage.removeItem("ws");
-
     const url = new URL(addr);
-    url.searchParams.set("id", clientId);
     ServerEvents.#connection = new WebSocket(url.toString());
     ServerEvents.#addListeners(ServerEvents.#connection);
   }
@@ -163,6 +160,9 @@ export class ServerEvents {
 
   /** @throws if connection is null */
   static async #reconenct() {
+    if (!ServerEvents.#allowReconnect) {
+      return;
+    }
     if (ServerEvents.#connection === null) {
       throw new Error("attempt to reconnect to non existing socket");
     }

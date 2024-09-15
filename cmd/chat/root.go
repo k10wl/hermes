@@ -30,7 +30,7 @@ func notifyActiveSessions(c *core.Core) {
 		return
 	}
 	if _, err = http.DefaultClient.Do(req); err != nil {
-		db.RemoveActiveSession(activeSession) // unreachable, remove active session
+		db.RemoveActiveSession(activeSession) // unreachable, remove from active sessions
 		return
 	}
 }
