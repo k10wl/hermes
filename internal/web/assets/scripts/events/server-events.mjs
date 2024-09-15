@@ -114,22 +114,16 @@ export class ServerEvents {
       "open",
       () => {
         ServerEvents.#log("connected");
-        for (let i = 0; i < ServerEvents.#onOpen.length; i++) {
-          ServerEvents.#onOpen[i]?.();
-        }
+        ServerEvents.#invokeOnOpen();
         webSocket.addEventListener("close", (closeEvent) => {
           ServerEvents.#log("connection closed", closeEvent);
-          ServerEvents.#reconenct();
-          for (let i = 0; i < ServerEvents.#onClose.length; i++) {
-            ServerEvents.#onClose[i]?.();
-          }
+          ServerEvents.#reconnect();
+          ServerEvents.#invokeOnClose();
         });
         webSocket.addEventListener("err", (errorEvent) => {
           ServerEvents.#log("connection error", errorEvent);
-          ServerEvents.#reconenct();
-          for (let i = 0; i < ServerEvents.#onClose.length; i++) {
-            ServerEvents.#onClose[i]?.();
-          }
+          ServerEvents.#reconnect();
+          ServerEvents.#invokeOnClose();
         });
         webSocket.addEventListener("message", (messageEvent) => {
           try {
@@ -142,6 +136,18 @@ export class ServerEvents {
       },
       { once: true },
     );
+  }
+
+  static #invokeOnOpen() {
+    for (let i = 0; i < ServerEvents.#onOpen.length; i++) {
+      ServerEvents.#onOpen[i]?.();
+    }
+  }
+
+  static #invokeOnClose() {
+    for (let i = 0; i < ServerEvents.#onClose.length; i++) {
+      ServerEvents.#onClose[i]?.();
+    }
   }
 
   /** @param {ServerEvent} event */
@@ -168,7 +174,7 @@ export class ServerEvents {
   }
 
   /** @throws if connection is null */
-  static async #reconenct() {
+  static async #reconnect() {
     if (!ServerEvents.#allowReconnect) {
       return;
     }
@@ -188,12 +194,12 @@ export class ServerEvents {
         ServerEvents.#addListeners(ServerEvents.#connection);
         return;
       }
-      ServerEvents.#reconenct();
+      ServerEvents.#reconnect();
     } catch {
       await new Promise((resolve) =>
         setTimeout(resolve, ServerEvents.#reconnectTimeout),
       );
-      ServerEvents.#reconenct();
+      ServerEvents.#reconnect();
     }
   }
 }
