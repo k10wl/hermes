@@ -1,23 +1,30 @@
 import { ServerEvents } from "../events/server-events.mjs";
+import { Publisher } from "../utils/publisher.mjs";
 
-const OFFLINE_SUFIX = " - offline";
+class OnlineObserver {
+  #offlineSufix = " - offline";
 
-function hasOfflineSufix() {
-  return window.document.title.endsWith(OFFLINE_SUFIX);
-}
-
-function onOnline() {
-  window.document.title = window.document.title.replace(OFFLINE_SUFIX, "");
-}
-
-function onOffline() {
-  if (hasOfflineSufix()) {
-    return;
+  /** @param {boolean} isOnline */
+  notify(isOnline) {
+    if (isOnline) {
+      window.document.title = window.document.title.replaceAll(
+        this.#offlineSufix,
+        "",
+      );
+      return;
+    }
+    if (window.document.title.endsWith(this.#offlineSufix)) {
+      return;
+    }
+    window.document.title += this.#offlineSufix;
   }
-  window.document.title += OFFLINE_SUFIX;
 }
 
 export function initConnectionIndicator() {
-  ServerEvents.onOpen(onOnline);
-  ServerEvents.onClose(onOffline);
+  const statusPublisher = new Publisher(ServerEvents.isOpen);
+  ServerEvents.onClose(() => statusPublisher.update(ServerEvents.isOpen));
+  ServerEvents.onOpen(() => statusPublisher.update(ServerEvents.isOpen));
+  const onlineObserver = new OnlineObserver();
+  statusPublisher.attach(onlineObserver);
+  statusPublisher.notify();
 }
