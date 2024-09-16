@@ -120,11 +120,6 @@ export class ServerEvents {
           ServerEvents.#reconnect();
           ServerEvents.#invokeOnClose();
         });
-        webSocket.addEventListener("err", (errorEvent) => {
-          ServerEvents.#log("connection error", errorEvent);
-          ServerEvents.#reconnect();
-          ServerEvents.#invokeOnClose();
-        });
         webSocket.addEventListener("message", (messageEvent) => {
           try {
             const event = ServerEvent.parse(messageEvent.data);
@@ -133,6 +128,15 @@ export class ServerEvents {
             ServerEvents.#log("failed to hanlde message", error, messageEvent);
           }
         });
+      },
+      { once: true },
+    );
+    webSocket.addEventListener(
+      "error",
+      (errorEvent) => {
+        ServerEvents.#log("connection error", errorEvent);
+        ServerEvents.#reconnect();
+        ServerEvents.#invokeOnClose();
       },
       { once: true },
     );
@@ -201,6 +205,11 @@ export class ServerEvents {
       );
       ServerEvents.#reconnect();
     }
+  }
+
+  /** @returns {boolean} */
+  static get isOpen() {
+    return ServerEvents.#connection?.readyState === WebSocket.OPEN;
   }
 }
 
