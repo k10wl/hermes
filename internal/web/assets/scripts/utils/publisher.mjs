@@ -28,11 +28,11 @@ export class Publisher {
   }
 
   /**
-   * @param {ConcreteObserver} callback
+   * @param {ConcreteObserver} observer
    * @returns {boolean}
    */
-  detach(callback) {
-    const i = this.#observers.indexOf(callback);
+  detach(observer) {
+    const i = this.#observers.indexOf(observer);
     if (i === -1) {
       return false;
     }
