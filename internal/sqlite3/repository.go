@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/k10wl/hermes/internal/models"
 )
@@ -218,7 +219,7 @@ func getTemplatesByNamesQuery(names []interface{}) string {
 	// my brother in christ this is painful to write... holy fuck
 	return `
 SELECT id, name, content, created_at, updated_at, deleted_at FROM templates
-WHERE name IN (?` + strings.Repeat(",?", len(names)-1) + `);`
+WHERE name IN (?` + strings.Repeat(",?", len(names)-1) + `) AND deleted_at IS NULL;`
 }
 
 func getTemplatesByNames(
@@ -318,7 +319,7 @@ func editTemplateByName(
 	name string,
 	content string,
 ) (bool, error) {
-	result, err := executor(ctx, editTemplateByNameQuery, content, name)
+	result, err := executor(ctx, editTemplateByNameQuery, content, time.Now(), name)
 	if err != nil {
 		return false, err
 	}
