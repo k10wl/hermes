@@ -1,6 +1,6 @@
 APP_NAME=hermes
 DEV_APP_NAME=hermes-dev
-DEV_PORT=8124
+DEV_PORT=8127
 
 SRC_DIR=.
 
