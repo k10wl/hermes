@@ -6,31 +6,26 @@ import (
 	"testing"
 
 	"github.com/k10wl/hermes/internal/models"
-	"github.com/k10wl/hermes/internal/sqlite3"
-	"github.com/k10wl/hermes/internal/test_helpers"
 	"github.com/k10wl/hermes/internal/test_helpers/db_helpers"
 )
 
 func TestCreateChats(t *testing.T) {
-	test_helpers.Skip(t)
-	sqlite3, err := sqlite3.NewSQLite3(":memory:")
-	if err != nil {
-		t.Errorf("error during setup - %s\n", err)
-		return
-	}
+	db := prepare(t)
+	defer db.Close()
+	ctx := context.Background()
 
 	subject := []*models.Chat{}
 	for i := 0; i < 10; i++ {
 		subject = append(subject, &models.Chat{Name: strconv.Itoa(i)})
 	}
 
-	err = db_helpers.CreateChats(sqlite3.DB, context.Background(), subject)
+	err := db_helpers.CreateChats(db, ctx, subject)
 	if err != nil {
 		t.Errorf("error upon chat creation - %s\n", err)
 		return
 	}
 
-	rows, err := sqlite3.DB.Query("SELECT name FROM chats")
+	rows, err := db.Query("SELECT name FROM chats")
 	if err != nil {
 		t.Errorf("error upon db query - %s\n", err)
 		return
