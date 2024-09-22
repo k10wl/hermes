@@ -41,8 +41,12 @@ func (s *SQLite3) CreateChatAndMessage(
 	return chat, message, err
 }
 
-func (s *SQLite3) GetChats(ctx context.Context) ([]*models.Chat, error) {
-	return getChats(s.DB.QueryContext, ctx)
+func (s *SQLite3) GetChats(
+	ctx context.Context,
+	limit int64,
+	startAfterID int64,
+) ([]*models.Chat, error) {
+	return getChats(s.DB.QueryContext, ctx, limit, startAfterID)
 }
 
 func (s *SQLite3) GetChatMessages(

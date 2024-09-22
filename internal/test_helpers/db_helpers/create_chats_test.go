@@ -2,10 +2,12 @@ package db_helpers_test
 
 import (
 	"context"
+	"reflect"
 	"strconv"
 	"testing"
 
 	"github.com/k10wl/hermes/internal/models"
+	"github.com/k10wl/hermes/internal/test_helpers"
 	"github.com/k10wl/hermes/internal/test_helpers/db_helpers"
 )
 
@@ -51,5 +53,22 @@ func TestCreateChats(t *testing.T) {
 			)
 			break
 		}
+	}
+}
+
+func TestGenerateChatsSliceN(t *testing.T) {
+	chats := db_helpers.GenerateChatsSliceN(3)
+	actual := test_helpers.UnpointerSlice(chats)
+	expected := []models.Chat{
+		{ID: 1, Name: "1"},
+		{ID: 2, Name: "2"},
+		{ID: 3, Name: "3"},
+	}
+	if !reflect.DeepEqual(expected, actual) {
+		t.Errorf(
+			"Bad result in generating chats slice\nexpected: %+v\nactual:   %+v\n",
+			expected,
+			actual,
+		)
 	}
 }

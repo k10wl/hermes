@@ -81,15 +81,21 @@ func createChat(
 }
 
 const getChatsQuery = `
-SELECT id, name, created_at, updated_at, deleted_at FROM chats
-ORDER BY created_at DESC;
+SELECT 
+    id, name, created_at, updated_at, deleted_at
+FROM chats
+WHERE id > ?
+ORDER BY created_at DESC
+LIMIT ?;
 `
 
 func getChats(
 	executor queryRows,
 	ctx context.Context,
+	limit int64,
+	startAfterID int64,
 ) ([]*models.Chat, error) {
-	rows, err := executor(ctx, getChatsQuery)
+	rows, err := executor(ctx, getChatsQuery, startAfterID, limit)
 	chats := []*models.Chat{}
 	if err != nil {
 		return chats, err

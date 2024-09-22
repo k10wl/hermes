@@ -4,9 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strconv"
-
-	"github.com/k10wl/hermes/internal/models"
 )
 
 type Seeder struct {
@@ -25,9 +22,5 @@ func (s Seeder) SeedChatsN(n int64) error {
 	if n < 0 {
 		return fmt.Errorf("cannot process negative N\n")
 	}
-	chats := []*models.Chat{}
-	for i := 0; i < int(n); i++ {
-		chats = append(chats, &models.Chat{Name: strconv.Itoa(i)})
-	}
-	return CreateChats(s.db, s.ctx, chats)
+	return CreateChats(s.db, s.ctx, GenerateChatsSliceN(n))
 }

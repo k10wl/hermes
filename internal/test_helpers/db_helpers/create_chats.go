@@ -3,6 +3,7 @@ package db_helpers
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"strings"
 
 	"github.com/k10wl/hermes/internal/models"
@@ -29,4 +30,19 @@ func CreateChats(db *sql.DB, ctx context.Context, chats []*models.Chat) error {
 		return err
 	}
 	return tx.Commit()
+}
+
+func GenerateChatsSliceN(n int64) []*models.Chat {
+	chats := []*models.Chat{}
+	for i := 0; i < int(n); i++ {
+		id := i + 1
+		chats = append(
+			chats,
+			&models.Chat{
+				ID:   int64(id),
+				Name: strconv.Itoa(id),
+			},
+		)
+	}
+	return chats
 }

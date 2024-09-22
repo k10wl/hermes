@@ -23,7 +23,7 @@ func handleChat(c *core.Core, t *template.Template) http.HandlerFunc {
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := home{}
-		getChats := core.NewGetChatsQuery(c)
+		getChats := core.NewGetChatsQuery(c, -1, -1)
 		err := getChats.Execute(context.Background())
 		if err != nil {
 			panic(err)

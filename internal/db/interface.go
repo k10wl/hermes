@@ -21,7 +21,11 @@ type Client interface {
 		role string,
 		content string,
 	) (*models.Chat, *models.Message, error)
-	GetChats(context.Context) ([]*models.Chat, error)
+	GetChats(
+		ctx context.Context,
+		limit int64,
+		startAfterID int64,
+	) ([]*models.Chat, error)
 	GetChatMessages(context.Context, int64) ([]*models.Message, error)
 
 	GetWebSettings(context.Context) (*models.WebSettings, error)
