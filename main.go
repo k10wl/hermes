@@ -21,7 +21,7 @@ func prepare(
 	if err != nil {
 		return nil, err
 	}
-	sqlite, err := sqlite3.NewSQLite3(config)
+	sqlite, err := sqlite3.NewSQLite3(config.DatabaseDSN)
 	if err != nil {
 		return nil, err
 	}

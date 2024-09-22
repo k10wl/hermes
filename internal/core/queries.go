@@ -11,12 +11,18 @@ type Query interface {
 }
 
 type GetChatsQuery struct {
-	Core   *Core
+	core   *Core
 	Result []*models.Chat
 }
 
+func NewGetChatsQuery(core *Core) *GetChatsQuery {
+	return &GetChatsQuery{
+		core: core,
+	}
+}
+
 func (q *GetChatsQuery) Execute(ctx context.Context) error {
-	chats, err := q.Core.db.GetChats(ctx)
+	chats, err := q.core.db.GetChats(ctx)
 	if err != nil {
 		return err
 	}

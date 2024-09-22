@@ -42,7 +42,15 @@ clean:
 	@rm -f ./bin/$(APP_NAME) ./bin/$(DEV_APP_NAME)
 	@echo "Done"
 
-test:
-	@echo "Running tests..."
+pre-test: 
+	@echo ">> Testing helper functions..."
+	@go test  ./internal/test_helpers/... -v
+	@echo ">> Done"
+test-app:
+	@echo ">> Testing app..."
 	@go test -ldflags "-X github.com/k10wl/hermes/internal/settings.appName=$(DEV_APP_NAME) -X github.com/k10wl/hermes/internal/settings.DefaultPort=$(DEV_PORT) -X github.com/k10wl/hermes/internal/settings.DefaultDatabaseName=':memory:'" ./... -v
-	@echo "Done"
+	@echo ">> Done"
+test:
+	@echo "> Starting testing"
+	@make pre-test
+	@echo "> Done"
