@@ -11,8 +11,9 @@ import (
 const Version = "4.3.2"
 const VersionDate = "2024-09-15"
 
-var DefaultDatabaseName = "main.db" // changes in ldflag for dev mode
-var appName = "hermes"              // changes in ldflag for dev mode
+const DefaultDatabaseName = "main.db"
+
+var appName = "hermes" // changes in ldflag for dev mode
 var config *Config
 var once sync.Once
 
@@ -72,7 +73,7 @@ func prepareDNS(c *Config) error {
 	}
 	hermesConfigDir := path.Join(sharedConfigDir, c.AppName)
 	c.ConfigDir = hermesConfigDir
-	c.DatabaseDSN = path.Join(hermesConfigDir, "main.db")
+	c.DatabaseDSN = path.Join(hermesConfigDir, DefaultDatabaseName)
 	err = ensureExists(hermesConfigDir)
 	return err
 }

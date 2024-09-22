@@ -7,10 +7,12 @@ import (
 
 	"github.com/k10wl/hermes/internal/models"
 	"github.com/k10wl/hermes/internal/sqlite3"
+	"github.com/k10wl/hermes/internal/test_helpers"
 	"github.com/k10wl/hermes/internal/test_helpers/db_helpers"
 )
 
 func TestCreateChats(t *testing.T) {
+	test_helpers.Skip(t)
 	sqlite3, err := sqlite3.NewSQLite3(":memory:")
 	if err != nil {
 		t.Errorf("error during setup - %s\n", err)

@@ -45,12 +45,12 @@ clean:
 pre-test: 
 	@echo ">> Testing helper functions..."
 	@go test  ./internal/test_helpers/... -v
-	@echo ">> Done"
+	@echo ">> Finished helpers testing"
 test-app:
 	@echo ">> Testing app..."
-	@go test -ldflags "-X github.com/k10wl/hermes/internal/settings.appName=$(DEV_APP_NAME) -X github.com/k10wl/hermes/internal/settings.DefaultPort=$(DEV_PORT) -X github.com/k10wl/hermes/internal/settings.DefaultDatabaseName=':memory:'" ./... -v
-	@echo ">> Done"
+	@export HERMES_TEST_HELPERS_SKIP=true; export HERMES_DB_DNS=:memory:; go test -ldflags "-X github.com/k10wl/hermes/internal/settings.appName=$(DEV_APP_NAME) -X github.com/k10wl/hermes/internal/settings.DefaultPort=$(DEV_PORT)" ./... -v
+	@echo ">> Finished app testing"
 test:
 	@echo "> Starting testing"
-	@make pre-test
+	@make pre-test && make test-app
 	@echo "> Done"
