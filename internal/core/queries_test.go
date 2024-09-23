@@ -208,39 +208,71 @@ func TestGetChatsQuery(t *testing.T) {
 		return c
 	}
 
+	reversed := func(data []*models.Chat) []*models.Chat {
+		slices.Reverse(data)
+		return data
+	}
+
 	table := []testCase{
 		{
-			name: "should return all chats is limit overshoots",
+			name: "should return all chats if limit unset",
 			init: func() closeDB {
 				c := prepare(10)
-				query = core.NewGetChatsQuery(c, 20, 0)
+				query = core.NewGetChatsQuery(c, -1, -1)
 				return c.GetDB().Close
 			},
-			expected: db_helpers.GenerateChatsSliceN(10),
+			expected: reversed(db_helpers.GenerateChatsSliceN(10)),
 		},
 		{
-			name: "should return only 5 first results",
+			name: "should return all chats if limit overshoots",
 			init: func() closeDB {
 				c := prepare(10)
-				query = core.NewGetChatsQuery(c, 5, 0)
+				query = core.NewGetChatsQuery(c, 100, -1)
 				return c.GetDB().Close
 			},
-			expected: db_helpers.GenerateChatsSliceN(5),
+			expected: reversed(db_helpers.GenerateChatsSliceN(10)),
 		},
 		{
-			name: "should return 5 last results if start after was specified",
+			name: "should return [10-8] results",
 			init: func() closeDB {
 				c := prepare(10)
-				query = core.NewGetChatsQuery(c, 5, 5)
+				query = core.NewGetChatsQuery(c, 3, -1)
 				return c.GetDB().Close
 			},
-			expected: db_helpers.GenerateChatsSliceN(10)[5:],
+			expected: reversed(db_helpers.GenerateChatsSliceN(10))[0:3],
+		},
+		{
+			name: "should return [7-5] results",
+			init: func() closeDB {
+				c := prepare(10)
+				query = core.NewGetChatsQuery(c, 3, 8)
+				return c.GetDB().Close
+			},
+			expected: reversed(db_helpers.GenerateChatsSliceN(10))[3:6],
+		},
+		{
+			name: "should return [4-2] results",
+			init: func() closeDB {
+				c := prepare(10)
+				query = core.NewGetChatsQuery(c, 3, 5)
+				return c.GetDB().Close
+			},
+			expected: reversed(db_helpers.GenerateChatsSliceN(10))[6:9],
+		},
+		{
+			name: "should return [1] result",
+			init: func() closeDB {
+				c := prepare(10)
+				query = core.NewGetChatsQuery(c, 3, 2)
+				return c.GetDB().Close
+			},
+			expected: reversed(db_helpers.GenerateChatsSliceN(10))[9:],
 		},
 		{
 			name: "should return empty slice if pagination overshoots data",
 			init: func() closeDB {
 				c := prepare(10)
-				query = core.NewGetChatsQuery(c, 10, 10)
+				query = core.NewGetChatsQuery(c, 10, 1)
 				return c.GetDB().Close
 			},
 			expected: db_helpers.GenerateChatsSliceN(0),
@@ -251,7 +283,11 @@ func TestGetChatsQuery(t *testing.T) {
 		cleanup := test.init()
 		defer cleanup()
 		ctx := context.Background()
-		query.Execute(ctx)
+		err := query.Execute(ctx)
+		if err != nil {
+			t.Errorf("Failed to execute query - %s\n\n", err)
+			continue
+		}
 		for _, c := range query.Result {
 			c.TimestampsToNilForTest__()
 		}
@@ -259,7 +295,7 @@ func TestGetChatsQuery(t *testing.T) {
 		actual := test_helpers.UnpointerSlice(query.Result)
 		if !reflect.DeepEqual(expected, actual) {
 			t.Errorf(
-				"Bed result %s\nexpected: %+v\nactual:   %+v\n",
+				"Bed result %s\nexpected: %+v\nactual:   %+v\n\n",
 				test.name,
 				expected,
 				actual,

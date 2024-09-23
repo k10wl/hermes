@@ -11,23 +11,23 @@ type Query interface {
 }
 
 type GetChatsQuery struct {
-	core         *Core
-	limit        int64
-	startAfterID int64
-	Result       []*models.Chat
+	core          *Core
+	limit         int64
+	startBeforeID int64
+	Result        []*models.Chat
 }
 
 // limit -1 forces to return all results
-func NewGetChatsQuery(core *Core, limit int64, startAfterID int64) *GetChatsQuery {
+func NewGetChatsQuery(core *Core, limit int64, startBeforeID int64) *GetChatsQuery {
 	return &GetChatsQuery{
-		core:         core,
-		limit:        limit,
-		startAfterID: startAfterID,
+		core:          core,
+		limit:         limit,
+		startBeforeID: startBeforeID,
 	}
 }
 
 func (q *GetChatsQuery) Execute(ctx context.Context) error {
-	chats, err := q.core.db.GetChats(ctx, q.limit, q.startAfterID)
+	chats, err := q.core.db.GetChats(ctx, q.limit, q.startBeforeID)
 	if err != nil {
 		return err
 	}

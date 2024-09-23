@@ -24,7 +24,7 @@ type Client interface {
 	GetChats(
 		ctx context.Context,
 		limit int64,
-		startAfterID int64,
+		startBeforeID int64,
 	) ([]*models.Chat, error)
 	GetChatMessages(context.Context, int64) ([]*models.Message, error)
 

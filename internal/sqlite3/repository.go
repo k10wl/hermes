@@ -80,12 +80,20 @@ func createChat(
 	return &chat, err
 }
 
+const getChatsQueryWithWhere = `
+SELECT 
+    id, name, created_at, updated_at, deleted_at
+FROM chats
+WHERE id < ?
+ORDER BY id DESC
+LIMIT ?;
+`
+
 const getChatsQuery = `
 SELECT 
     id, name, created_at, updated_at, deleted_at
 FROM chats
-WHERE id > ?
-ORDER BY created_at DESC
+ORDER BY id DESC
 LIMIT ?;
 `
 
@@ -93,9 +101,15 @@ func getChats(
 	executor queryRows,
 	ctx context.Context,
 	limit int64,
-	startAfterID int64,
+	startBeforeID int64,
 ) ([]*models.Chat, error) {
-	rows, err := executor(ctx, getChatsQuery, startAfterID, limit)
+	var rows *sql.Rows
+	var err error
+	if startBeforeID < 1 {
+		rows, err = executor(ctx, getChatsQuery, limit)
+	} else {
+		rows, err = executor(ctx, getChatsQueryWithWhere, startBeforeID, limit)
+	}
 	chats := []*models.Chat{}
 	if err != nil {
 		return chats, err
@@ -179,7 +193,7 @@ func updateWebSettings(executor queryRow, ctx context.Context, darkMode bool) er
 
 const getLatestChatQuery = `
 SELECT id, name, created_at, updated_at, deleted_at FROM chats
-ORDER BY created_at DESC
+ORDER BY id DESC
 LIMIT 1;
 `
 
