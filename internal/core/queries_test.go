@@ -22,7 +22,7 @@ func TestGetTemplateByNameQuery(t *testing.T) {
 		shouldError    bool
 	}
 
-	coreInstance, _ := createCoreAndDB()
+	coreInstance, _ := test_helpers.CreateCore()
 	var query *core.GetTemplatesByNamesQuery
 	if err := core.NewUpsertTemplateCommand(coreInstance,
 		`--{{define "hello"}}hello world--{{end}}`).Execute(context.Background()); err != nil {
@@ -92,7 +92,7 @@ func TestGetTemplatesByRegexp(t *testing.T) {
 		shouldError    bool
 	}
 
-	coreInstance, _ := createCoreAndDB()
+	coreInstance, _ := test_helpers.CreateCore()
 	var query *core.GetTemplatesByRegexp
 	templates := map[string]string{
 		"hello":   `--{{define "hello"}}hello--{{end}}`,
