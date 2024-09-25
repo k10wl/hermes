@@ -36,9 +36,9 @@ export class ServerEvents {
   /** @type Map<string, {callback: callback, options: options}[]> */
   static #listeners = new Map();
   static #reconnectTimeout = 1000;
-  /** @type (() => void)[] */
+  /** @type {(() => void)[]} */
   static #onClose = [];
-  /** @type (() => void)[] */
+  /** @type {(() => void)[]} */
   static #onOpen = [];
   static #allowReconnect = true;
 
@@ -208,7 +208,7 @@ export class ServerEvents {
   }
 
   /** @returns {boolean} */
-  static get isOpen() {
+  static get connected() {
     return ServerEvents.#connection?.readyState === WebSocket.OPEN;
   }
 }

@@ -31,11 +31,12 @@ dev-run:
 	@echo "Running dev version..."
 	@APP_NAME=$(DEV_APP_NAME) ./bin/$(DEV_APP_NAME)
 
-dev-watch:
-	@echo "Running dev version in watch mode..."
-	@APP_NAME=$(DEV_APP_NAME) air
-
 dev-all: dev-build dev-run
+
+serve-watch:
+	@echo "Running dev version in watch mode..."
+	@APP_NAME=$(DEV_APP_NAME) air -- serve --port 8124
+
 
 clean:
 	@echo "Cleaning up..."

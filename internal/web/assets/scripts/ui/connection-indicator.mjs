@@ -4,9 +4,9 @@ import { Publisher } from "../utils/publisher.mjs";
 class OnlineObserver {
   #offlineSufix = " - offline";
 
-  /** @param {boolean} isOnline */
-  notify(isOnline) {
-    if (isOnline) {
+  /** @param {boolean} connected */
+  notify(connected) {
+    if (connected) {
       window.document.title = window.document.title.replaceAll(
         this.#offlineSufix,
         "",
@@ -21,9 +21,9 @@ class OnlineObserver {
 }
 
 export function initConnectionIndicator() {
-  const statusPublisher = new Publisher(ServerEvents.isOpen);
-  ServerEvents.onClose(() => statusPublisher.update(ServerEvents.isOpen));
-  ServerEvents.onOpen(() => statusPublisher.update(ServerEvents.isOpen));
+  const statusPublisher = new Publisher(ServerEvents.connected);
+  ServerEvents.onClose(() => statusPublisher.update(ServerEvents.connected));
+  ServerEvents.onOpen(() => statusPublisher.update(ServerEvents.connected));
   const onlineObserver = new OnlineObserver();
   statusPublisher.attach(onlineObserver);
   statusPublisher.notify();
