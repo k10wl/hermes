@@ -42,8 +42,14 @@ main {
   grid-auto-rows: max-content;
 }
 
+#chats {
+  padding: 5px 0;
+}
+
 .chat-link {
+  transition: all 50ms;
   color: var(--text-0);
+  border: 1px solid transparent;
   text-decoration: none;
   padding: 4px 8px;
   margin: 1px 6px;
@@ -64,14 +70,9 @@ main {
   }
 }
 
-.chat-link:first-child {
-  margin-top: 6px;
-}
-.chat-link:last-child {
-  margin-bottom: 6px;
-}
 .chat-link:hover {
-  background-color: var(--primary);
+  scale: 1.05;
+  border-color: var(--primary);
 }
 
 #chat-content {
