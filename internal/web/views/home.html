@@ -36,8 +36,9 @@
 
 {{define "chats-list"}}
 <div id="chats-list">
-    <a href="/" class="chat-link">New chat</a>
-    {{range .Chats}}{{template "chat-link" .}}{{end}}
+    <hermes-paginated-list id="chats" style="overflow: auto; max-height: 100vh;">
+        <a href="/" class="chat-link">New chat</a>
+    </hermes-paginated-list>
 </div>
 {{end}}
 

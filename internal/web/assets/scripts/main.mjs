@@ -1,7 +1,10 @@
+import { initChats } from "./ui/chats.mjs";
 import { initConnectionIndicator } from "./ui/connection-indicator.mjs";
-import { Publisher } from "./utils/publisher.mjs";
+import { initCustomElements } from "./ui/custom-elements/init.mjs";
 
 initConnectionIndicator();
+initCustomElements();
 
-const hello = new Publisher("hello world");
-hello.notify();
+document.addEventListener("DOMContentLoaded", function () {
+  initChats();
+});

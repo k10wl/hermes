@@ -13,4 +13,7 @@ export const config = {
       webSocket: apiPathnameV1("ws"),
     },
   },
+  chats: {
+    paginationLimit: 5,
+  },
 };
