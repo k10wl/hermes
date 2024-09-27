@@ -2,7 +2,12 @@ import { describe, test } from "node:test";
 
 import * as assert from "assert";
 
-import { ValidateNumber, ValidateObject, ValidateString } from "./validate.mjs";
+import {
+  ValidateOptional,
+  ValidateNumber,
+  ValidateObject,
+  ValidateString,
+} from "./validate.mjs";
 
 const primitives = {
   string: "string",
@@ -39,6 +44,48 @@ describe("string validation", () => {
     for (const testData of Object.values(withoutString)) {
       assert.throws(() => stringValidation.parse(testData));
     }
+  });
+});
+
+describe("optional", () => {
+  test("primitive", () => {
+    const optionalStringValidator = new ValidateOptional(new ValidateString());
+    assert.equal(
+      optionalStringValidator.parse(undefined),
+      undefined,
+      "should allow undefined",
+    );
+    assert.equal(
+      optionalStringValidator.parse("test"),
+      "test",
+      "should validate propper type",
+    );
+    assert.throws(
+      () => optionalStringValidator.parse({}),
+      "should throw with wrong type",
+    );
+  });
+
+  test("object property", () => {
+    const optionalObjectValidator = new ValidateObject({
+      optional: new ValidateOptional(new ValidateString()),
+    });
+    assert.deepEqual(
+      optionalObjectValidator.parse({}),
+      {},
+      "should skip optional key",
+    );
+    assert.deepEqual(
+      optionalObjectValidator.parse({ optional: "test" }),
+      {
+        optional: "test",
+      },
+      "should validate optional key if present",
+    );
+    assert.throws(
+      () => optionalObjectValidator.parse({ optional: 1234 }),
+      "should throw if optional value has wrong type",
+    );
   });
 });
 

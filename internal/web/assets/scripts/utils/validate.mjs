@@ -29,11 +29,29 @@ export class ValidateString {
   }
 }
 
+/** @template T */
+export class ValidateOptional {
+  #validator;
+  /** @param {Assertion<T>} validator  */
+  constructor(validator) {
+    this.#validator = validator;
+  }
+
+  /** @param {unknown} data  */
+  parse(data) {
+    if (data === undefined) {
+      return undefined;
+    }
+    return this.#validator.parse(data);
+  }
+}
+
 /** @template K, T=Record<string, Assertion<K>> */
 export class ValidateObject {
+  #shape;
   /** @param {T} shape */
   constructor(shape) {
-    this.shape = shape;
+    this.#shape = shape;
   }
 
   /**
@@ -45,11 +63,8 @@ export class ValidateObject {
       throw new Error(`expected object but got ${typeof data}`);
     }
     for (const [key, assertion] of Object.entries(
-      /** @type {any} to reset type  */ (this.shape),
+      /** @type {any} to reset type  */ (this.#shape),
     )) {
-      if (!(key in data)) {
-        throw new Error(`data is missing key ${key}`);
-      }
       assertion.parse(/** @type Record<string, unknown> */ (data)[key]);
     }
     /** @type {any} to reset type */
