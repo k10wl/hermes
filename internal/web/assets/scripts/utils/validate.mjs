@@ -5,10 +5,9 @@
  * @property {(data: unknown) => T} parse
  */
 
-/** @implements Assertion<number> */
 export class ValidateNumber {
   /** @param {unknown} data */
-  parse(data) {
+  static parse(data) {
     if (typeof data !== "number" || isNaN(data)) {
       throw new Error(`expected number but got ${typeof data}`);
     }
@@ -16,12 +15,11 @@ export class ValidateNumber {
   }
 }
 
-/** @implements Assertion<string> */
 export class ValidateString {
   /**
    * @param {unknown} data
    */
-  parse(data) {
+  static parse(data) {
     if (typeof data !== "string") {
       throw new Error(`expected string but got ${typeof data}`);
     }

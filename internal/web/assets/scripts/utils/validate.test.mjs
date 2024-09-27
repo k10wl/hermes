@@ -3,9 +3,9 @@ import { describe, test } from "node:test";
 import * as assert from "assert";
 
 import {
-  ValidateOptional,
   ValidateNumber,
   ValidateObject,
+  ValidateOptional,
   ValidateString,
 } from "./validate.mjs";
 
@@ -20,7 +20,7 @@ const primitives = {
 };
 
 describe("number validation", () => {
-  const nubmerValidation = new ValidateNumber();
+  const nubmerValidation = ValidateNumber;
   test("should return number", () => {
     const res = nubmerValidation.parse(2);
     assert.strictEqual(res, 2, "failed to return same value");
@@ -34,7 +34,7 @@ describe("number validation", () => {
 });
 
 describe("string validation", () => {
-  const stringValidation = new ValidateString();
+  const stringValidation = ValidateString;
   test("should return string", () => {
     const res = stringValidation.parse("test");
     assert.strictEqual(res, "test", "failed to return same value");
@@ -49,7 +49,7 @@ describe("string validation", () => {
 
 describe("optional", () => {
   test("primitive", () => {
-    const optionalStringValidator = new ValidateOptional(new ValidateString());
+    const optionalStringValidator = new ValidateOptional(ValidateString);
     assert.equal(
       optionalStringValidator.parse(undefined),
       undefined,
@@ -68,7 +68,7 @@ describe("optional", () => {
 
   test("object property", () => {
     const optionalObjectValidator = new ValidateObject({
-      optional: new ValidateOptional(new ValidateString()),
+      optional: new ValidateOptional(ValidateString),
     });
     assert.deepEqual(
       optionalObjectValidator.parse({}),
@@ -91,10 +91,10 @@ describe("optional", () => {
 
 describe("object validation", () => {
   const objectValidation = new ValidateObject({
-    string: new ValidateString(),
-    number: new ValidateNumber(),
+    string: ValidateString,
+    number: ValidateNumber,
     object: new ValidateObject({
-      nestedString: new ValidateString(),
+      nestedString: ValidateString,
     }),
   });
   test("should return object", () => {
