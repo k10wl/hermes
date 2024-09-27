@@ -11,6 +11,13 @@ export default [
     },
     rules: {
       strict: ["error", "global"],
+      "no-unused-vars": [
+        "error",
+        {
+          destructuredArrayIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+        },
+      ],
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
       "no-restricted-imports": [
@@ -24,6 +31,12 @@ export default [
           ],
         },
       ],
+    },
+  },
+  {
+    files: ["**/*test.mjs"],
+    rules: {
+      "no-restricted-imports": "off",
     },
   },
   pluginJs.configs.recommended,

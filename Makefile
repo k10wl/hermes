@@ -43,6 +43,10 @@ clean:
 	@rm -f ./bin/$(APP_NAME) ./bin/$(DEV_APP_NAME)
 	@echo "Done"
 
+test-web:
+	@echo ">> Testing web..."
+	@(cd internal/web && npm run test)
+	@echo ">> Finished web testing"
 pre-test: 
 	@echo ">> Testing helper functions..."
 	@go test  ./internal/test_helpers/... -v
@@ -53,5 +57,5 @@ test-app:
 	@echo ">> Finished app testing"
 test:
 	@echo "> Starting testing"
-	@make pre-test && make test-app
+	@make test-web && make pre-test && make test-app
 	@echo "> Done"
