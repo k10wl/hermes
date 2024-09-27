@@ -1,4 +1,4 @@
-import { initChats } from "./ui/chats.mjs";
+import { initChats } from "./ui/chats/init.mjs";
 import { initConnectionIndicator } from "./ui/connection-indicator.mjs";
 import { initCustomElements } from "./ui/custom-elements/init.mjs";
 

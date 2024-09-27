@@ -28,11 +28,14 @@ export class PaginatedList extends HTMLElement {
     if (!entry?.isIntersecting || this.#loading) {
       return;
     }
-    const hasMore = await this.#withLoading(this.#loadNext());
+    await this.#withLoading(this.#loadNext());
     this.#positionTriggerElement();
   });
   /** @type {Element | null} */
   #currentlyObserving = null;
+
+  /** @type {HTMLElement} */
+  #startContainer = document.createElement("div");
 
   /** @type {HTMLElement} */
   #content = document.createElement("div");
@@ -42,7 +45,7 @@ export class PaginatedList extends HTMLElement {
 
   constructor() {
     super();
-    this.appendChild(this.#content);
+    this.append(this.#startContainer, this.#content);
   }
 
   #positionTriggerElement() {
@@ -105,5 +108,10 @@ export class PaginatedList extends HTMLElement {
   /** @param {Iterator<T>} iterator  */
   setIterator(iterator) {
     this.#iterator = iterator;
+  }
+
+  /** @param {Node[]} nodes  */
+  prepandNodes(nodes) {
+    this.#startContainer.prepend(...nodes);
   }
 }

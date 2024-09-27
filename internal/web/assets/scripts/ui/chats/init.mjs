@@ -1,6 +1,6 @@
 import { config } from "/assets/scripts/config.mjs";
-
-import { PaginatedList } from "./custom-elements/paginated-list.mjs";
+import { PaginatedList } from "/assets/scripts/ui/custom-elements/paginated-list.mjs";
+import { assertInstance } from "/assets/scripts/utils/assert-instance.mjs";
 
 export class Chat {
   /**
@@ -59,11 +59,14 @@ class ChatsIterator {
   }
 }
 
+const rendrer = new ChatsRenderer();
+
 export function initChats() {
   const list = /** @type {PaginatedList<Chat>} */ (
     assertInstance(document.getElementById("chats"), PaginatedList)
   );
+
   list.setIterator(new ChatsIterator());
-  list.setRenderer(new ChatsRenderer());
+  list.setRenderer(rendrer);
   list.init();
 }
