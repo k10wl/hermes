@@ -1,39 +1,94 @@
 import { config } from "/assets/scripts/config.mjs";
+import { Chat } from "/assets/scripts/ui/chats/init.mjs";
 import { currentUrl } from "/assets/scripts/utils/current-url.mjs";
+import {
+  ValidateNumber,
+  ValidateObject,
+  ValidateString,
+} from "/assets/scripts/utils/validate.mjs";
+
+/**
+ * @typedef {{
+ *   "chat-created": ChatCreatedEvent,
+ *   "reload": ServerEvent
+ * }} expectedEvents
+ */
 
 export class ServerEvent {
+  static #eventValidation = new ValidateObject({ type: ValidateString });
+
   /** @type {string} */
   type;
-  /** @param {string} type - The type of the event. */
-  constructor(type) {
-    this.type = type;
+
+  /** @param { { type: string } } event - The type of the event. */
+  constructor(event) {
+    this.type = event.type;
   }
 
-  /**
-   * Parses a raw data string into a ServerEvent instance.
-   * @param {unknown} data - The raw data string from the WebSocket.
-   * @returns {ServerEvent} - An instance of ServerEvent.
-   * @throws {Error} - Throws an error if the data structure is invalid.
-   */
+  /** @param {unknown} data */
   static parse(data) {
-    if (typeof data !== "string") {
-      throw new Error("Invalid data type, expected a string.");
-    }
-    const obj = JSON.parse(data);
-    if (typeof obj !== "object" || obj === null || !obj.type) {
-      throw new Error(`Invalid message: ${data}`);
-    }
-    return new ServerEvent(obj.type);
+    return new ServerEvent(
+      ServerEvent.#eventValidation.parse(
+        JSON.parse(ValidateString.parse(data)),
+      ),
+    );
+  }
+}
+
+const typeRegex = /"type":(\s?)+"(?<type>.*?)"/;
+/**
+ * @param {string} data
+ * @returns {expectedEvents[keyof expectedEvents]}
+ */
+function selectEvent(data) {
+  const res = typeRegex.exec(data);
+  switch (ValidateString.parse(res?.groups?.type)) {
+    case "reload":
+      return ServerEvent.parse(data);
+    case "chat-created":
+      return ChatCreatedEvent.parse(data);
+    default:
+      throw new Error(`unhandled server event - ${data}`);
+  }
+}
+
+export class ChatCreatedEvent extends ServerEvent {
+  static #eventValidation = new ValidateObject({
+    type: ValidateString,
+    payload: new ValidateObject({
+      id: ValidateNumber,
+      name: ValidateString,
+    }),
+  });
+
+  /**
+   * @param { { type: string, payload: { id: number, name: string } } } event
+   */
+  constructor(event) {
+    super(event);
+    this.payload = new Chat(event.payload.id, event.payload.name);
+  }
+
+  /** @param {unknown} data */
+  static parse(data) {
+    return new ChatCreatedEvent(
+      ChatCreatedEvent.#eventValidation.parse(
+        JSON.parse(ValidateString.parse(data)),
+      ),
+    );
   }
 }
 
 export class ServerEvents {
+  /**
+   * @template {keyof expectedEvents} T
+   * @typedef {(data: expectedEvents[T]) => void} callback
+   */
   /** @typedef {{once?: boolean}} options */
-  /** @typedef {(data: ServerEvent) => void} callback */
   /** @typedef {() => void} unsubscribe */
   /** @type WebSocket | null */
   static #connection = null;
-  /** @type Map<string, {callback: callback, options: options}[]> */
+  /** @type Map<string, {callback: callback<any>, options: options}[]> */
   static #listeners = new Map();
   static #reconnectTimeout = 1000;
   /** @type {(() => void)[]} */
@@ -56,13 +111,15 @@ export class ServerEvents {
   }
 
   /**
-   * @param {string} type
-   * @param {(data: ServerEvent) => void} callback
-   * @param {options} options
+   * @template {keyof expectedEvents} T
+   * @param {T} type
+   * @param {callback<T>} callback
+   * @param {object} [options]
    * @returns {unsubscribe} unsubscribe
    */
   static on(type, callback, options = {}) {
     let events = ServerEvents.#listeners.get(type);
+    ServerEvents.#listeners.get("reload");
     if (!events) {
       events = [];
       ServerEvents.#listeners.set(type, events);
@@ -72,8 +129,9 @@ export class ServerEvents {
   }
 
   /**
-   * @param {string} type
-   * @param {(data: ServerEvent) => void} callback
+   * @template {keyof expectedEvents} T
+   * @param {T} type
+   * @param {callback<T>} callback
    */
   static off(type, callback) {
     let events = ServerEvents.#listeners.get(type);
@@ -122,8 +180,7 @@ export class ServerEvents {
         });
         webSocket.addEventListener("message", (messageEvent) => {
           try {
-            const event = ServerEvent.parse(messageEvent.data);
-            ServerEvents.#notifySubscribers(event);
+            ServerEvents.#notifySubscribers(selectEvent(messageEvent.data));
           } catch (error) {
             ServerEvents.#log("failed to hanlde message", error, messageEvent);
           }
@@ -154,7 +211,7 @@ export class ServerEvents {
     }
   }
 
-  /** @param {ServerEvent} event */
+  /** @param {expectedEvents[keyof expectedEvents]} event */
   static #notifySubscribers(event) {
     const listeners = ServerEvents.#listeners.get(event.type);
     if (!listeners) {
