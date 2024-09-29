@@ -35,15 +35,17 @@ main {
 }
 
 #chats-list {
+  padding: 5px 0;
   max-height: 100vh;
-  overflow: scroll;
-  display: grid;
+  overflow: auto;
   border-right: 1px solid var(--bg-1);
   grid-auto-rows: max-content;
 }
 
 .chat-link {
+  transition: all 50ms;
   color: var(--text-0);
+  border: 1px solid transparent;
   text-decoration: none;
   padding: 4px 8px;
   margin: 1px 6px;
@@ -52,20 +54,26 @@ main {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  animation: fade-in 250ms forwards;
 }
-.chat-link:first-child {
-  margin-top: 6px;
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
-.chat-link:last-child {
-  margin-bottom: 6px;
-}
+
 .chat-link:hover {
-  background-color: var(--primary);
+  scale: 1.05;
+  border-color: var(--primary);
 }
 
 #chat-content {
   max-height: 100vh;
-  overflow: scroll;
+  overflow: auto;
   display: grid;
   grid-template-rows: 1fr auto;
 }
@@ -73,7 +81,7 @@ main {
 #messages-list-wrapper {
   max-height: 100%;
   background: var(--bg-1);
-  overflow: scroll;
+  overflow: auto;
   display: flex;
   flex-direction: column-reverse;
 }

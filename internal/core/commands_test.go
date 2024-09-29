@@ -8,6 +8,7 @@ import (
 	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/models"
+	"github.com/k10wl/hermes/internal/test_helpers"
 )
 
 func TestCreateChatAndCompletionCommand(t *testing.T) {
@@ -18,7 +19,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 		expectedResult models.Message
 	}
 
-	coreInstance, _ := createCoreAndDB()
+	coreInstance, _ := test_helpers.CreateCore()
 	var currentCommand *core.CreateChatAndCompletionCommand
 
 	dbTemplates := map[string]string{
@@ -282,7 +283,7 @@ func TestCreateCompletionCommand(t *testing.T) {
 		expectedResult models.Message
 	}
 
-	coreInstance, _ := createCoreAndDB()
+	coreInstance, _ := test_helpers.CreateCore()
 	var currentCommand *core.CreateCompletionCommand
 
 	table := []testCase{
@@ -342,7 +343,8 @@ func TestCreateTemplateCommand(t *testing.T) {
 		shouldError  bool
 	}
 
-	coreInstance, db := createCoreAndDB()
+	coreInstance, _ := test_helpers.CreateCore()
+	db := coreInstance.GetDB()
 	var command *core.UpsertTemplateCommand
 
 	table := []testCase{
@@ -407,7 +409,7 @@ func TestDeleteTemplateByName(t *testing.T) {
 		templateName string
 	}
 
-	coreInstance, _ := createCoreAndDB()
+	coreInstance, _ := test_helpers.CreateCore()
 	cmd := core.NewDeleteTemplateByName
 	var command core.DeleteTemplateByName
 
@@ -479,7 +481,7 @@ func TestEditTemplateByName(t *testing.T) {
 		deletedTemplateName string
 	}
 
-	coreInstance, _ := createCoreAndDB()
+	coreInstance, _ := test_helpers.CreateCore()
 	var command core.EditTemplateByName
 
 	templates := []string{

@@ -12,14 +12,14 @@ type Timestamps struct {
 }
 
 type CompletionParameters struct {
-	MaxTokens   int64
-	Temperature int64
+	MaxTokens   int64 `json:"max_tokens"`
+	Temperature int64 `json:"temperature"`
 }
 
 type Chat struct {
-	ID    int64
-	Model string
-	Name  string
+	ID    int64  `json:"id"`
+	Model string `json:"model"`
+	Name  string `json:"name"`
 	CompletionParameters
 	Timestamps
 }
@@ -35,13 +35,13 @@ type Message struct {
 }
 
 type Role struct {
-	ID   int64
-	Name string
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
 type WebSettings struct {
-	DarkMode bool
-	Initted  bool
+	DarkMode bool `json:"dark_mode"`
+	Initted  bool `json:"initted"`
 }
 
 type Template struct {
@@ -49,6 +49,12 @@ type Template struct {
 	Name    string `json:"name"`
 	Content string `json:"content"`
 	Timestamps
+}
+
+type ActiveSession struct {
+	ID          int64  `json:"id"`
+	Address     string `json:"address"`
+	DatabaseDNS string `json:"database_dns"`
 }
 
 // if you used this anywhere (any-fucking-where) outside of test function - you fucked up

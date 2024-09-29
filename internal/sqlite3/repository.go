@@ -3,6 +3,7 @@ package sqlite3
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 	"time"
 
@@ -79,16 +80,36 @@ func createChat(
 	return &chat, err
 }
 
+const getChatsQueryWithWhere = `
+SELECT 
+    id, name, created_at, updated_at, deleted_at
+FROM chats
+WHERE id < ?
+ORDER BY id DESC
+LIMIT ?;
+`
+
 const getChatsQuery = `
-SELECT id, name, created_at, updated_at, deleted_at FROM chats
-ORDER BY created_at DESC;
+SELECT 
+    id, name, created_at, updated_at, deleted_at
+FROM chats
+ORDER BY id DESC
+LIMIT ?;
 `
 
 func getChats(
 	executor queryRows,
 	ctx context.Context,
+	limit int64,
+	startBeforeID int64,
 ) ([]*models.Chat, error) {
-	rows, err := executor(ctx, getChatsQuery)
+	var rows *sql.Rows
+	var err error
+	if startBeforeID < 1 {
+		rows, err = executor(ctx, getChatsQuery, limit)
+	} else {
+		rows, err = executor(ctx, getChatsQueryWithWhere, startBeforeID, limit)
+	}
 	chats := []*models.Chat{}
 	if err != nil {
 		return chats, err
@@ -172,7 +193,7 @@ func updateWebSettings(executor queryRow, ctx context.Context, darkMode bool) er
 
 const getLatestChatQuery = `
 SELECT id, name, created_at, updated_at, deleted_at FROM chats
-ORDER BY created_at DESC
+ORDER BY id DESC
 LIMIT 1;
 `
 
@@ -326,4 +347,83 @@ func editTemplateByName(
 		return false, err
 	}
 	return true, nil
+}
+
+const createActiveSessionQuery = `
+INSERT INTO active_sessions (address, database_dns)
+VALUES ($1, $2);
+`
+
+func createActiveSession(
+	executor execute,
+	ctx context.Context,
+	activeSession *models.ActiveSession,
+) error {
+	res, err := executor(
+		ctx,
+		createActiveSessionQuery,
+		activeSession.Address,
+		activeSession.DatabaseDNS,
+	)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return fmt.Errorf("failed to create active session\n")
+	}
+	return err
+}
+
+const removeActiveSessionQuery = `
+DELETE FROM active_sessions WHERE (database_dns = $1);
+`
+
+func removeActiveSession(
+	executor execute,
+	ctx context.Context,
+	activeSession *models.ActiveSession,
+) error {
+	res, err := executor(
+		ctx,
+		removeActiveSessionQuery,
+		activeSession.DatabaseDNS,
+	)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return fmt.Errorf("failed to remove active session\n")
+	}
+	return err
+}
+
+const getActiveSessionsQuery = `
+SELECT id, address, database_dns FROM active_sessions
+WHERE database_dns = $1;
+`
+
+func getActiveSession(
+	executor queryRow,
+	ctx context.Context,
+	databaseDNS string,
+) (*models.ActiveSession, error) {
+	res := executor(ctx, getActiveSessionsQuery, databaseDNS)
+	err := res.Err()
+	if err != nil {
+		return nil, err
+	}
+	activeSession := models.ActiveSession{}
+	err = res.Scan(&activeSession.ID, &activeSession.Address, &activeSession.DatabaseDNS)
+	if err != nil {
+		return nil, err
+	}
+	return &activeSession, nil
 }
