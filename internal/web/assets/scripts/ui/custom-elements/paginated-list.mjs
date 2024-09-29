@@ -111,7 +111,7 @@ export class PaginatedList extends HTMLElement {
   }
 
   /** @param {Node[]} nodes  */
-  prepandNodes(nodes) {
+  prepandNodes(...nodes) {
     this.#startContainer.prepend(...nodes);
   }
 }

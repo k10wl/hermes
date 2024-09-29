@@ -1,5 +1,5 @@
 import { config } from "/assets/scripts/config.mjs";
-import { Chat } from "/assets/scripts/ui/chats/init.mjs";
+import { Chat } from "/assets/scripts/models.mjs";
 import { currentUrl } from "/assets/scripts/utils/current-url.mjs";
 import {
   ValidateNumber,

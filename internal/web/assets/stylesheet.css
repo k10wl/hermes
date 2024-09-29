@@ -35,15 +35,11 @@ main {
 }
 
 #chats-list {
+  padding: 5px 0;
   max-height: 100vh;
   overflow: auto;
-  display: grid;
   border-right: 1px solid var(--bg-1);
   grid-auto-rows: max-content;
-}
-
-#chats {
-  padding: 5px 0;
 }
 
 .chat-link {
