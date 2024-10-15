@@ -44,6 +44,18 @@ export class ValidateOptional {
   }
 }
 
+export class ValidateBoolean {
+  /**
+   * @param {unknown} data
+   */
+  static parse(data) {
+    if (typeof data !== "boolean") {
+      throw new Error(`expected boolean but got ${typeof data}`);
+    }
+    return data;
+  }
+}
+
 /** @template K, T=Record<string, Assertion<K>> */
 export class ValidateObject {
   #shape;

@@ -3,6 +3,7 @@ import { describe, test } from "node:test";
 import * as assert from "assert";
 
 import {
+  ValidateBoolean,
   ValidateNumber,
   ValidateObject,
   ValidateOptional,
@@ -13,7 +14,8 @@ const primitives = {
   string: "string",
   number: 1,
   undefined: undefined,
-  boolean: true,
+  truthy: true,
+  falsy: true,
   symbol: Symbol,
   NaN: NaN,
   null: null,
@@ -29,6 +31,22 @@ describe("number validation", () => {
     const { number, ...withoutNumber } = primitives;
     for (const testData of Object.values(withoutNumber)) {
       assert.throws(() => nubmerValidation.parse(testData));
+    }
+  });
+});
+
+describe("boolean validation", () => {
+  const booleanValidation = ValidateBoolean;
+  test("should return boolean", () => {
+    const truthy = booleanValidation.parse(true);
+    assert.strictEqual(truthy, true, "failed to return 'true'");
+    const falsy = booleanValidation.parse(false);
+    assert.strictEqual(falsy, false, "failed to return 'false'");
+  });
+  test("should throw if data is not boolean", () => {
+    const { truthy, falsy, ...withoutString } = primitives;
+    for (const testData of Object.values(withoutString)) {
+      assert.throws(() => booleanValidation.parse(testData));
     }
   });
 });
@@ -93,25 +111,55 @@ describe("object validation", () => {
   const objectValidation = new ValidateObject({
     string: ValidateString,
     number: ValidateNumber,
+    boolean: ValidateBoolean,
     object: new ValidateObject({
       nestedString: ValidateString,
+      nestedBoolean: ValidateBoolean,
     }),
   });
   test("should return object", () => {
     const testData = {
       string: "string",
       number: 123,
-      object: { nestedString: "1234" },
+      boolean: true,
+      object: { nestedString: "1234", nestedBoolean: true },
     };
     assert.deepEqual(objectValidation.parse(testData), testData);
   });
   test("should throw if data does not comply schema", () => {
     const testDataArray = [
       {},
-      { string: 1234, number: 123, object: { nestedString: "1234" } },
-      { string: "string", number: "123", object: { nestedString: "1234" } },
-      { string: "string", number: 123, object: null },
-      { string: "string", number: 123, object: { nestedString: 1234 } },
+      {
+        string: 1234,
+        number: 123,
+        boolean: false,
+        object: { nestedString: "1234", nestedBoolean: true },
+      },
+      {
+        string: "string",
+        number: "123",
+        boolean: false,
+        object: { nestedString: "1234", nestedBoolean: true },
+      },
+      { string: "string", number: 123, boolean: false, object: null },
+      {
+        string: "string",
+        number: 123,
+        boolean: false,
+        object: { nestedString: 1234, nestedBoolean: true },
+      },
+      {
+        string: "string",
+        number: 123,
+        boolean: "false",
+        object: { nestedString: "1234", nestedBoolean: true },
+      },
+      {
+        string: "string",
+        number: 123,
+        boolean: true,
+        object: { nestedString: "1234", nestedBoolean: "true" },
+      },
     ];
     for (const testData of testDataArray) {
       assert.throws(() => objectValidation.parse(testData));
