@@ -1,83 +1,19 @@
 import { config } from "/assets/scripts/config.mjs";
-import { Chat } from "/assets/scripts/models.mjs";
 import { currentUrl } from "/assets/scripts/utils/current-url.mjs";
+import { ValidateString } from "/assets/scripts/utils/validate.mjs";
+
 import {
-  ValidateNumber,
-  ValidateObject,
-  ValidateString,
-} from "/assets/scripts/utils/validate.mjs";
+  ChatCreatedEvent,
+  ConnectionStatusChangeEvent,
+  ServerEvent,
+} from "./server-events-list.mjs";
 
 /**
- * @typedef {{
- *   "chat-created": ChatCreatedEvent,
- *   "reload": ServerEvent
- * }} expectedEvents
+ * @typedef {Object} expectedEvents
+ * @property {ChatCreatedEvent} chat-created
+ * @property {ConnectionStatusChangeEvent} connection-status-change
+ * @property {ServerEvent} reload
  */
-
-export class ServerEvent {
-  static #eventValidation = new ValidateObject({ type: ValidateString });
-
-  /** @type {string} */
-  type;
-
-  /** @param { { type: string } } event - The type of the event. */
-  constructor(event) {
-    this.type = event.type;
-  }
-
-  /** @param {unknown} data */
-  static parse(data) {
-    return new ServerEvent(
-      ServerEvent.#eventValidation.parse(
-        JSON.parse(ValidateString.parse(data)),
-      ),
-    );
-  }
-}
-
-const typeRegex = /"type":(\s?)+"(?<type>.*?)"/;
-/**
- * @param {string} data
- * @returns {expectedEvents[keyof expectedEvents]}
- */
-function selectEvent(data) {
-  const res = typeRegex.exec(data);
-  switch (ValidateString.parse(res?.groups?.type)) {
-    case "reload":
-      return ServerEvent.parse(data);
-    case "chat-created":
-      return ChatCreatedEvent.parse(data);
-    default:
-      throw new Error(`unhandled server event - ${data}`);
-  }
-}
-
-export class ChatCreatedEvent extends ServerEvent {
-  static #eventValidation = new ValidateObject({
-    type: ValidateString,
-    payload: new ValidateObject({
-      id: ValidateNumber,
-      name: ValidateString,
-    }),
-  });
-
-  /**
-   * @param { { type: string, payload: { id: number, name: string } } } event
-   */
-  constructor(event) {
-    super(event);
-    this.payload = new Chat(event.payload.id, event.payload.name);
-  }
-
-  /** @param {unknown} data */
-  static parse(data) {
-    return new ChatCreatedEvent(
-      ChatCreatedEvent.#eventValidation.parse(
-        JSON.parse(ValidateString.parse(data)),
-      ),
-    );
-  }
-}
 
 export class ServerEvents {
   /**
@@ -91,10 +27,6 @@ export class ServerEvents {
   /** @type Map<string, {callback: callback<any>, options: options}[]> */
   static #listeners = new Map();
   static #reconnectTimeout = 1000;
-  /** @type {(() => void)[]} */
-  static #onClose = [];
-  /** @type {(() => void)[]} */
-  static #onOpen = [];
   static #allowReconnect = true;
 
   /** @param {string} addr */
@@ -147,40 +79,25 @@ export class ServerEvents {
     events.splice(callbackIndex, 1);
   }
 
-  /** @param {() => void} callback  */
-  static onOpen(callback) {
-    if (ServerEvents.#connection?.readyState === WebSocket.OPEN) {
-      callback();
-    }
-    ServerEvents.#onOpen.push(callback);
-  }
-
-  /** @param {() => void} callback  */
-  static onClose(callback) {
-    if (
-      ServerEvents.#connection === null ||
-      ServerEvents.#connection.readyState === WebSocket.CLOSED
-    ) {
-      callback();
-    }
-    ServerEvents.#onClose.push(callback);
-  }
-
   /** @param {WebSocket} webSocket */
   static #addListeners(webSocket) {
     webSocket.addEventListener(
       "open",
       () => {
         ServerEvents.#log("connected");
-        ServerEvents.#invokeOnOpen();
+        ServerEvents.#notifySubscribers(new ConnectionStatusChangeEvent(true));
         webSocket.addEventListener("close", (closeEvent) => {
           ServerEvents.#log("connection closed", closeEvent);
+          ServerEvents.#notifySubscribers(
+            new ConnectionStatusChangeEvent(false),
+          );
           ServerEvents.#reconnect();
-          ServerEvents.#invokeOnClose();
         });
         webSocket.addEventListener("message", (messageEvent) => {
           try {
-            ServerEvents.#notifySubscribers(selectEvent(messageEvent.data));
+            ServerEvents.#notifySubscribers(
+              ServerEvents.#parseEvent(messageEvent.data),
+            );
           } catch (error) {
             ServerEvents.#log("failed to hanlde message", error, messageEvent);
           }
@@ -192,23 +109,11 @@ export class ServerEvents {
       "error",
       (errorEvent) => {
         ServerEvents.#log("connection error", errorEvent);
+        ServerEvents.#notifySubscribers(new ConnectionStatusChangeEvent(false));
         ServerEvents.#reconnect();
-        ServerEvents.#invokeOnClose();
       },
       { once: true },
     );
-  }
-
-  static #invokeOnOpen() {
-    for (let i = 0; i < ServerEvents.#onOpen.length; i++) {
-      ServerEvents.#onOpen[i]?.();
-    }
-  }
-
-  static #invokeOnClose() {
-    for (let i = 0; i < ServerEvents.#onClose.length; i++) {
-      ServerEvents.#onClose[i]?.();
-    }
   }
 
   /** @param {expectedEvents[keyof expectedEvents]} event */
@@ -261,6 +166,23 @@ export class ServerEvents {
         setTimeout(resolve, ServerEvents.#reconnectTimeout),
       );
       ServerEvents.#reconnect();
+    }
+  }
+
+  static #typeRegex = /"type":(\s?)+"(?<type>.*?)"/;
+  /**
+   * @param {string} data
+   * @returns {expectedEvents[keyof expectedEvents]}
+   */
+  static #parseEvent(data) {
+    const res = ServerEvents.#typeRegex.exec(ValidateString.parse(data));
+    switch (ValidateString.parse(res?.groups?.type)) {
+      case "reload":
+        return ServerEvent.parse(data);
+      case "chat-created":
+        return ChatCreatedEvent.parse(data);
+      default:
+        throw new Error(`unhandled server event - ${data}`);
     }
   }
 

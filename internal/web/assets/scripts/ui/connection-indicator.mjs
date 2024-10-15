@@ -22,8 +22,9 @@ class OnlineObserver {
 
 export function initConnectionIndicator() {
   const statusPublisher = new Publisher(ServerEvents.connected);
-  ServerEvents.onClose(() => statusPublisher.update(ServerEvents.connected));
-  ServerEvents.onOpen(() => statusPublisher.update(ServerEvents.connected));
+  ServerEvents.on("connection-status-change", (data) =>
+    statusPublisher.update(data.payload.connected),
+  );
   const onlineObserver = new OnlineObserver();
   statusPublisher.attach(onlineObserver);
   statusPublisher.notify();
