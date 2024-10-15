@@ -185,11 +185,6 @@ export class ServerEvents {
         throw new Error(`unhandled server event - ${data}`);
     }
   }
-
-  /** @returns {boolean} */
-  static get connected() {
-    return ServerEvents.#connection?.readyState === WebSocket.OPEN;
-  }
 }
 
 ServerEvents.__init(currentUrl(config.server.pathnames.webSocket));
