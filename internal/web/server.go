@@ -13,6 +13,7 @@ import (
 
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/settings"
+	v1 "github.com/k10wl/hermes/internal/web/routes/api/v1"
 )
 
 //go:embed assets
@@ -50,8 +51,8 @@ func Serve(core *core.Core, config *settings.Config, hostname string, port strin
 func NewServer(core *core.Core) http.Handler {
 	mux := http.NewServeMux()
 	t := NewTemplate()
-	hub := newHub()
-	go hub.run()
+	hub := v1.NewHub()
+	go hub.Run()
 	addRoutes(mux, core, hub, t)
 	return mux
 }

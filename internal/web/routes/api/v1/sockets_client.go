@@ -1,7 +1,6 @@
-package web
+package v1
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"net/http"
@@ -42,7 +41,10 @@ func (c *Client) readPump() {
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(
-		func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil },
+		func(string) error {
+			c.conn.SetReadDeadline(time.Now().Add(pongWait))
+			return nil
+		},
 	)
 	for {
 		_, message, err := c.conn.ReadMessage()
@@ -56,7 +58,7 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+		// XXX place for command picked
 		c.hub.broadcast <- message
 	}
 }

@@ -1,4 +1,4 @@
-package web
+package v1
 
 import (
 	"encoding/json"
@@ -15,4 +15,8 @@ func newMessage(messageType string, payload any) Message {
 
 func (message Message) encode() ([]byte, error) {
 	return json.Marshal(message)
+}
+
+func (message *Message) decode(data []byte) error {
+	return json.Unmarshal(data, message)
 }

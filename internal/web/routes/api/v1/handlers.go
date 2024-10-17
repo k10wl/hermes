@@ -44,3 +44,24 @@ func handleChats(c *core.Core) http.HandlerFunc {
 		}
 	}
 }
+
+func handleCheckHeath() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "OK")
+	}
+}
+
+func handleWebhook(hub *Hub) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		msg, err := newMessage("reload", nil).encode()
+		if err != nil {
+			fmt.Printf("err: %v\n", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		hub.broadcast <- msg
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "OK")
+	}
+}

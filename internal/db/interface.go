@@ -26,7 +26,10 @@ type Client interface {
 		limit int64,
 		startBeforeID int64,
 	) ([]*models.Chat, error)
-	GetChatMessages(context.Context, int64) ([]*models.Message, error)
+	GetChatMessages(
+		ctx context.Context,
+		chatID int64,
+	) ([]*models.Message, error)
 
 	GetWebSettings(context.Context) (*models.WebSettings, error)
 	UpdateWebSettings(ctx context.Context, dark_mode bool) error
