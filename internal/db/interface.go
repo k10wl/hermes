@@ -7,6 +7,8 @@ import (
 )
 
 type Client interface {
+	Close() error
+
 	CreateChat(context.Context, string) (*models.Chat, error)
 	CreateMessage(
 		ctx context.Context,
@@ -19,8 +21,15 @@ type Client interface {
 		role string,
 		content string,
 	) (*models.Chat, *models.Message, error)
-	GetChats(context.Context) ([]*models.Chat, error)
-	GetChatMessages(context.Context, int64) ([]*models.Message, error)
+	GetChats(
+		ctx context.Context,
+		limit int64,
+		startBeforeID int64,
+	) ([]*models.Chat, error)
+	GetChatMessages(
+		ctx context.Context,
+		chatID int64,
+	) ([]*models.Message, error)
 
 	GetWebSettings(context.Context) (*models.WebSettings, error)
 	UpdateWebSettings(ctx context.Context, dark_mode bool) error
@@ -50,5 +59,7 @@ type Client interface {
 		content string,
 	) (bool, error)
 
-	Close() error
+	CreateActiveSession(*models.ActiveSession) error
+	RemoveActiveSession(*models.ActiveSession) error
+	GetActiveSessionByDatabaseDNS(string) (*models.ActiveSession, error)
 }

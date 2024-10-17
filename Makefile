@@ -1,6 +1,6 @@
 APP_NAME=hermes
 DEV_APP_NAME=hermes-dev
-DEV_PORT=8124
+DEV_PORT=8127
 
 SRC_DIR=.
 
@@ -31,18 +31,31 @@ dev-run:
 	@echo "Running dev version..."
 	@APP_NAME=$(DEV_APP_NAME) ./bin/$(DEV_APP_NAME)
 
-dev-watch:
-	@echo "Running dev version in watch mode..."
-	@APP_NAME=$(DEV_APP_NAME) air
-
 dev-all: dev-build dev-run
+
+serve-watch:
+	@echo "Running dev version in watch mode..."
+	@APP_NAME=$(DEV_APP_NAME) air -- serve --port 8124
+
 
 clean:
 	@echo "Cleaning up..."
 	@rm -f ./bin/$(APP_NAME) ./bin/$(DEV_APP_NAME)
 	@echo "Done"
 
+test-web:
+	@echo ">> Testing web..."
+	@(cd internal/web && npm run test)
+	@echo ">> Finished web testing"
+pre-test: 
+	@echo ">> Testing helper functions..."
+	@go test  ./internal/test_helpers/... -v
+	@echo ">> Finished helpers testing"
+test-app:
+	@echo ">> Testing app..."
+	@export HERMES_TEST_HELPERS_SKIP=true; export HERMES_DB_DNS=:memory:; go test -ldflags "-X github.com/k10wl/hermes/internal/settings.appName=$(DEV_APP_NAME) -X github.com/k10wl/hermes/internal/settings.DefaultPort=$(DEV_PORT)" ./... -v
+	@echo ">> Finished app testing"
 test:
-	@echo "Running tests..."
-	@go test -ldflags "-X github.com/k10wl/hermes/internal/settings.appName=$(DEV_APP_NAME) -X github.com/k10wl/hermes/internal/settings.DefaultPort=$(DEV_PORT) -X github.com/k10wl/hermes/internal/settings.DefaultDatabaseName=':memory:'" ./... -v
-	@echo "Done"
+	@echo "> Starting testing"
+	@make test-web && make pre-test && make test-app
+	@echo "> Done"

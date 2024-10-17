@@ -21,7 +21,7 @@ func prepare(
 	if err != nil {
 		return nil, err
 	}
-	sqlite, err := sqlite3.NewSQLite3(config)
+	sqlite, err := sqlite3.NewSQLite3(config.DatabaseDSN)
 	if err != nil {
 		return nil, err
 	}
@@ -31,11 +31,11 @@ func prepare(
 
 func main() {
 	core, err := prepare(os.Stdin, os.Stdout, os.Stderr)
-	defer core.GetDB().Close()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(1)
 	}
+	defer core.GetDB().Close()
 	if err := cmd.Execute(core, ai_clients.Complete); err != nil {
 		os.Exit(1)
 	}

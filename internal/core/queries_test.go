@@ -8,6 +8,10 @@ import (
 
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/models"
+	"github.com/k10wl/hermes/internal/settings"
+	"github.com/k10wl/hermes/internal/sqlite3"
+	"github.com/k10wl/hermes/internal/test_helpers"
+	"github.com/k10wl/hermes/internal/test_helpers/db_helpers"
 )
 
 func TestGetTemplateByNameQuery(t *testing.T) {
@@ -18,7 +22,7 @@ func TestGetTemplateByNameQuery(t *testing.T) {
 		shouldError    bool
 	}
 
-	coreInstance, _ := createCoreAndDB()
+	coreInstance, _ := test_helpers.CreateCore()
 	var query *core.GetTemplatesByNamesQuery
 	if err := core.NewUpsertTemplateCommand(coreInstance,
 		`--{{define "hello"}}hello world--{{end}}`).Execute(context.Background()); err != nil {
@@ -88,7 +92,7 @@ func TestGetTemplatesByRegexp(t *testing.T) {
 		shouldError    bool
 	}
 
-	coreInstance, _ := createCoreAndDB()
+	coreInstance, _ := test_helpers.CreateCore()
 	var query *core.GetTemplatesByRegexp
 	templates := map[string]string{
 		"hello":   `--{{define "hello"}}hello--{{end}}`,
@@ -163,8 +167,8 @@ func TestGetTemplatesByRegexp(t *testing.T) {
 			continue
 		}
 		for _, e := range test.expectedResult {
-			expected := unpointerTemplateSlice(test.expectedResult)
-			actual := unpointerTemplateSlice(query.Result)
+			expected := test_helpers.UnpointerSlice(test.expectedResult)
+			actual := test_helpers.UnpointerSlice(query.Result)
 			if !slices.ContainsFunc(query.Result, func(el *models.Template) bool {
 				return el.Name == e.Name
 			}) {
@@ -179,10 +183,124 @@ func TestGetTemplatesByRegexp(t *testing.T) {
 	}
 }
 
-func unpointerTemplateSlice(arg []*models.Template) []models.Template {
-	res := make([]models.Template, len(arg))
-	for i, v := range arg {
-		res[i] = *v
+func TestGetChatsQuery(t *testing.T) {
+	type closeDB func() error
+	type testCase struct {
+		name     string
+		init     func() closeDB
+		expected []*models.Chat
 	}
-	return res
+
+	var query *core.GetChatsQuery
+
+	prepare := func(n int64) *core.Core {
+		db, err := sqlite3.NewSQLite3(":memory:")
+		if err != nil {
+			t.Fatalf("failed to create db - %s\n", err)
+		}
+		c := core.NewCore(db, &settings.Config{})
+		ctx := context.Background()
+		seeder := db_helpers.NewSeeder(db.DB, ctx)
+		err = seeder.SeedChatsN(n)
+		if err != nil {
+			t.Fatalf("failed to seed db - %s\n", err)
+		}
+		return c
+	}
+
+	reversed := func(data []*models.Chat) []*models.Chat {
+		slices.Reverse(data)
+		return data
+	}
+
+	table := []testCase{
+		{
+			name: "should return all chats if limit unset",
+			init: func() closeDB {
+				c := prepare(10)
+				query = core.NewGetChatsQuery(c, -1, -1)
+				return c.GetDB().Close
+			},
+			expected: reversed(db_helpers.GenerateChatsSliceN(10)),
+		},
+		{
+			name: "should return all chats if limit overshoots",
+			init: func() closeDB {
+				c := prepare(10)
+				query = core.NewGetChatsQuery(c, 100, -1)
+				return c.GetDB().Close
+			},
+			expected: reversed(db_helpers.GenerateChatsSliceN(10)),
+		},
+		{
+			name: "should return [10-8] results",
+			init: func() closeDB {
+				c := prepare(10)
+				query = core.NewGetChatsQuery(c, 3, -1)
+				return c.GetDB().Close
+			},
+			expected: reversed(db_helpers.GenerateChatsSliceN(10))[0:3],
+		},
+		{
+			name: "should return [7-5] results",
+			init: func() closeDB {
+				c := prepare(10)
+				query = core.NewGetChatsQuery(c, 3, 8)
+				return c.GetDB().Close
+			},
+			expected: reversed(db_helpers.GenerateChatsSliceN(10))[3:6],
+		},
+		{
+			name: "should return [4-2] results",
+			init: func() closeDB {
+				c := prepare(10)
+				query = core.NewGetChatsQuery(c, 3, 5)
+				return c.GetDB().Close
+			},
+			expected: reversed(db_helpers.GenerateChatsSliceN(10))[6:9],
+		},
+		{
+			name: "should return [1] result",
+			init: func() closeDB {
+				c := prepare(10)
+				query = core.NewGetChatsQuery(c, 3, 2)
+				return c.GetDB().Close
+			},
+			expected: reversed(db_helpers.GenerateChatsSliceN(10))[9:],
+		},
+		{
+			name: "should return empty slice if pagination overshoots data",
+			init: func() closeDB {
+				c := prepare(10)
+				query = core.NewGetChatsQuery(c, 10, 1)
+				return c.GetDB().Close
+			},
+			expected: db_helpers.GenerateChatsSliceN(0),
+		},
+	}
+
+	for _, test := range table {
+		cleanup := test.init()
+		defer cleanup()
+		ctx := context.Background()
+		err := query.Execute(ctx)
+		if err != nil {
+			t.Errorf("Failed to execute query - %s\n\n", err)
+			continue
+		}
+		for _, c := range query.Result {
+			c.TimestampsToNilForTest__()
+		}
+		expected := test_helpers.UnpointerSlice(test.expected)
+		actual := test_helpers.UnpointerSlice(query.Result)
+		if !reflect.DeepEqual(expected, actual) {
+			t.Errorf(
+				"Bed result %s\nexpected: %+v\nactual:   %+v\n\n",
+				test.name,
+				expected,
+				actual,
+			)
+			continue
+		}
+	}
 }
