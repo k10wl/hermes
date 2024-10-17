@@ -14,5 +14,7 @@
     "dependencies": {
         "@types/node": "^22.7.4"
     },
-    "eslintIgnore": ["*_test.mjs"]
+    "eslintIgnore": [
+        "*_test.mjs"
+    ]
 }
