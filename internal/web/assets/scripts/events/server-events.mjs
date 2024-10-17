@@ -9,16 +9,22 @@ import {
 } from "./server-events-list.mjs";
 
 /**
- * @typedef {Object} expectedEvents
- * @property {ChatCreatedEvent} chat-created
+ * @typedef {Object} IsolatedServiceEvents
  * @property {ConnectionStatusChangeEvent} connection-status-change
+ */
+
+/**
+ * @typedef {Object} ServerEmittedEvents
+ * @property {ChatCreatedEvent} chat-created
  * @property {ServerEvent} reload
  */
 
+/** @typedef { ServerEmittedEvents & IsolatedServiceEvents } RegisteredEvents */
+
 export class ServerEvents {
   /**
-   * @template {keyof expectedEvents} T
-   * @typedef {(data: expectedEvents[T]) => void} callback
+   * @template {keyof RegisteredEvents} T
+   * @typedef {(data: RegisteredEvents[T]) => void} callback
    */
   /** @typedef {{once?: boolean}} options */
   /** @typedef {() => void} unsubscribe */
@@ -43,7 +49,7 @@ export class ServerEvents {
   }
 
   /**
-   * @template {keyof expectedEvents} T
+   * @template {keyof RegisteredEvents} T
    * @param {T} type
    * @param {callback<T>} callback
    * @param {object} [options]
@@ -61,7 +67,7 @@ export class ServerEvents {
   }
 
   /**
-   * @template {keyof expectedEvents} T
+   * @template {keyof RegisteredEvents} T
    * @param {T} type
    * @param {callback<T>} callback
    */
@@ -81,42 +87,43 @@ export class ServerEvents {
 
   /** @param {WebSocket} webSocket */
   static #addListeners(webSocket) {
-    webSocket.addEventListener(
-      "open",
-      () => {
-        ServerEvents.#log("connected");
-        ServerEvents.#notifySubscribers(new ConnectionStatusChangeEvent(true));
-        webSocket.addEventListener("close", (closeEvent) => {
-          ServerEvents.#log("connection closed", closeEvent);
-          ServerEvents.#notifySubscribers(
-            new ConnectionStatusChangeEvent(false),
-          );
-          ServerEvents.#reconnect();
-        });
-        webSocket.addEventListener("message", (messageEvent) => {
-          try {
-            ServerEvents.#notifySubscribers(
-              ServerEvents.#parseEvent(messageEvent.data),
-            );
-          } catch (error) {
-            ServerEvents.#log("failed to hanlde message", error, messageEvent);
-          }
-        });
-      },
-      { once: true },
-    );
-    webSocket.addEventListener(
-      "error",
-      (errorEvent) => {
-        ServerEvents.#log("connection error", errorEvent);
-        ServerEvents.#notifySubscribers(new ConnectionStatusChangeEvent(false));
-        ServerEvents.#reconnect();
-      },
-      { once: true },
-    );
+    webSocket.addEventListener("open", ServerEvents.#onOpen, { once: true });
+    webSocket.addEventListener("close", ServerEvents.#onClose, { once: true });
+    webSocket.addEventListener("message", ServerEvents.#onMessage);
+    webSocket.addEventListener("error", ServerEvents.#onError, { once: true });
   }
 
-  /** @param {expectedEvents[keyof expectedEvents]} event */
+  static #onOpen() {
+    ServerEvents.#log("connected");
+    ServerEvents.#notifySubscribers(new ConnectionStatusChangeEvent(true));
+  }
+
+  /** @param {MessageEvent<unknown>} event */
+  static #onMessage(event) {
+    try {
+      ServerEvents.#notifySubscribers(
+        EmittedServerEventFactory.parse(event.data),
+      );
+    } catch (error) {
+      ServerEvents.#log("failed to handle message", error, event);
+    }
+  }
+
+  /** @param {Event} event */
+  static #onClose(event) {
+    ServerEvents.#log("connection closed", event);
+    ServerEvents.#notifySubscribers(new ConnectionStatusChangeEvent(false));
+    ServerEvents.#reconnect();
+  }
+
+  /** @param {Event} event  */
+  static #onError(event) {
+    ServerEvents.#log("connection error", event);
+    ServerEvents.#notifySubscribers(new ConnectionStatusChangeEvent(false));
+    ServerEvents.#reconnect();
+  }
+
+  /** @param {RegisteredEvents[keyof RegisteredEvents]} event */
   static #notifySubscribers(event) {
     const listeners = ServerEvents.#listeners.get(event.type);
     if (!listeners) {
@@ -169,13 +176,21 @@ export class ServerEvents {
     }
   }
 
+  static get connected() {
+    return ServerEvents.#connection?.readyState === WebSocket.OPEN;
+  }
+}
+
+class EmittedServerEventFactory {
   static #typeRegex = /"type":(\s?)+"(?<type>.*?)"/;
   /**
-   * @param {string} data
-   * @returns {expectedEvents[keyof expectedEvents]}
+   * @param {unknown} data
+   * @returns {RegisteredEvents[keyof RegisteredEvents]}
    */
-  static #parseEvent(data) {
-    const res = ServerEvents.#typeRegex.exec(ValidateString.parse(data));
+  static parse(data) {
+    const res = EmittedServerEventFactory.#typeRegex.exec(
+      ValidateString.parse(data),
+    );
     switch (ValidateString.parse(res?.groups?.type)) {
       case "reload":
         return ServerEvent.parse(data);
