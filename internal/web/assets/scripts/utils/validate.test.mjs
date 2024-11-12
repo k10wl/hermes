@@ -3,6 +3,7 @@ import { describe, test } from "node:test";
 import * as assert from "assert";
 
 import {
+  ValidateArray,
   ValidateBoolean,
   ValidateNumber,
   ValidateObject,
@@ -164,5 +165,20 @@ describe("object validation", () => {
     for (const testData of testDataArray) {
       assert.throws(() => objectValidation.parse(testData));
     }
+  });
+});
+
+describe("array validation", () => {
+  const arrayValidation = new ValidateArray(
+    new ValidateObject({ id: ValidateString }),
+  );
+  test("should return array", () => {
+    assert.deepStrictEqual(
+      arrayValidation.parse([{ id: "qwerty-1" }, { id: "qwerty-2" }]),
+      [{ id: "qwerty-1" }, { id: "qwerty-2" }],
+    );
+  });
+  test("should throw if data does not comply schema", () => {
+    assert.throws(() => arrayValidation.parse(["1234", 12340]));
   });
 });

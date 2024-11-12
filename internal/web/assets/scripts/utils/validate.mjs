@@ -82,3 +82,28 @@ export class ValidateObject {
     return _data;
   }
 }
+
+/** @template K, T=Assertion<K> */
+export class ValidateArray {
+  #shape;
+  /** @param {T} shape */
+  constructor(shape) {
+    this.#shape = shape;
+  }
+
+  /**
+   * @param {unknown} data
+   * @returns { ReturnType<T['parse']>[] } }
+   */
+  parse(data) {
+    if (!Array.isArray(data)) {
+      throw new Error(`expected object but got ${typeof data}`);
+    }
+    for (const value of data) {
+      /** @type Assertion<K> */ (this.#shape).parse(value);
+    }
+    /** @type {any} to reset type */
+    const _data = data;
+    return _data;
+  }
+}
