@@ -3,10 +3,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("message-form"),
     HTMLFormElement,
   );
-  const messagesList = assertInstance(
-    document.getElementById("messages-list"),
-    HTMLDivElement,
-  );
   const messageInput = assertInstance(
     document.getElementById("message-input"),
     HTMLTextAreaElement,
@@ -65,38 +61,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     assertInstance(messageInput, HTMLTextAreaElement).focus();
-  });
-
-  messageForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const data = new FormData(assertInstance(messageForm, HTMLFormElement));
-    const content = data.get("content");
-    if (!content || typeof content !== "string" || content.trim() === "") {
-      return;
-    }
-    const input = assertInstance(messageInput, HTMLTextAreaElement);
-    input.value = "";
-    input.rows = 1;
-    assertInstance(messagesList, HTMLDivElement).append(
-      Templates.createMessage(content, "user"),
-    );
-    let pathname = window.location.pathname;
-    if (pathname === "/") {
-      pathname = "/chats";
-    }
-    const res = await fetch(pathname, {
-      method: "POST",
-      body: data,
-    });
-    const html = await res.text();
-    if (res.status === 301 && res.headers.get("Eval") === "js") {
-      // yeah nah, this should not be done, but whatever
-      eval(html);
-    }
-    const parsed = new DOMParser().parseFromString(html, "text/html");
-    assertInstance(messagesList, HTMLDivElement).append(
-      ...parsed.body.childNodes,
-    );
   });
 
   messageInput.addEventListener("keydown", (e) => {

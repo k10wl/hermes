@@ -12,13 +12,13 @@ export class Chat {
 export class Message {
   /** @param {{
    *   id: number
-   *   chatId: number
-   *   role: "user" | "assistant" | "system"
+   *   chat_id: number
+   *   role: "user" | "assistant" | "system" | string
    *   content: string
    * }} message */
   constructor(message) {
     this.id = message.id;
-    this.chatId = message.chatId;
+    this.chat_id = message.chat_id;
     this.role = message.role;
     this.content = message.content;
   }

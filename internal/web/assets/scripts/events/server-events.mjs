@@ -2,21 +2,28 @@ import { config } from "/assets/scripts/config.mjs";
 import { currentUrl } from "/assets/scripts/utils/current-url.mjs";
 import { ValidateString } from "/assets/scripts/utils/validate.mjs";
 
+import { assertInstance } from "../utils/assert-instance.mjs";
 import {
   ChatCreatedEvent,
   ConnectionStatusChangeEvent,
+  ReadChatEvent,
   ServerEvent,
 } from "./server-events-list.mjs";
-
 /**
  * @typedef {Object} IsolatedServiceEvents
  * @property {ConnectionStatusChangeEvent} connection-status-change
  */
 
 /**
+ * @typedef {Object} ClientEmittedEvents
+ * @property {import("./client-events-list.mjs").RequestReadChatEvent} request-read-chat
+ */
+
+/**
  * @typedef {Object} ServerEmittedEvents
  * @property {ChatCreatedEvent} chat-created
  * @property {ServerEvent} reload
+ * @property {ReadChatEvent} read-chat
  */
 
 /** @typedef { ServerEmittedEvents & IsolatedServiceEvents } RegisteredEvents */
@@ -85,6 +92,16 @@ export class ServerEvents {
     events.splice(callbackIndex, 1);
   }
 
+  /**
+   * @template {keyof ClientEmittedEvents} T
+   * @param {ClientEmittedEvents[T]} event
+   */
+  static send(event) {
+    assertInstance(ServerEvents.#connection, WebSocket).send(
+      JSON.stringify(event),
+    );
+  }
+
   /** @param {WebSocket} webSocket */
   static #addListeners(webSocket) {
     webSocket.addEventListener("open", ServerEvents.#onOpen, { once: true });
@@ -146,6 +163,7 @@ export class ServerEvents {
     console.log(`[ServerEvents]`, ...data);
   }
 
+  // TODO reconnect only if tab is opened and active
   /** @throws if connection is null */
   static async #reconnect() {
     if (!ServerEvents.#allowReconnect) {
@@ -196,6 +214,8 @@ class EmittedServerEventFactory {
         return ServerEvent.parse(data);
       case "chat-created":
         return ChatCreatedEvent.parse(data);
+      case "read-chat":
+        return ReadChatEvent.parse(data);
       default:
         throw new Error(`unhandled server event - ${data}`);
     }
@@ -203,3 +223,4 @@ class EmittedServerEventFactory {
 }
 
 ServerEvents.__init(currentUrl(config.server.pathnames.webSocket));
+Reflect.set(window, "ServerEvents", ServerEvents);

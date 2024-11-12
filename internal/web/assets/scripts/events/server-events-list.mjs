@@ -1,5 +1,6 @@
-import { Chat } from "/assets/scripts/models.mjs";
+import { Chat, Message } from "/assets/scripts/models.mjs";
 import {
+  ValidateArray,
   ValidateBoolean,
   ValidateNumber,
   ValidateObject,
@@ -12,9 +13,13 @@ export class ServerEvent {
   /** @type {string} */
   type;
 
-  /** @param { { type: string } } event - The type of the event. */
+  /** @type {unknown} */
+  payload;
+
+  /** @param { { type: string, payload?: unknown } } event - The type of the event. */
   constructor(event) {
     this.type = event.type;
+    this.payload = event.payload;
   }
 
   /** @param {unknown} data */
@@ -61,5 +66,50 @@ export class ChatCreatedEvent extends ServerEvent {
         JSON.parse(ValidateString.parse(data)),
       ),
     );
+  }
+}
+
+export class ReadChatEvent extends ServerEvent {
+  static #eventValidation = new ValidateObject({
+    type: ValidateString,
+    payload: new ValidateObject({
+      messages: new ValidateArray(
+        new ValidateObject({
+          id: ValidateNumber,
+          chat_id: ValidateNumber,
+          content: ValidateString,
+          role: ValidateString,
+        }),
+      ),
+    }),
+  });
+
+  /**
+   * @param {{
+   *   type: string,
+   *   payload: {
+   *     messages: Message[]
+   *   }
+   * }} event
+   */
+  constructor(event) {
+    super(event);
+    this.payload = event.payload;
+  }
+
+  /** @param {unknown} data */
+  static parse(data) {
+    const parsed = ReadChatEvent.#eventValidation.parse(
+      JSON.parse(ValidateString.parse(data)),
+    );
+    return new ReadChatEvent({
+      ...parsed,
+      payload: {
+        ...parsed.payload,
+        messages: parsed.payload.messages.map(
+          (message) => new Message(message),
+        ),
+      },
+    });
   }
 }
