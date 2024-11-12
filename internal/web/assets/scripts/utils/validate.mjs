@@ -97,7 +97,7 @@ export class ValidateArray {
    */
   parse(data) {
     if (!Array.isArray(data)) {
-      throw new Error(`expected object but got ${typeof data}`);
+      throw new Error(`expected array but got ${typeof data}`);
     }
     for (const value of data) {
       /** @type Assertion<K> */ (this.#shape).parse(value);
