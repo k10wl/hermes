@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/k10wl/hermes/internal/core"
+	"github.com/k10wl/hermes/internal/web/routes/api/v1/messages"
 )
 
 const (
@@ -33,7 +34,7 @@ type Client struct {
 	send chan []byte
 }
 
-func (c *Client) readPump() {
+func (c *Client) readPump(coreInstanse *core.Core) {
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
@@ -46,6 +47,7 @@ func (c *Client) readPump() {
 			return nil
 		},
 	)
+	stdout := coreInstanse.GetConfig().Stdoout
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
@@ -58,8 +60,50 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		// XXX place for command picked
-		c.hub.broadcast <- message
+
+		clientMessage, err := messages.ReadMessage(message)
+		if err != nil {
+			fmt.Fprintf(stdout, "%s\n", err)
+			err := messages.Broadcast(
+				c.send,
+				messages.NewErrorMessage(
+					fmt.Sprintf("unhandled message: %s", message),
+				),
+			)
+			if err != nil {
+				fmt.Fprintf(stdout, "failed to broadcast %s\n", err)
+			}
+			continue
+		}
+		fmt.Fprintf(stdout, "received %+v\n", clientMessage)
+
+		serverMessage, receiver, err := clientMessage.Process(coreInstanse)
+		if err != nil {
+			fmt.Fprintf(stdout, "%s\n", err)
+			err := messages.Broadcast(
+				c.send,
+				messages.NewErrorMessage(
+					fmt.Sprintf("failed to create server message: %s", message),
+				),
+			)
+			if err != nil {
+				fmt.Fprintf(stdout, "failed to broadcast %s\n", err)
+			}
+			continue
+		}
+
+		var to chan []byte
+		switch receiver {
+		case messages.None:
+			continue
+		case messages.Sender:
+			to = c.send
+		case messages.All:
+			to = c.hub.broadcast
+		}
+		if err := messages.Broadcast(to, serverMessage); err != nil {
+			fmt.Fprintf(stdout, "failed to broadcast %s\n", err)
+		}
 	}
 }
 
@@ -133,13 +177,13 @@ func handleServeWebSockets(core *core.Core, hub *Hub) http.HandlerFunc {
 
 		client.hub.register <- client
 		if r.URL.Query().Get("reconnect") == "true" {
-			err := client.sendMessage(newMessage("reload", nil))
+			// err := client.sendMessage(newMessage("reload", nil))
 			if err != nil {
 				fmt.Fprintf(config.Stderr, "failed to send refresh message: %s\n", err)
 			}
 		}
 
 		go client.writePump()
-		go client.readPump()
+		go client.readPump(core)
 	}
 }

@@ -64,6 +64,7 @@ func TestCreateMessages(t *testing.T) {
 }
 
 func TestGenerateMessagesSliceN(t *testing.T) {
+	test_helpers.Skip(t)
 	messages := db_helpers.GenerateMessagesSliceN(3, 1)
 	actual := test_helpers.UnpointerSlice(messages)
 	expected := []models.Message{

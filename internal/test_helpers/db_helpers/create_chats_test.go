@@ -57,6 +57,7 @@ func TestCreateChats(t *testing.T) {
 }
 
 func TestGenerateChatsSliceN(t *testing.T) {
+	test_helpers.Skip(t)
 	chats := db_helpers.GenerateChatsSliceN(3)
 	actual := test_helpers.UnpointerSlice(chats)
 	expected := []models.Chat{

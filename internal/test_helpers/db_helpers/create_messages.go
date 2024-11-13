@@ -3,10 +3,23 @@ package db_helpers
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 
 	"github.com/k10wl/hermes/internal/models"
 )
+
+func roleStringToID(role string) int64 {
+	switch role {
+	case "user":
+		return 1
+	case "assistant":
+		return 2
+	case "system":
+		return 3
+	}
+	panic(fmt.Sprintf("role %q does not exist", role))
+}
 
 func CreateMessages(db *sql.DB, ctx context.Context, messages []*models.Message) error {
 	tx, err := db.BeginTx(ctx, nil)
@@ -17,7 +30,7 @@ func CreateMessages(db *sql.DB, ctx context.Context, messages []*models.Message)
 	sqlStr := "INSERT INTO messages (chat_id, content, role_id) VALUES "
 	for _, v := range messages {
 		sqlStr += "(?, ?, ?), "
-		vals = append(vals, v.ChatID, v.Content, v.Role)
+		vals = append(vals, v.ChatID, v.Content, roleStringToID(v.Role))
 	}
 	sqlStr = strings.TrimSuffix(sqlStr, ", ")
 	stmt, err := tx.Prepare(sqlStr)

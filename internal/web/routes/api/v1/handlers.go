@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/k10wl/hermes/internal/core"
+	"github.com/k10wl/hermes/internal/web/routes/api/v1/messages"
 )
 
 func handleChats(c *core.Core) http.HandlerFunc {
@@ -54,7 +55,7 @@ func handleCheckHeath() http.HandlerFunc {
 
 func handleWebhook(hub *Hub) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg, err := newMessage("reload", nil).encode()
+		msg, err := messages.NewReloadMessage().Encode()
 		if err != nil {
 			fmt.Printf("err: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)

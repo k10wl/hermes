@@ -7,7 +7,7 @@ import (
 )
 
 type Query interface {
-	Execute() error
+	Execute(context.Context) error
 }
 
 type GetChatsQuery struct {

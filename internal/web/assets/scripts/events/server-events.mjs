@@ -1,14 +1,16 @@
 import { config } from "/assets/scripts/config.mjs";
+import { assertInstance } from "/assets/scripts/utils/assert-instance.mjs";
 import { currentUrl } from "/assets/scripts/utils/current-url.mjs";
 import { ValidateString } from "/assets/scripts/utils/validate.mjs";
 
-import { assertInstance } from "../utils/assert-instance.mjs";
 import {
   ChatCreatedEvent,
   ConnectionStatusChangeEvent,
   ReadChatEvent,
+  ServerErrorEvent,
   ServerEvent,
 } from "./server-events-list.mjs";
+
 /**
  * @typedef {Object} IsolatedServiceEvents
  * @property {ConnectionStatusChangeEvent} connection-status-change
@@ -24,6 +26,7 @@ import {
  * @property {ChatCreatedEvent} chat-created
  * @property {ServerEvent} reload
  * @property {ReadChatEvent} read-chat
+ * @property {ServerErrorEvent} server-error
  */
 
 /** @typedef { ServerEmittedEvents & IsolatedServiceEvents } RegisteredEvents */
@@ -212,6 +215,8 @@ class EmittedServerEventFactory {
     switch (ValidateString.parse(res?.groups?.type)) {
       case "reload":
         return ServerEvent.parse(data);
+      case "server-error":
+        return ServerErrorEvent.parse(data);
       case "chat-created":
         return ChatCreatedEvent.parse(data);
       case "read-chat":

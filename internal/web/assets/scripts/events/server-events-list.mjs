@@ -113,3 +113,30 @@ export class ReadChatEvent extends ServerEvent {
     });
   }
 }
+
+export class ServerErrorEvent extends ServerEvent {
+  static #eventValidation = new ValidateObject({
+    type: ValidateString,
+    payload: ValidateString,
+  });
+
+  /**
+   * @param {{
+   *   type: string,
+   *   payload: string
+   * }} event
+   */
+  constructor(event) {
+    super(event);
+    this.payload = event.payload;
+  }
+
+  /** @param {unknown} data */
+  static parse(data) {
+    return new ServerErrorEvent(
+      ServerErrorEvent.#eventValidation.parse(
+        JSON.parse(ValidateString.parse(data)),
+      ),
+    );
+  }
+}
