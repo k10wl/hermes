@@ -24,3 +24,10 @@ func (s Seeder) SeedChatsN(n int64) error {
 	}
 	return CreateChats(s.db, s.ctx, GenerateChatsSliceN(n))
 }
+
+func (s Seeder) SeedMessagesN(n int64, chatID int64) error {
+	if n < 0 {
+		return fmt.Errorf("cannot process negative N\n")
+	}
+	return CreateMessages(s.db, s.ctx, GenerateMessagesSliceN(n, chatID))
+}

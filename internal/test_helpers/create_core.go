@@ -2,6 +2,7 @@ package test_helpers
 
 import (
 	"database/sql"
+	"strings"
 
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/settings"
@@ -13,5 +14,8 @@ func CreateCore() (*core.Core, *sql.DB) {
 	if err != nil {
 		panic(err)
 	}
-	return core.NewCore(db, &settings.Config{}), db.DB
+	c := core.NewCore(db, &settings.Config{})
+	c.GetConfig().Stdoout = &strings.Builder{}
+	c.GetConfig().Stderr = &strings.Builder{}
+	return c, db.DB
 }
