@@ -38,7 +38,12 @@ func TestMessagesSeeder(t *testing.T) {
 
 	seeder := db_helpers.NewSeeder(db, ctx)
 	seedsAmount := 420
-	seeder.SeedMessagesN(int64(seedsAmount), 1)
+	if err := seeder.SeedChatsN(1); err != nil {
+		t.Fatalf("error upon seeding messages - %s\n", err)
+	}
+	if err := seeder.SeedMessagesN(int64(seedsAmount), 1); err != nil {
+		t.Fatalf("error upon seeding messages - %s\n", err)
+	}
 
 	rows, err := db.Query(`SELECT * FROM messages`)
 	if err != nil {

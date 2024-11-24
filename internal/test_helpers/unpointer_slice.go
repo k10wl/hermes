@@ -7,3 +7,13 @@ func UnpointerSlice[T any](arg []*T) []T {
 	}
 	return res
 }
+
+type timeResetter interface {
+	TimestampsToNilForTest__()
+}
+
+func ResetSliceTime[T timeResetter](arg []T) {
+	for _, value := range arg {
+		value.TimestampsToNilForTest__()
+	}
+}

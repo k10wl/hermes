@@ -28,16 +28,18 @@ func TestCreateMessages(t *testing.T) {
 		)
 	}
 
-	err := db_helpers.CreateMessages(db, ctx, subject)
-	if err != nil {
-		t.Errorf("error upon messages creation - %s\n", err)
-		return
+	if _, err := db.Exec(
+		`INSERT INTO chats (name) VALUES ("test");`,
+	); err != nil {
+		t.Fatalf("failed to create chat, error: %s\n", err)
+	}
+	if err := db_helpers.CreateMessages(db, ctx, subject); err != nil {
+		t.Fatalf("error upon messages creation - %s\n", err)
 	}
 
 	rows, err := db.Query("SELECT content FROM messages WHERE chat_id = 1")
 	if err != nil {
-		t.Errorf("error upon db query - %s\n", err)
-		return
+		t.Fatalf("error upon db query - %s\n", err)
 	}
 
 	for i, subject := range subject {

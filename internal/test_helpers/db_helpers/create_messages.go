@@ -21,7 +21,11 @@ func roleStringToID(role string) int64 {
 	panic(fmt.Sprintf("role %q does not exist", role))
 }
 
-func CreateMessages(db *sql.DB, ctx context.Context, messages []*models.Message) error {
+func CreateMessages(
+	db *sql.DB,
+	ctx context.Context,
+	messages []*models.Message,
+) error {
 	tx, err := db.BeginTx(ctx, nil)
 	vals := []any{}
 	if err != nil {
