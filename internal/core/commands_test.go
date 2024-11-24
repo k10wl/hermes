@@ -9,6 +9,7 @@ import (
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/models"
 	"github.com/k10wl/hermes/internal/test_helpers"
+	"github.com/k10wl/hermes/internal/test_helpers/db_helpers"
 )
 
 func TestCreateChatAndCompletionCommand(t *testing.T) {
@@ -50,7 +51,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 					"hello world",
 					"",
 					&ai_clients.Parameters{Model: "gpt-4o"},
-					mockCompletion,
+					test_helpers.MockCompletion,
 				)
 			},
 			shouldError: false,
@@ -58,7 +59,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 				ID:      2,
 				ChatID:  1,
 				Role:    core.AssistantRole,
-				Content: "hello world",
+				Content: "> mocked: hello world",
 			},
 		},
 		{
@@ -70,7 +71,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 					``,
 					"welcome",
 					&ai_clients.Parameters{Model: "gpt-4o"},
-					mockCompletion,
+					test_helpers.MockCompletion,
 				)
 			},
 			shouldError: false,
@@ -78,7 +79,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 				ID:      4,
 				ChatID:  2,
 				Role:    core.AssistantRole,
-				Content: "hello world!",
+				Content: "> mocked: hello world!",
 			},
 		},
 		{
@@ -90,7 +91,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 					`--{{template "welcome"}}`,
 					"",
 					&ai_clients.Parameters{Model: "gpt-4o"},
-					mockCompletion,
+					test_helpers.MockCompletion,
 				)
 			},
 			shouldError: false,
@@ -98,7 +99,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 				ID:      6,
 				ChatID:  3,
 				Role:    core.AssistantRole,
-				Content: "hello world!",
+				Content: "> mocked: hello world!",
 			},
 		},
 		{
@@ -110,7 +111,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 					`--{{template "welcome"}}`,
 					"wrapper",
 					&ai_clients.Parameters{Model: "gpt-4o"},
-					mockCompletion,
+					test_helpers.MockCompletion,
 				)
 			},
 			shouldError: false,
@@ -118,7 +119,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 				ID:      8,
 				ChatID:  4,
 				Role:    core.AssistantRole,
-				Content: "wrapper - hello world! - wrapper",
+				Content: "> mocked: wrapper - hello world! - wrapper",
 			},
 		},
 		{
@@ -130,7 +131,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 					`--{{template "welcome"}}`,
 					"does not exist",
 					&ai_clients.Parameters{Model: "gpt-4o"},
-					mockCompletion,
+					test_helpers.MockCompletion,
 				)
 			},
 			shouldError:    true,
@@ -145,7 +146,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 					"hello world!",
 					"wrapper",
 					&ai_clients.Parameters{Model: "gpt-4o"},
-					mockCompletion,
+					test_helpers.MockCompletion,
 				)
 			},
 			shouldError: false,
@@ -153,7 +154,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 				ID:      10,
 				ChatID:  5,
 				Role:    core.AssistantRole,
-				Content: "wrapper - hello world! - wrapper",
+				Content: "> mocked: wrapper - hello world! - wrapper",
 			},
 		},
 		{
@@ -165,7 +166,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 					"will blow up",
 					"loop1",
 					&ai_clients.Parameters{Model: "gpt-4o"},
-					mockCompletion,
+					test_helpers.MockCompletion,
 				)
 			},
 			shouldError:    true,
@@ -180,7 +181,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 					`will blow up --{{template "loop1" . }} `,
 					"",
 					&ai_clients.Parameters{Model: "gpt-4o"},
-					mockCompletion,
+					test_helpers.MockCompletion,
 				)
 			},
 			shouldError:    true,
@@ -195,7 +196,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 					`will blow up --{{template "loop1" . }} `,
 					"loop2",
 					&ai_clients.Parameters{Model: "gpt-4o"},
-					mockCompletion,
+					test_helpers.MockCompletion,
 				)
 			},
 			shouldError:    true,
@@ -210,7 +211,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 					`should fill welcome (--{{template "welcome"}})(--{{template "welcome"}})`,
 					"",
 					&ai_clients.Parameters{Model: "gpt-4o"},
-					mockCompletion,
+					test_helpers.MockCompletion,
 				)
 			},
 			shouldError: false,
@@ -218,7 +219,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 				ChatID:  6,
 				ID:      12,
 				Role:    core.AssistantRole,
-				Content: "should fill welcome (hello world!)(hello world!)",
+				Content: "> mocked: should fill welcome (hello world!)(hello world!)",
 			},
 		},
 		{
@@ -230,7 +231,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 					`should fill welcome (--{{template "welcome"}})(--{{template "welcome"}})`,
 					"wrapper",
 					&ai_clients.Parameters{Model: "gpt-4o"},
-					mockCompletion,
+					test_helpers.MockCompletion,
 				)
 			},
 			shouldError: false,
@@ -238,7 +239,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 				ChatID:  7,
 				ID:      14,
 				Role:    core.AssistantRole,
-				Content: "wrapper - should fill welcome (hello world!)(hello world!) - wrapper",
+				Content: "> mocked: wrapper - should fill welcome (hello world!)(hello world!) - wrapper",
 			},
 		},
 	}
@@ -283,7 +284,11 @@ func TestCreateCompletionCommand(t *testing.T) {
 		expectedResult models.Message
 	}
 
-	coreInstance, _ := test_helpers.CreateCore()
+	coreInstance, db := test_helpers.CreateCore()
+	err := db_helpers.NewSeeder(db, context.Background()).SeedChatsN(1)
+	if err != nil {
+		t.Fatalf("Failed to seed chats: %s\n", err)
+	}
 	var currentCommand *core.CreateCompletionCommand
 
 	table := []testCase{
@@ -297,7 +302,7 @@ func TestCreateCompletionCommand(t *testing.T) {
 					"hello world",
 					"",
 					&ai_clients.Parameters{Model: "gpt-4o"},
-					mockCompletion,
+					test_helpers.MockCompletion,
 				)
 			},
 			shouldError: false,
@@ -305,7 +310,7 @@ func TestCreateCompletionCommand(t *testing.T) {
 				ID:      2,
 				ChatID:  1,
 				Role:    core.AssistantRole,
-				Content: "hello world",
+				Content: "> mocked: hello world",
 			},
 		},
 	}
@@ -609,5 +614,30 @@ func TestEditTemplateByName(t *testing.T) {
 				continue
 			}
 		}
+	}
+}
+
+func TestCreateChat(t *testing.T) {
+	c, db := test_helpers.CreateCore()
+	cmd := core.NewCreateChatWithMessageCommand(c, &models.Message{
+		Role:    "user",
+		Content: "hello-world",
+	})
+	err := cmd.Execute(context.Background())
+	if err != nil {
+		t.Errorf("Unexpected error: %s\n", err)
+	}
+	dbChat, err := db_helpers.GetChatByID(db, context.Background(), 1)
+	if err != nil {
+		t.Errorf("Unexpected error: %s\n", err)
+	}
+	if dbChat.ID != 1 {
+		t.Errorf("Failed to store first chat in the database\nData: %+v", dbChat)
+	}
+	if cmd.Result.Chat.ID != 1 {
+		t.Errorf("Created chat with wrong ID - %d\n", cmd.Result.Chat.ID)
+	}
+	if cmd.Result.Message.Content != "hello-world" {
+		t.Errorf("Created message has wrong content - %q", cmd.Result.Message.Content)
 	}
 }

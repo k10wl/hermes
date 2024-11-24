@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/web/routes/api/v1/messages"
 )
@@ -34,7 +35,15 @@ type Client struct {
 	send chan []byte
 }
 
-func (c *Client) readPump(coreInstanse *core.Core) {
+func (c Client) Single() chan []byte {
+	return c.send
+}
+
+func (c Client) All() chan []byte {
+	return c.hub.broadcast
+}
+
+func (c *Client) readPump(coreInstanse *core.Core, completionFn ai_clients.CompletionFn) {
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
@@ -47,7 +56,9 @@ func (c *Client) readPump(coreInstanse *core.Core) {
 			return nil
 		},
 	)
+	stderr := coreInstanse.GetConfig().Stderr
 	stdout := coreInstanse.GetConfig().Stdoout
+
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
@@ -62,48 +73,30 @@ func (c *Client) readPump(coreInstanse *core.Core) {
 		}
 
 		clientMessage, err := messages.ReadMessage(message)
-		if err != nil {
-			fmt.Fprintf(stdout, "%s\n", err)
-			err := messages.Broadcast(
+		if err != nil || clientMessage == nil {
+			fmt.Fprintf(stderr, "> %s\n", err.Error())
+
+			if err := messages.Broadcast(
 				c.send,
-				messages.NewErrorMessage(
-					fmt.Sprintf("unhandled message: %s", message),
+				messages.NewServerError(
+					fmt.Sprintf("malformed message: %q\n", message),
 				),
-			)
-			if err != nil {
-				fmt.Fprintf(stdout, "failed to broadcast %s\n", err)
+			); err != nil {
+				fmt.Fprintf(stderr, "failed to broadcast %s\n", err.Error())
 			}
 			continue
 		}
-		fmt.Fprintf(stdout, "received %+v\n", clientMessage)
+		fmt.Fprintf(stdout, "< %+v\n", clientMessage)
 
-		serverMessage, receiver, err := clientMessage.Process(coreInstanse)
-		if err != nil {
-			fmt.Fprintf(stdout, "%s\n", err)
-			err := messages.Broadcast(
-				c.send,
-				messages.NewErrorMessage(
-					fmt.Sprintf("failed to create server message: %s", message),
-				),
-			)
-			if err != nil {
-				fmt.Fprintf(stdout, "failed to broadcast %s\n", err)
+		go func() {
+			if err := clientMessage.Process(
+				c,
+				coreInstanse,
+				completionFn,
+			); err != nil {
+				fmt.Fprintf(stderr, "processing error %s\n", err.Error())
 			}
-			continue
-		}
-
-		var to chan []byte
-		switch receiver {
-		case messages.None:
-			continue
-		case messages.Sender:
-			to = c.send
-		case messages.All:
-			to = c.hub.broadcast
-		}
-		if err := messages.Broadcast(to, serverMessage); err != nil {
-			fmt.Fprintf(stdout, "failed to broadcast %s\n", err)
-		}
+		}()
 	}
 }
 
@@ -161,8 +154,13 @@ func (c *Client) sendMessage(m message) error {
 	return nil
 }
 
-func handleServeWebSockets(core *core.Core, hub *Hub) http.HandlerFunc {
+func handleServeWebSockets(
+	core *core.Core,
+	hub *Hub,
+	completionFn ai_clients.CompletionFn,
+) http.HandlerFunc {
 	config := core.GetConfig()
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -177,13 +175,13 @@ func handleServeWebSockets(core *core.Core, hub *Hub) http.HandlerFunc {
 
 		client.hub.register <- client
 		if r.URL.Query().Get("reconnect") == "true" {
-			// err := client.sendMessage(newMessage("reload", nil))
+			err := messages.Broadcast(client.send, messages.NewServerReload())
 			if err != nil {
 				fmt.Fprintf(config.Stderr, "failed to send refresh message: %s\n", err)
 			}
 		}
 
 		go client.writePump()
-		go client.readPump(core)
+		go client.readPump(core, completionFn)
 	}
 }

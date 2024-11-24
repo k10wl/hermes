@@ -12,6 +12,43 @@ type Command interface {
 	Execute(context.Context) error
 }
 
+type CreateChatWithMessageCommandResult struct {
+	Chat    *models.Chat
+	Message *models.Message
+}
+
+type CreateChatWithMessageCommand struct {
+	core    *Core
+	message *models.Message
+	Result  *CreateChatWithMessageCommandResult
+}
+
+func NewCreateChatWithMessageCommand(
+	core *Core,
+	message *models.Message,
+) *CreateChatWithMessageCommand {
+	return &CreateChatWithMessageCommand{
+		core:    core,
+		message: message,
+	}
+}
+
+func (c *CreateChatWithMessageCommand) Execute(ctx context.Context) error {
+	chat, message, err := c.core.db.CreateChatAndMessage(
+		ctx,
+		c.message.Role,
+		c.message.Content,
+	)
+	if err != nil {
+		return err
+	}
+	c.Result = &CreateChatWithMessageCommandResult{
+		Chat:    chat,
+		Message: message,
+	}
+	return nil
+}
+
 type CreateChatAndCompletionCommand struct {
 	core       *Core
 	role       string
@@ -22,6 +59,8 @@ type CreateChatAndCompletionCommand struct {
 	Result     *models.Message
 }
 
+// Deprecated: turned out to good to be true
+// please use create chat and create message separately
 func NewCreateChatAndCompletionCommand(
 	core *Core,
 	role string,
@@ -73,14 +112,15 @@ func (c *CreateChatAndCompletionCommand) Execute(ctx context.Context) error {
 }
 
 type CreateCompletionCommand struct {
-	core       *Core
-	message    string
-	template   string
-	role       string
-	chatID     int64
-	parameters *ai_clients.Parameters
-	completion ai_clients.CompletionFn
-	Result     *models.Message
+	core                     *Core
+	message                  string
+	template                 string
+	role                     string
+	chatID                   int64
+	parameters               *ai_clients.Parameters
+	completion               ai_clients.CompletionFn
+	Result                   *models.Message
+	shouldPersistUserMessage bool
 }
 
 func NewCreateCompletionCommand(
@@ -93,14 +133,19 @@ func NewCreateCompletionCommand(
 	completion ai_clients.CompletionFn,
 ) *CreateCompletionCommand {
 	return &CreateCompletionCommand{
-		core:       core,
-		chatID:     chatID,
-		message:    message,
-		template:   template,
-		role:       role,
-		parameters: parameters,
-		completion: completion,
+		core:                     core,
+		chatID:                   chatID,
+		message:                  message,
+		template:                 template,
+		role:                     role,
+		parameters:               parameters,
+		completion:               completion,
+		shouldPersistUserMessage: true,
 	}
+}
+
+func (c *CreateCompletionCommand) SkipPersistingUserMessage(skipPersistingUserMessage bool) {
+	c.shouldPersistUserMessage = skipPersistingUserMessage
 }
 
 func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
@@ -112,14 +157,16 @@ func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.core.db.CreateMessage(
-		ctx,
-		c.chatID,
-		c.role,
-		input,
-	)
-	if err != nil {
-		return err
+	if c.shouldPersistUserMessage {
+		_, err = c.core.db.CreateMessage(
+			ctx,
+			c.chatID,
+			c.role,
+			input,
+		)
+		if err != nil {
+			return err
+		}
 	}
 	history := []*ai_clients.Message{}
 	for _, p := range prev {

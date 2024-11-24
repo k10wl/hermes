@@ -43,17 +43,19 @@ clean:
 	@rm -f ./bin/$(APP_NAME) ./bin/$(DEV_APP_NAME)
 	@echo "Done"
 
+TEST_DURATION=5s
+
 test-web:
 	@echo ">> Testing web..."
 	@(cd internal/web && npm run test)
 	@echo ">> Finished web testing"
 pre-test: 
 	@echo ">> Testing helper functions..."
-	@go test  ./internal/test_helpers/... -v
+	@go test  ./internal/test_helpers/... -v -timeout $(TEST_DURATION)
 	@echo ">> Finished helpers testing"
 test-app:
 	@echo ">> Testing app..."
-	@export HERMES_TEST_HELPERS_SKIP=true; export HERMES_DB_DNS=:memory:; go test -ldflags "-X github.com/k10wl/hermes/internal/settings.appName=$(DEV_APP_NAME) -X github.com/k10wl/hermes/internal/settings.DefaultPort=$(DEV_PORT)" ./... -v
+	@export HERMES_TEST_HELPERS_SKIP=true; export HERMES_DB_DNS=:memory:; go test -ldflags "-X github.com/k10wl/hermes/internal/settings.appName=$(DEV_APP_NAME) -X github.com/k10wl/hermes/internal/settings.DefaultPort=$(DEV_PORT)" ./... -v -timeout $(TEST_DURATION)
 	@echo ">> Finished app testing"
 test:
 	@echo "> Starting testing"

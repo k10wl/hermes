@@ -38,9 +38,9 @@ type TokensUsage struct {
 }
 
 type Parameters struct {
-	Model       string
-	MaxTokens   *int64
-	Temperature *float64
+	Model       string   `json:"model,required"`
+	MaxTokens   *int64   `json:"max_tokens"`
+	Temperature *float64 `json:"temperature"`
 }
 
 type AIResponse struct {
