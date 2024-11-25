@@ -17,13 +17,13 @@ export class Messages extends HTMLElement {
     const messagesViewObserver = new MessagesViewObserver(container);
     const routeObserver = new RouteObserver(container);
     const messageCreatedObserver = new MessageCreatedObserver(container);
-    this.#cleanupOnDisconnect.push(LocationControll.attach(routeObserver));
+    const audioNotificationObserver = new AudioNotificaitonsObserver();
     this.#cleanupOnDisconnect.push(
-      ServerEvents.on("message-created", (data) =>
-        messageCreatedObserver.notify(data),
-      ),
-    );
-    this.#cleanupOnDisconnect.push(
+      LocationControll.attach(routeObserver),
+      ServerEvents.on("message-created", (data) => {
+        messageCreatedObserver.notify(data);
+        audioNotificationObserver.notify(data);
+      }),
       ServerEvents.on("read-chat", (data) => messagesViewObserver.notify(data)),
     );
   }
@@ -78,6 +78,22 @@ class MessagesViewObserver {
   }
 }
 
+class AudioNotificaitonsObserver {
+  /**
+   * @param {import("/assets/scripts/events/server-events-list.mjs").MessageCreatedEvent } event
+   */
+  notify(event) {
+    if (event.payload.message.role === "user") {
+      return;
+    }
+    if (LocationControll.pathname === `/chats/${event.payload.chat_id}`) {
+      SoundManager.play("message-in-local");
+      return;
+    }
+    SoundManager.play("message-in-global");
+  }
+}
+
 class MessageCreatedObserver {
   #container;
   /** @param {HTMLElement} container  */
@@ -86,13 +102,6 @@ class MessageCreatedObserver {
   }
   /** @param {import("/assets/scripts/events/server-events-list.mjs").MessageCreatedEvent } event  */
   notify(event) {
-    if (LocationControll.pathname !== `/chats/${event.payload.chat_id}`) {
-      SoundManager.play("message-in-global");
-      return;
-    }
-    if (event.payload.message.role !== "user") {
-      SoundManager.play("message-in-local");
-    }
     this.#container.append(MessageCreator.createElement(event.payload.message));
   }
 }
