@@ -13,10 +13,9 @@ import (
 )
 
 const (
-	writeWait      = 10 * time.Second
-	pongWait       = 60 * time.Second
-	pingPeriod     = (pongWait * 9) / 10
-	maxMessageSize = 512
+	writeWait  = 10 * time.Second
+	pongWait   = 10 * time.Second
+	pingPeriod = (pongWait * 9) / 10
 )
 
 var (
@@ -25,8 +24,8 @@ var (
 )
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	ReadBufferSize:  0,
+	WriteBufferSize: 0,
 }
 
 type Client struct {
@@ -48,7 +47,6 @@ func (c *Client) readPump(coreInstanse *core.Core, completionFn ai_clients.Compl
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
-	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(
 		func(string) error {
