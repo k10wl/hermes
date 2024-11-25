@@ -1,3 +1,9 @@
+import {
+  ValidateNumber,
+  ValidateObject,
+  ValidateString,
+} from "./utils/validate.mjs";
+
 export class Chat {
   /**
    * @param {number} id
@@ -10,6 +16,13 @@ export class Chat {
 }
 
 export class Message {
+  static validator = new ValidateObject({
+    id: ValidateNumber,
+    chat_id: ValidateNumber,
+    content: ValidateString,
+    role: ValidateString,
+  });
+
   /** @param {{
    *   id: number
    *   chat_id: number

@@ -4,6 +4,7 @@ import {
   ValidateBoolean,
   ValidateNumber,
   ValidateObject,
+  ValidateOptional,
   ValidateString,
 } from "/assets/scripts/utils/validate.mjs";
 
@@ -46,26 +47,35 @@ export class ChatCreatedEvent extends ServerEvent {
   static #eventValidation = new ValidateObject({
     type: ValidateString,
     payload: new ValidateObject({
-      id: ValidateNumber,
-      name: ValidateString,
+      chat: new ValidateObject({
+        id: ValidateNumber,
+        name: ValidateString,
+      }),
+      message: Message.validator,
+      redirect: new ValidateOptional(ValidateBoolean),
     }),
   });
 
-  /**
-   * @param { { type: string, payload: { id: number, name: string } } } event
-   */
-  constructor(event) {
-    super(event);
-    this.payload = new Chat(event.payload.id, event.payload.name);
+  /** @param { ReturnType<ChatCreatedEvent.validate> } data */
+  constructor(data) {
+    super(data);
+    this.payload = {
+      ...data.payload,
+      chat: new Chat(data.payload.chat.id, data.payload.chat.name),
+      message: new Message(data.payload.message),
+    };
   }
 
   /** @param {unknown} data */
   static parse(data) {
     return new ChatCreatedEvent(
-      ChatCreatedEvent.#eventValidation.parse(
-        JSON.parse(ValidateString.parse(data)),
-      ),
+      ChatCreatedEvent.validate(JSON.parse(ValidateString.parse(data))),
     );
+  }
+
+  /** @param {unknown} data */
+  static validate(data) {
+    return ChatCreatedEvent.#eventValidation.parse(data);
   }
 }
 
@@ -73,14 +83,7 @@ export class ReadChatEvent extends ServerEvent {
   static #eventValidation = new ValidateObject({
     type: ValidateString,
     payload: new ValidateObject({
-      messages: new ValidateArray(
-        new ValidateObject({
-          id: ValidateNumber,
-          chat_id: ValidateNumber,
-          content: ValidateString,
-          role: ValidateString,
-        }),
-      ),
+      messages: new ValidateArray(Message.validator),
     }),
   });
 
@@ -138,5 +141,43 @@ export class ServerErrorEvent extends ServerEvent {
         JSON.parse(ValidateString.parse(data)),
       ),
     );
+  }
+}
+
+export class MessageCreatedEvent extends ServerEvent {
+  static #eventValidation = new ValidateObject({
+    type: ValidateString,
+    payload: new ValidateObject({
+      chat_id: ValidateNumber,
+      message: Message.validator,
+    }),
+  });
+
+  /**
+   * @param {{
+   *   type: string,
+   *   payload: {
+   *     chat_id: number
+   *     message: Message
+   *   }
+   * }} event
+   */
+  constructor(event) {
+    super(event);
+    this.payload = event.payload;
+  }
+
+  /** @param {unknown} data */
+  static parse(data) {
+    const parsed = MessageCreatedEvent.#eventValidation.parse(
+      JSON.parse(ValidateString.parse(data)),
+    );
+    return new MessageCreatedEvent({
+      ...parsed,
+      payload: {
+        ...parsed.payload,
+        message: new Message(parsed.payload.message),
+      },
+    });
   }
 }

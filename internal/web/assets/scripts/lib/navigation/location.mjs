@@ -1,14 +1,18 @@
 import { Publisher } from "/assets/scripts/utils/publisher.mjs";
 
 export class LocationControll {
-  static #publisher = new Publisher(LocationControll.#getPathname());
+  static get pathname() {
+    return window.location.pathname;
+  }
+
+  static #publisher = new Publisher(LocationControll.pathname);
   static #ready = false;
 
   /**
    * @param {{notify: (route: string) => void}} observer
    */
   static attach(observer) {
-    observer.notify(LocationControll.#getPathname());
+    observer.notify(LocationControll.pathname);
     return this.#publisher.attach(observer);
   }
 
@@ -31,12 +35,8 @@ export class LocationControll {
     });
   }
 
-  static #getPathname() {
-    return window.location.pathname;
-  }
-
   static #update() {
-    LocationControll.#publisher.update(LocationControll.#getPathname());
+    LocationControll.#publisher.update(LocationControll.pathname);
   }
 }
 

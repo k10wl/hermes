@@ -1,6 +1,7 @@
 import { RequestReadChatEvent } from "/assets/scripts/events/client-events-list.mjs";
 import { ServerEvents } from "/assets/scripts/events/server-events.mjs";
 import { LocationControll } from "/assets/scripts/lib/navigation/location.mjs";
+import { SoundManager } from "/assets/scripts/lib/sound-manager.mjs";
 
 export class Messages extends HTMLElement {
   /** @type {(() => void)[]} */
@@ -15,7 +16,13 @@ export class Messages extends HTMLElement {
     this.appendChild(container);
     const messagesViewObserver = new MessagesViewObserver(container);
     const routeObserver = new RouteObserver(container);
+    const messageCreatedObserver = new MessageCreatedObserver(container);
     this.#cleanupOnDisconnect.push(LocationControll.attach(routeObserver));
+    this.#cleanupOnDisconnect.push(
+      ServerEvents.on("message-created", (data) =>
+        messageCreatedObserver.notify(data),
+      ),
+    );
     this.#cleanupOnDisconnect.push(
       ServerEvents.on("read-chat", (data) => messagesViewObserver.notify(data)),
     );
@@ -68,6 +75,25 @@ class MessagesViewObserver {
         MessageCreator.createElement(message),
       ),
     );
+  }
+}
+
+class MessageCreatedObserver {
+  #container;
+  /** @param {HTMLElement} container  */
+  constructor(container) {
+    this.#container = container;
+  }
+  /** @param {import("/assets/scripts/events/server-events-list.mjs").MessageCreatedEvent } event  */
+  notify(event) {
+    if (LocationControll.pathname !== `/chats/${event.payload.chat_id}`) {
+      SoundManager.play("message-in-global");
+      return;
+    }
+    if (event.payload.message.role !== "user") {
+      SoundManager.play("message-in-local");
+    }
+    this.#container.append(MessageCreator.createElement(event.payload.message));
   }
 }
 

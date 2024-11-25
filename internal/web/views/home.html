@@ -18,7 +18,6 @@
     <script>
         new Theme(Settings.init(JSON.parse({{.WebSettings}}))).load();
     </script>
-    <script src="/assets/dom-content-loaded.js"></script>
 </head>
 
 <body>
@@ -64,8 +63,9 @@
 {{end}}
 
 {{define "form"}}
-<form id="message-form">
-    <textarea rows="1" id="message-input" name="content" placeholder="Type message..." autofocus></textarea>
+<form id="message-form" is="hermes-message-content-form">
+    <textarea id="message-input" is="hermes-textarea-autoresize" focus-on-input="true" max-rows="8" name="content"
+        placeholder="Type message..." autofocus></textarea>
     <button id="message-submit-button" type="submit">send</button>
 </form>
 {{end}}

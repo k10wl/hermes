@@ -6,6 +6,7 @@ import { ValidateString } from "/assets/scripts/utils/validate.mjs";
 import {
   ChatCreatedEvent,
   ConnectionStatusChangeEvent,
+  MessageCreatedEvent,
   ReadChatEvent,
   ServerErrorEvent,
   ServerEvent,
@@ -27,6 +28,7 @@ import {
  * @property {ServerEvent} reload
  * @property {ReadChatEvent} read-chat
  * @property {ServerErrorEvent} server-error
+ * @property {MessageCreatedEvent} message-created
  */
 
 /** @typedef { ServerEmittedEvents & IsolatedServiceEvents } RegisteredEvents */
@@ -202,6 +204,7 @@ export class ServerEvents {
   }
 }
 
+// I HATE ADDING EVERY MESSAGE IN HERE HOLYFUCK CAN THIS BE AUTOMATED???
 class EmittedServerEventFactory {
   static #typeRegex = /"type":(\s?)+"(?<type>.*?)"/;
   /**
@@ -219,6 +222,8 @@ class EmittedServerEventFactory {
         return ServerErrorEvent.parse(data);
       case "chat-created":
         return ChatCreatedEvent.parse(data);
+      case "message-created":
+        return MessageCreatedEvent.parse(data);
       case "read-chat":
         return ReadChatEvent.parse(data);
       default:

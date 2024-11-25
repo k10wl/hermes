@@ -3,7 +3,8 @@ export class SoundManager {
 
   static #path = "/assets/sounds/";
   static availableSounds = {
-    "message-in": "message-in.mp3",
+    "message-in-global": "message-in-global.mp3",
+    "message-in-local": "message-in-local.mp3",
   };
 
   /** @param {SoundName} name */
