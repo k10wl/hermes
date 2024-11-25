@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/k10wl/hermes/internal/ai_clients/claude"
+	"github.com/k10wl/hermes/internal/settings"
 )
 
 type clientClaude struct {
@@ -115,7 +116,10 @@ func (client clientClaude) decodeResult(response *claude.MessagesResponse) (*AIR
 
 func (client clientClaude) fillHeaders(r *http.Request) error {
 	if client.apiKey == "" {
-		return fmt.Errorf("Claude API key was not provided\n")
+		return fmt.Errorf(
+			"Anthropic API key %q was not provided\n",
+			settings.HermesAnthropicApiKeyName,
+		)
 	}
 	r.Header.Set("x-api-key", client.apiKey)
 	r.Header.Set("anthropic-version", "2023-06-01")

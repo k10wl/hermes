@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/k10wl/hermes/internal/ai_clients/openai"
+	"github.com/k10wl/hermes/internal/settings"
 )
 
 type clientOpenAI struct {
@@ -102,7 +103,10 @@ func (client clientOpenAI) decodeResponse(
 
 func (client clientOpenAI) fillHeaders(req *http.Request) error {
 	if client.apiKey == "" {
-		return fmt.Errorf("OpenAI API key was not provided\n")
+		return fmt.Errorf(
+			"OpenAI API key %q was not provided\n",
+			settings.HermesOpenAIApiKeyName,
+		)
 	}
 	req.Header.Add("Authorization", "Bearer "+client.apiKey)
 	req.Header.Set("Content-Type", "application/json")
