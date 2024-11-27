@@ -2,6 +2,7 @@ package core_test
 
 import (
 	"context"
+	"database/sql"
 	"reflect"
 	"testing"
 
@@ -639,5 +640,118 @@ func TestCreateChat(t *testing.T) {
 	}
 	if cmd.Result.Message.Content != "hello-world" {
 		t.Errorf("Created message has wrong content - %q", cmd.Result.Message.Content)
+	}
+}
+
+func TestCreateChatNames(t *testing.T) {
+	tooLong := "toolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolong"
+
+	chatCreators := []struct {
+		name         string
+		setup        func() (core.Command, *sql.DB)
+		expectToTrim bool
+	}{
+		{
+			name: "create chat with message",
+			setup: func() (core.Command, *sql.DB) {
+				c, db := test_helpers.CreateCore()
+				name := tooLong
+				cmd := core.NewCreateChatWithMessageCommand(c, &models.Message{
+					Role:    "user",
+					Content: name,
+				})
+				return cmd, db
+			},
+			expectToTrim: true,
+		},
+		{
+			name: "create chat and completion",
+			setup: func() (core.Command, *sql.DB) {
+				c, db := test_helpers.CreateCore()
+				name := tooLong
+				cmd := core.NewCreateChatAndCompletionCommand(
+					c,
+					core.AssistantRole,
+					name,
+					"",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					test_helpers.MockCompletion,
+				)
+				return cmd, db
+			},
+			expectToTrim: true,
+		},
+		{
+			name: "with normal name",
+			setup: func() (core.Command, *sql.DB) {
+				c, db := test_helpers.CreateCore()
+				name := "just a normal name"
+				cmd := core.NewCreateChatAndCompletionCommand(
+					c,
+					core.AssistantRole,
+					name,
+					"",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					test_helpers.MockCompletion,
+				)
+				return cmd, db
+			},
+			expectToTrim: false,
+		},
+		{
+			name: "80 characters name",
+			setup: func() (core.Command, *sql.DB) {
+				c, db := test_helpers.CreateCore()
+				name := "01234567890123456789012345678901234567890123456789012345678901234567890123456789"
+				cmd := core.NewCreateChatAndCompletionCommand(
+					c,
+					core.AssistantRole,
+					name,
+					"",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					test_helpers.MockCompletion,
+				)
+				return cmd, db
+			},
+			expectToTrim: false,
+		},
+	}
+
+	for _, test := range chatCreators {
+		cmd, db := test.setup()
+		err := cmd.Execute(context.Background())
+		if err != nil {
+			t.Errorf("Unexpected error in %q: %s\n", test.name, err)
+		}
+		dbChat, err := db_helpers.GetChatByID(db, context.Background(), 1)
+		if err != nil {
+			t.Fatalf("Unexpected error in %q: %s\n", test.name, err)
+		}
+
+		if test.expectToTrim {
+			if len(dbChat.Name) > 80 {
+				t.Errorf(
+					"Failed to trim chat name in %q\nData: %+v\n",
+					test.name,
+					dbChat,
+				)
+			}
+			if dbChat.Name[len(dbChat.Name)-3:] != "..." {
+				t.Errorf(
+					"Name did not ended in ellipsis in %q\nData: %+v\n",
+					test.name,
+					dbChat,
+				)
+			}
+			continue
+		}
+
+		if dbChat.Name[len(dbChat.Name)-3:] == "..." {
+			t.Errorf(
+				"Ellipsis used on name wihtout need in %q\nData: %+v\n",
+				test.name,
+				dbChat,
+			)
+		}
 	}
 }

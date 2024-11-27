@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-const Version = "4.5.1"
+const Version = "4.5.2"
 const VersionDate = "2024-11-27"
 
 const DefaultDatabaseName = "main.db"

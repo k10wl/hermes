@@ -68,7 +68,7 @@ func createChat(
 	ctx context.Context,
 	name string,
 ) (*models.Chat, error) {
-	row := executor(ctx, createChatQuery, name)
+	row := executor(ctx, createChatQuery, ellipsis(name, 80, 3, "."))
 	var chat models.Chat
 	err := row.Scan(
 		&chat.ID,
@@ -78,6 +78,18 @@ func createChat(
 		&chat.DeletedAt,
 	)
 	return &chat, err
+}
+
+func ellipsis(text string, max int, times int, replacement string) string {
+	if len(text) <= max {
+		return text
+	}
+	cutLen := len(replacement) * times
+	if max-cutLen < 1 {
+		panic("cannot trim into nothing")
+	}
+	cut := text[:max-cutLen]
+	return fmt.Sprintf("%s%s", cut, strings.Repeat(replacement, times))
 }
 
 const getChatsQueryWithWhere = `
