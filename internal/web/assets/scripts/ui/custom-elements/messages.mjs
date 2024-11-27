@@ -37,18 +37,15 @@ export class Messages extends HTMLElement {
 
 class RouteObserver {
   container;
-  #chatRegex = /\/chats\/(?<chatId>\d+)$/;
 
   /** @param {HTMLElement} container  */
   constructor(container) {
     this.container = container;
   }
 
-  /** @param {string} pathname  */
-  notify(pathname) {
-    const match = this.#chatRegex.exec(pathname);
-    if (match?.groups?.chatId) {
-      ServerEvents.send(new RequestReadChatEvent(+match.groups.chatId));
+  notify() {
+    if (LocationControll.chatId) {
+      ServerEvents.send(new RequestReadChatEvent(LocationControll.chatId));
       return;
     }
     this.container.innerHTML = "";
@@ -57,19 +54,14 @@ class RouteObserver {
 
 class MessagesViewObserver {
   container;
-  /** @type {null | number} */
-  chatId;
   /** @param {HTMLElement} container  */
   constructor(container) {
     this.container = container;
-    this.chatId = null;
   }
 
   /** @param {import( "/assets/scripts/events/server-events-list.mjs").ReadChatEvent} readChatEvent  */
   notify(readChatEvent) {
-    if (this.chatId !== readChatEvent.payload.messages.at(0)?.chat_id) {
-      this.container.innerHTML = "";
-    }
+    this.container.innerHTML = "";
     this.container.append(
       ...readChatEvent.payload.messages.map((message) =>
         MessageCreator.createElement(message),

@@ -130,8 +130,7 @@ class ChatsRenderer {
     a.href = href;
     a.id = "chat-" + chat.id;
     a.classList.add("chat-link");
-    // AYAYA, NOT GOOD, DEPENDS ON EXTERNAL SHIT WITHOUT ABSTRACTION
-    if (href === this.#activeProvider.activePathname) {
+    if (chat.id === LocationControll.chatId) {
       this.#activeProvider.updateActive(a);
     }
     a.innerText = chat.name.replaceAll(/(\n|\s)+/gi, " ");
