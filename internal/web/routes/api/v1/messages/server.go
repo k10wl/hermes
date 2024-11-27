@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/k10wl/hermes/internal/models"
+	"github.com/k10wl/hermes/internal/settings"
 	"github.com/k10wl/hermes/internal/validator"
 )
 
@@ -22,6 +23,9 @@ func Broadcast(channel chan []byte, message ServerEmittedMessage) error {
 		return err
 	}
 	channel <- data
+	if config, err := settings.GetInstance(); err == nil {
+		fmt.Fprintf(config.Stdoout, "-<send>-> %s\n", data)
+	}
 	return nil
 }
 

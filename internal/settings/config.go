@@ -2,13 +2,14 @@ package settings
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path"
 	"sync"
 )
 
-const Version = "4.5.2"
+const Version = "4.5.3"
 const VersionDate = "2024-11-27"
 
 const DefaultDatabaseName = "main.db"
@@ -45,6 +46,13 @@ func GetConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, er
 		config, err = loadConfig(stdin, stdout, stderr)
 	})
 	return config, err
+}
+
+func GetInstance() (*Config, error) {
+	if config == nil {
+		return nil, fmt.Errorf("config was not initialized")
+	}
+	return config, nil
 }
 
 func loadConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, error) {

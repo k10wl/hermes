@@ -9,6 +9,7 @@ import (
 	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/models"
+	"github.com/k10wl/hermes/internal/settings"
 	"github.com/k10wl/hermes/internal/validator"
 )
 
@@ -42,6 +43,9 @@ func typeDetector(data []byte) (string, error) {
 }
 
 func ReadMessage(data []byte) (ClientEmittedMessage, error) {
+	if config, err := settings.GetInstance(); err == nil {
+		fmt.Fprintf(config.Stdoout, "<-<read>- %s\n", data)
+	}
 	messageType, err := typeDetector(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse message type\n")

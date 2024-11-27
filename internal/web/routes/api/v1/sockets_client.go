@@ -56,7 +56,6 @@ func (c *Client) readPump(coreInstanse *core.Core, completionFn ai_clients.Compl
 		},
 	)
 	stderr := coreInstanse.GetConfig().Stderr
-	stdout := coreInstanse.GetConfig().Stdoout
 
 	for {
 		_, message, err := c.conn.ReadMessage()
@@ -73,7 +72,7 @@ func (c *Client) readPump(coreInstanse *core.Core, completionFn ai_clients.Compl
 
 		clientMessage, err := messages.ReadMessage(message)
 		if err != nil || clientMessage == nil {
-			fmt.Fprintf(stderr, "> %s\n", err.Error())
+			fmt.Fprintf(stderr, "errored upon message read %s\n", err.Error())
 			if err := messages.Broadcast(
 				c.send,
 				messages.NewServerError(
@@ -89,7 +88,6 @@ func (c *Client) readPump(coreInstanse *core.Core, completionFn ai_clients.Compl
 			}
 			continue
 		}
-		fmt.Fprintf(stdout, "< %+v\n", clientMessage)
 
 		go func() {
 			if err := clientMessage.Process(
