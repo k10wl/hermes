@@ -38,6 +38,22 @@ export class LocationControll {
   static #update() {
     LocationControll.#publisher.update(LocationControll.pathname);
   }
+
+  static #chatIdRegexp = /\/chats\/(?<chatId>\d+)/;
+  static get chatId() {
+    try {
+      const chatId = +(
+        LocationControll.#chatIdRegexp.exec(LocationControll.pathname)?.groups
+          ?.chatId ?? "no"
+      );
+      if (Number.isNaN(chatId)) {
+        return null;
+      }
+      return chatId;
+    } catch {
+      return null;
+    }
+  }
 }
 
 LocationControll.__init();

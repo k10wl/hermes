@@ -9,6 +9,7 @@ import (
 	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/models"
+	"github.com/k10wl/hermes/internal/validator"
 )
 
 const (
@@ -23,12 +24,12 @@ type CommunicationChannel interface {
 }
 
 type ClientEmittedMessage interface {
-	Decode(data []byte) error
 	Process(
 		CommunicationChannel,
 		*core.Core,
 		ai_clients.CompletionFn,
 	) error
+	GetID() string
 }
 
 func typeDetector(data []byte) (string, error) {
@@ -57,20 +58,20 @@ func ReadMessage(data []byte) (ClientEmittedMessage, error) {
 	if msg == nil {
 		return nil, fmt.Errorf("received unknown message type\n")
 	}
-	err = msg.Decode(data)
+	err = decode(msg, data)
 	if err != nil {
 		return nil, err
 	}
 	return msg, nil
 }
 
-type ClientRequestReadChat struct {
-	Type    string `json:"type,required"`
-	Payload int64  `json:"payload,omitempty"`
+type ClientRequestReadChatPayload struct {
 }
 
-func (message *ClientRequestReadChat) Decode(data []byte) error {
-	return json.Unmarshal(data, message)
+type ClientRequestReadChat struct {
+	ID      string `json:"id,required"       validate:"required,uuid4"`
+	Type    string `json:"type,required"`
+	Payload int64  `json:"payload,omitempty"`
 }
 
 func (message *ClientRequestReadChat) Process(
@@ -86,21 +87,23 @@ func (message *ClientRequestReadChat) Process(
 	if err != nil {
 		return Broadcast(
 			coms.Single(),
-			NewServerError(err.Error()),
+			NewServerError(
+				message.ID,
+				err.Error(),
+			),
 		)
 	}
 	return Broadcast(
 		coms.Single(),
-		NewServerReadChat(cmd.ChatID, cmd.Result),
+		NewServerReadChat(message.ID, cmd.ChatID, cmd.Result),
 	)
 }
 
-type ClientPing struct {
-	Type string `json:"type,required"`
-}
+func (message *ClientRequestReadChat) GetID() string { return message.ID }
 
-func (message *ClientPing) Decode(data []byte) error {
-	return json.Unmarshal(data, message)
+type ClientPing struct {
+	ID   string `json:"id,required"   validate:"required,uuid4"`
+	Type string `json:"type,required"`
 }
 
 func (message *ClientPing) Process(
@@ -108,23 +111,26 @@ func (message *ClientPing) Process(
 	_ *core.Core,
 	_ ai_clients.CompletionFn,
 ) error {
-	return Broadcast(coms.Single(), NewServerPong())
+	return Broadcast(coms.Single(), NewServerPong(message.ID))
 }
 
+func (message *ClientPing) GetID() string { return message.ID }
+
 type CreateCompletionMessagePayload struct {
-	ChatID     int64                 `json:"chat_id,required"`
-	Content    string                `json:"content,required"`
+	ChatID     int64                 `json:"chat_id"    validate:"required"`
+	Content    string                `json:"content"    validate:"required"`
 	Template   string                `json:"template"`
-	Parameters ai_clients.Parameters `json:"parameters,required"`
+	Parameters ai_clients.Parameters `json:"parameters" validate:"required"`
 }
 
 type ClientCreateCompletion struct {
+	ID      string                         `json:"id,required"      validate:"required,uuid4"`
 	Type    string                         `json:"type,required"`
 	Payload CreateCompletionMessagePayload `json:"payload,required"`
 }
 
-func (message *ClientCreateCompletion) Decode(data []byte) error {
-	return json.Unmarshal(data, message)
+func (message *ClientCreateCompletion) GetID() string {
+	return message.ID
 }
 
 func (message *ClientCreateCompletion) Process(
@@ -159,7 +165,7 @@ func (message *ClientCreateCompletion) processNewChat(
 	}
 	if err := Broadcast(
 		coms.Single(),
-		NewServerChatCreated(cmd.Result.Chat, cmd.Result.Message),
+		NewServerChatCreated(message.ID, cmd.Result.Chat, cmd.Result.Message),
 	); err != nil {
 		return err
 	}
@@ -180,6 +186,7 @@ func (message *ClientCreateCompletion) processExistingChat(
 	if err := Broadcast(
 		coms.All(),
 		NewServerMessageCreated(
+			message.ID,
 			message.Payload.ChatID,
 			&models.Message{
 				ID:      time.Now().UnixMilli(),
@@ -217,10 +224,22 @@ func (message *ClientCreateCompletion) createCompletion(
 	)
 	cmd.SkipPersistingUserMessage(skipPersistingUserMessage)
 	if err := cmd.Execute(context.TODO()); err != nil {
-		return Broadcast(coms.Single(), NewServerError(err.Error()))
+		return Broadcast(coms.Single(), NewServerError(
+			message.ID,
+			err.Error(),
+		))
 	}
 	return Broadcast(
 		coms.All(),
-		NewServerMessageCreated(chatID, cmd.Result),
+		NewServerMessageCreated(message.ID, chatID, cmd.Result),
 	)
+}
+
+func decode(receiver any, data []byte) error {
+	err := json.Unmarshal(data, receiver)
+	if err != nil {
+		return err
+	}
+	err = validator.Validate.Struct(receiver)
+	return err
 }

@@ -86,7 +86,7 @@ class AudioNotificaitonsObserver {
     if (event.payload.message.role === "user") {
       return;
     }
-    if (LocationControll.pathname === `/chats/${event.payload.chat_id}`) {
+    if (event.payload.chat_id === LocationControll.chatId) {
       SoundManager.play("message-in-local");
       return;
     }
@@ -102,6 +102,9 @@ class MessageCreatedObserver {
   }
   /** @param {import("/assets/scripts/events/server-events-list.mjs").MessageCreatedEvent } event  */
   notify(event) {
+    if (event.payload.chat_id !== LocationControll.chatId) {
+      return;
+    }
     this.#container.append(MessageCreator.createElement(event.payload.message));
   }
 }

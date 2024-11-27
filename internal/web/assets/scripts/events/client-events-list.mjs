@@ -7,7 +7,10 @@ import {
 
 import { ServerEvent } from "./server-events-list.mjs";
 
-class ClientEvent extends ServerEvent {}
+class ClientEvent extends ServerEvent {
+  /** @type {string} */
+  id = crypto.randomUUID();
+}
 
 export class RequestReadChatEvent extends ClientEvent {
   /** @param {number} chatId  */

@@ -38,7 +38,7 @@ type TokensUsage struct {
 }
 
 type Parameters struct {
-	Model       string   `json:"model,required"`
+	Model       string   `json:"model"       validate:"required"`
 	MaxTokens   *int64   `json:"max_tokens"`
 	Temperature *float64 `json:"temperature"`
 }

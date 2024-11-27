@@ -52,22 +52,21 @@ export class MessageContentForm extends HTMLFormElement {
     let chat_id = LocationControll.pathname.split("/").at(-1);
     chat_id = ValidateNumber.parse(chat_id ? +chat_id : -1);
     const content = ValidateString.parse(new FormData(this).get("content"));
-    ServerEvents.send(
-      new CreateCompletionMessageEvent({
-        chat_id,
-        content: content,
-        parameters: {
-          model: "gpt-4o-mini",
-          max_tokens: undefined,
-          temperature: undefined,
-        },
-      }),
-    );
+    const message = new CreateCompletionMessageEvent({
+      chat_id,
+      content: content,
+      parameters: {
+        model: "gpt-4o-mini",
+        max_tokens: undefined,
+        temperature: undefined,
+      },
+    });
+    ServerEvents.send(message);
     let eventOff = () => {};
     let locationControllOff = () => {};
     if (chat_id === -1) {
       eventOff = ServerEvents.on("chat-created", (e) => {
-        if (e.payload.message.content !== content) {
+        if (e.id !== message.id) {
           return;
         }
         LocationControll.navigate(`/chats/${e.payload.chat.id}`);
@@ -77,12 +76,7 @@ export class MessageContentForm extends HTMLFormElement {
       });
     } else {
       eventOff = ServerEvents.on("message-created", (e) => {
-        if (
-          // XXX this is not a best comparison, would be good to have some
-          // traveling id to indicate concreate messages instead of... this
-          e.payload.message.content !== content ||
-          e.payload.chat_id !== chat_id
-        ) {
+        if (e.id !== message.id) {
           return;
         }
         this.reset();

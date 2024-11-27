@@ -9,7 +9,13 @@ import {
 } from "/assets/scripts/utils/validate.mjs";
 
 export class ServerEvent {
-  static #eventValidation = new ValidateObject({ type: ValidateString });
+  static #eventValidation = new ValidateObject({
+    id: ValidateString,
+    type: ValidateString,
+  });
+
+  /** @type {string} */
+  id;
 
   /** @type {string} */
   type;
@@ -17,10 +23,11 @@ export class ServerEvent {
   /** @type {unknown} */
   payload;
 
-  /** @param { { type: string, payload?: unknown } } event - The type of the event. */
-  constructor(event) {
-    this.type = event.type;
-    this.payload = event.payload;
+  /** @param { { id: string, type: string, payload?: unknown } } data */
+  constructor(data) {
+    this.id = data.id;
+    this.type = data.type;
+    this.payload = data.payload;
   }
 
   /** @param {unknown} data */
@@ -38,13 +45,14 @@ export class ConnectionStatusChangeEvent extends ServerEvent {
    * @param {  boolean  } connected
    */
   constructor(connected) {
-    super({ type: "connection-status-change" });
+    super({ id: crypto.randomUUID(), type: "connection-status-change" });
     this.payload = { connected: ValidateBoolean.parse(connected) };
   }
 }
 
 export class ChatCreatedEvent extends ServerEvent {
   static #eventValidation = new ValidateObject({
+    id: ValidateString,
     type: ValidateString,
     payload: new ValidateObject({
       chat: new ValidateObject({
@@ -81,28 +89,22 @@ export class ChatCreatedEvent extends ServerEvent {
 
 export class ReadChatEvent extends ServerEvent {
   static #eventValidation = new ValidateObject({
+    id: ValidateString,
     type: ValidateString,
     payload: new ValidateObject({
       messages: new ValidateArray(Message.validator),
     }),
   });
 
-  /**
-   * @param {{
-   *   type: string,
-   *   payload: {
-   *     messages: Message[]
-   *   }
-   * }} event
-   */
-  constructor(event) {
-    super(event);
-    this.payload = event.payload;
+  /** @param { ReturnType<ReadChatEvent.validate> } data */
+  constructor(data) {
+    super(data);
+    this.payload = data.payload;
   }
 
   /** @param {unknown} data */
   static parse(data) {
-    const parsed = ReadChatEvent.#eventValidation.parse(
+    const parsed = ReadChatEvent.validate(
       JSON.parse(ValidateString.parse(data)),
     );
     return new ReadChatEvent({
@@ -115,37 +117,42 @@ export class ReadChatEvent extends ServerEvent {
       },
     });
   }
+
+  /** @param {unknown} data */
+  static validate(data) {
+    return ReadChatEvent.#eventValidation.parse(data);
+  }
 }
 
 export class ServerErrorEvent extends ServerEvent {
   static #eventValidation = new ValidateObject({
+    id: ValidateString,
     type: ValidateString,
     payload: ValidateString,
   });
 
-  /**
-   * @param {{
-   *   type: string,
-   *   payload: string
-   * }} event
-   */
-  constructor(event) {
-    super(event);
-    this.payload = event.payload;
+  /** @param { ReturnType<ServerErrorEvent.validate> } data */
+  constructor(data) {
+    super(data);
+    this.payload = data.payload;
   }
 
   /** @param {unknown} data */
   static parse(data) {
     return new ServerErrorEvent(
-      ServerErrorEvent.#eventValidation.parse(
-        JSON.parse(ValidateString.parse(data)),
-      ),
+      ServerErrorEvent.validate(JSON.parse(ValidateString.parse(data))),
     );
+  }
+
+  /** @param {unknown} data */
+  static validate(data) {
+    return ServerErrorEvent.#eventValidation.parse(data);
   }
 }
 
 export class MessageCreatedEvent extends ServerEvent {
   static #eventValidation = new ValidateObject({
+    id: ValidateString,
     type: ValidateString,
     payload: new ValidateObject({
       chat_id: ValidateNumber,
@@ -153,23 +160,15 @@ export class MessageCreatedEvent extends ServerEvent {
     }),
   });
 
-  /**
-   * @param {{
-   *   type: string,
-   *   payload: {
-   *     chat_id: number
-   *     message: Message
-   *   }
-   * }} event
-   */
-  constructor(event) {
-    super(event);
-    this.payload = event.payload;
+  /** @param { ReturnType<MessageCreatedEvent.validate> } data */
+  constructor(data) {
+    super(data);
+    this.payload = data.payload;
   }
 
   /** @param {unknown} data */
   static parse(data) {
-    const parsed = MessageCreatedEvent.#eventValidation.parse(
+    const parsed = MessageCreatedEvent.validate(
       JSON.parse(ValidateString.parse(data)),
     );
     return new MessageCreatedEvent({
@@ -179,5 +178,10 @@ export class MessageCreatedEvent extends ServerEvent {
         message: new Message(parsed.payload.message),
       },
     });
+  }
+
+  /** @param {unknown} data */
+  static validate(data) {
+    return MessageCreatedEvent.#eventValidation.parse(data);
   }
 }

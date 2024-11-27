@@ -55,7 +55,7 @@ func handleCheckHeath() http.HandlerFunc {
 
 func handleWebhook(hub *Hub) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg, err := messages.NewServerReload().Encode()
+		msg, err := messages.Encode(messages.NewServerReload())
 		if err != nil {
 			fmt.Printf("err: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)

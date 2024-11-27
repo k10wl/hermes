@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/core"
@@ -73,11 +74,15 @@ func (c *Client) readPump(coreInstanse *core.Core, completionFn ai_clients.Compl
 		clientMessage, err := messages.ReadMessage(message)
 		if err != nil || clientMessage == nil {
 			fmt.Fprintf(stderr, "> %s\n", err.Error())
-
 			if err := messages.Broadcast(
 				c.send,
 				messages.NewServerError(
-					fmt.Sprintf("malformed message: %q\n", message),
+					uuid.New().String(),
+					fmt.Sprintf(
+						"malformed message, error: %s\ndata: %q\n",
+						err,
+						message,
+					),
 				),
 			); err != nil {
 				fmt.Fprintf(stderr, "failed to broadcast %s\n", err.Error())
@@ -93,6 +98,22 @@ func (c *Client) readPump(coreInstanse *core.Core, completionFn ai_clients.Compl
 				completionFn,
 			); err != nil {
 				fmt.Fprintf(stderr, "processing error %s\n", err.Error())
+				if err := messages.Broadcast(
+					c.send,
+					messages.NewServerError(
+						clientMessage.GetID(),
+						fmt.Sprintf("malformed message, error: %s\ndata: %q\n",
+							err,
+							message,
+						),
+					),
+				); err != nil {
+					fmt.Fprintf(
+						stderr,
+						"failed to broadcast %s\n",
+						err.Error(),
+					)
+				}
 			}
 		}()
 	}

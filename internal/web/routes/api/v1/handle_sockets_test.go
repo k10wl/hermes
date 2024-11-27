@@ -16,11 +16,15 @@ import (
 	"github.com/k10wl/hermes/internal/web/routes/api/v1/messages"
 )
 
+const sharedID = "717dc403-63ab-48e6-94e8-21b3110da18c"
+
 func TestHandleWebSocketPing(t *testing.T) {
 	client, _, teardown := setupWebSocketTest(t)
 	defer teardown()
 
-	err := client.WriteMessage(websocket.TextMessage, []byte(`{"type": "ping"}`))
+	err := client.WriteMessage(websocket.TextMessage, []byte(
+		`{ "id": "717dc403-63ab-48e6-94e8-21b3110da18c", "type": "ping" }`,
+	))
 	if err != nil {
 		t.Fatalf("could not write message to WebSocket server: %v", err)
 	}
@@ -30,7 +34,7 @@ func TestHandleWebSocketPing(t *testing.T) {
 		t.Fatalf("could not read message from WebSocket server: %v", err)
 	}
 
-	expected := `{"type":"pong"}`
+	expected := `{"id":"717dc403-63ab-48e6-94e8-21b3110da18c","type":"pong"}`
 	if string(response) != expected {
 		t.Errorf("expected response '%s', but got '%s'", expected, string(response))
 	}
@@ -53,7 +57,9 @@ func TestRequestReadChat(t *testing.T) {
 
 	err = client.WriteMessage(
 		websocket.TextMessage,
-		[]byte(`{"type": "request-read-chat", "payload": 1}`),
+		[]byte(
+			`{"type": "request-read-chat", "payload": 1, "id": "717dc403-63ab-48e6-94e8-21b3110da18c"}`,
+		),
 	)
 	if err != nil {
 		t.Fatalf("could not write message to WebSocket server: %v", err)
@@ -67,7 +73,7 @@ func TestRequestReadChat(t *testing.T) {
 	res := messages.ServerReadChat{}
 	err = json.Unmarshal(response, &res)
 	if err != nil {
-		t.Errorf("Failed to decode server response message\n")
+		t.Errorf("Failed to decode server response message - %s\n", response)
 	}
 	if res.Payload.ChatID != 1 {
 		t.Errorf("Failed to return same chat\n")
@@ -96,6 +102,7 @@ func TestCreateMessageInExistingChat(t *testing.T) {
 		websocket.TextMessage,
 		[]byte(`
 {
+  "id": "717dc403-63ab-48e6-94e8-21b3110da18c",
   "type": "create-completion",
   "payload": {
     "chat_id": 1,
@@ -120,10 +127,13 @@ func TestCreateMessageInExistingChat(t *testing.T) {
 	res := messages.ServerMessageCreated{}
 	err = json.Unmarshal(response, &res)
 	if err != nil {
-		t.Errorf("Failed to decode server response message\n")
+		t.Errorf("Failed to decode server response message - %s\n", response)
 	}
 	if res.Type != "message-created" {
 		t.Errorf("Did not respond with 'message created'\n")
+	}
+	if res.ID != sharedID {
+		t.Errorf("Failed to return shared id\n")
 	}
 	if res.Payload.ChatID != 1 {
 		t.Errorf("Failed to return same chat\n")
@@ -140,13 +150,16 @@ func TestCreateMessageInExistingChat(t *testing.T) {
 	res = messages.ServerMessageCreated{}
 	err = json.Unmarshal(response, &res)
 	if err != nil {
-		t.Errorf("Failed to decode server response message\n")
+		t.Errorf("Failed to decode server response message - %s\n", response)
 	}
 	if res.Type != "message-created" {
 		t.Errorf("Did not respond with 'message created'\n")
 	}
 	if res.Payload.ChatID != 1 {
 		t.Errorf("Failed to return same chat\n")
+	}
+	if res.ID != sharedID {
+		t.Errorf("Failed to return shared id\n")
 	}
 	if res.Payload.Message.Content != "> mocked: create message" {
 		t.Errorf("Failed to create message, got %q\n", res.Payload.Message.Content)
@@ -170,6 +183,7 @@ func TestCreateMessageInNewChat(t *testing.T) {
 		[]byte(`
 {
   "type": "create-completion",
+  "id": "717dc403-63ab-48e6-94e8-21b3110da18c",
   "payload": {
     "chat_id": -1,
     "content": "create message",
@@ -193,13 +207,16 @@ func TestCreateMessageInNewChat(t *testing.T) {
 	res := messages.ServerChatCreated{}
 	err = json.Unmarshal(response, &res)
 	if err != nil {
-		t.Errorf("Failed to decode server response message\n")
+		t.Errorf("Failed to decode server response message - %s\n", response)
 	}
 	if res.Type != "chat-created" {
 		t.Errorf("Did not respond with 'message created'\n")
 	}
 	if res.Payload.Chat.ID != 1 {
 		t.Errorf("Failed to return new chat id\nChat: %+v\n", res.Payload.Chat)
+	}
+	if res.ID != sharedID {
+		t.Errorf("Failed to return shared id\n")
 	}
 	if res.Payload.Message.Content != "create message" {
 		t.Errorf("Failed to create desired message\nMessage: %+v\n", res.Payload.Message)
@@ -213,13 +230,16 @@ func TestCreateMessageInNewChat(t *testing.T) {
 	res2 := messages.ServerMessageCreated{}
 	err = json.Unmarshal(response, &res2)
 	if err != nil {
-		t.Errorf("Failed to decode server response message\n")
+		t.Errorf("Failed to decode server response message - %s\n", response)
 	}
 	if res2.Type != "message-created" {
 		t.Errorf("Did not respond with 'message created'\n")
 	}
 	if res2.Payload.ChatID != 1 {
 		t.Errorf("Failed to return new chat id\nPayload: %+v\n", res2.Payload)
+	}
+	if res.ID != sharedID {
+		t.Errorf("Failed to return shared id\n")
 	}
 	if res2.Payload.Message.Content != "> mocked: create message" {
 		t.Errorf("Failed to create desired message, Actual: %+v\n", res2.Payload.Message)
@@ -245,9 +265,10 @@ func TestCreateMessageInNonExistingChat(t *testing.T) {
 		websocket.TextMessage,
 		[]byte(`
 {
+  "id": "717dc403-63ab-48e6-94e8-21b3110da18c",
   "type": "create-completion",
   "payload": {
-    "chat_id": 0,
+    "chat_id": 999,
     "content": "create message",
     "template": "",
     "parameters": {
@@ -277,6 +298,9 @@ func TestCreateMessageInNonExistingChat(t *testing.T) {
 	if res1.Payload.Message.Content != "create message" {
 		t.Errorf("Failed to create desired message\nMessage: %+v\n", res1.Payload.Message)
 	}
+	if res1.ID != sharedID {
+		t.Errorf("Failed to return shared id\n")
+	}
 
 	_, response2, err := client.ReadMessage()
 	if err != nil {
@@ -289,6 +313,9 @@ func TestCreateMessageInNonExistingChat(t *testing.T) {
 	}
 	if res2.Type != "server-error" {
 		t.Errorf("Server did not throw expected error upon creating message in non existing chat\n")
+	}
+	if res2.ID != sharedID {
+		t.Errorf("Failed to return shared id\n")
 	}
 }
 
