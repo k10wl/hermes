@@ -44,7 +44,7 @@ func typeDetector(data []byte) (string, error) {
 
 func ReadMessage(data []byte) (ClientEmittedMessage, error) {
 	if config, err := settings.GetInstance(); err == nil {
-		fmt.Fprintf(config.Stdoout, "<-<read>- %s\n", data)
+		fmt.Fprintf(config.Stdoout, "   <-<read>-  %s\n", data)
 	}
 	messageType, err := typeDetector(data)
 	if err != nil {

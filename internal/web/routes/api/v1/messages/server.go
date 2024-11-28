@@ -24,7 +24,7 @@ func Broadcast(channel chan []byte, message ServerEmittedMessage) error {
 	}
 	channel <- data
 	if config, err := settings.GetInstance(); err == nil {
-		fmt.Fprintf(config.Stdoout, "-<send>-> %s\n", data)
+		fmt.Fprintf(config.Stdoout, "    -<send>-> %s\n", data)
 	}
 	return nil
 }
