@@ -1,6 +1,7 @@
 package test_helpers
 
 import (
+	"context"
 	"database/sql"
 	"strings"
 
@@ -17,5 +18,6 @@ func CreateCore() (*core.Core, *sql.DB) {
 	c := core.NewCore(db, &settings.Config{})
 	c.GetConfig().Stdoout = &strings.Builder{}
 	c.GetConfig().Stderr = &strings.Builder{}
+	c.GetConfig().ShutdownContext = context.Background()
 	return c, db.DB
 }

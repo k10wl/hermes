@@ -54,7 +54,7 @@ $ hermes serve --open --latest`,
 			open = o
 			latest = l
 			addr = web.BuildAddr(h, p)
-			activeSession.Address = addr
+			activeSession.Address = `http://` + addr
 			activeSession.DatabaseDNS = config.DatabaseDSN
 			return nil
 		},

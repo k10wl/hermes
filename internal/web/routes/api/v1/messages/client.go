@@ -226,7 +226,7 @@ func (message *ClientCreateCompletion) createCompletion(
 		&message.Payload.Parameters,
 		completionFn,
 	)
-	cmd.SkipPersistingUserMessage(skipPersistingUserMessage)
+	cmd.ShouldPersistUserMessage(skipPersistingUserMessage)
 	if err := cmd.Execute(context.TODO()); err != nil {
 		return Broadcast(coms.Single(), NewServerError(
 			message.ID,

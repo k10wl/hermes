@@ -18,7 +18,10 @@ SELECT
     m.id,
     m.chat_id,
     r.name,
-    m.content
+    m.content,
+    m.created_at,
+    m.updated_at,
+    m.deleted_at
 FROM
     messages m
 JOIN
@@ -29,7 +32,15 @@ JOIN
 	}
 	for rows.Next() {
 		msg := models.Message{}
-		rows.Scan(&msg.ID, &msg.ChatID, &msg.Role, &msg.Content)
+		rows.Scan(
+			&msg.ID,
+			&msg.ChatID,
+			&msg.Role,
+			&msg.Content,
+			&msg.CreatedAt,
+			&msg.UpdatedAt,
+			&msg.DeletedAt,
+		)
 		res = append(res, &msg)
 	}
 	return res, nil

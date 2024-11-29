@@ -144,7 +144,7 @@ func NewCreateCompletionCommand(
 	}
 }
 
-func (c *CreateCompletionCommand) SkipPersistingUserMessage(skipPersistingUserMessage bool) {
+func (c *CreateCompletionCommand) ShouldPersistUserMessage(skipPersistingUserMessage bool) {
 	c.shouldPersistUserMessage = skipPersistingUserMessage
 }
 
