@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/k10wl/hermes/internal/test_helpers"
@@ -328,14 +327,14 @@ func setupWebSocketTest(t *testing.T) (*websocket.Conn, *sql.DB, func()) {
 			handleServeWebSockets(c, hub, test_helpers.MockCompletion),
 		),
 	)
-	url := "ws" + strings.TrimPrefix(server.URL, "http")
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	client, _, err := websocket.DefaultDialer.DialContext(ctx, url, nil)
+	client, cleanupClient, err := test_helpers.CreateWebsocketConnection(
+		"ws" + strings.TrimPrefix(server.URL, "http"),
+	)
 	if err != nil {
 		t.Fatalf("could not connect to WebSocket server: %v", err)
 	}
 	return client, db, func() {
-		cancel()
+		cleanupClient()
 		client.Close()
 		server.Close()
 		db.Close()

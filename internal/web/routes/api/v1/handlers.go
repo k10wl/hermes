@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -64,5 +65,17 @@ func handleWebhook(hub *Hub) http.HandlerFunc {
 		hub.broadcast <- msg
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "OK")
+	}
+}
+
+func handleRelay(relay chan []byte) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data, err := io.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		relay <- data
+		w.WriteHeader(http.StatusOK)
 	}
 }

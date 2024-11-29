@@ -23,7 +23,7 @@ func notifyActiveSessions(c *core.Core) {
 	}
 	req, err := http.NewRequest(
 		"GET",
-		"http://"+activeSession.Address+"/api/v1/update",
+		"http://"+activeSession.Address+"/api/v1/update", // TODO replace with new relay endpoint
 		nil,
 	)
 	if err != nil {
