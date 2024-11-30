@@ -163,7 +163,7 @@ func (message *ClientCreateCompletion) processNewChat(
 	cmd := core.NewCreateChatWithMessageCommand(c, &models.Message{
 		Role:    "user",
 		Content: message.Payload.Content,
-	})
+	}, "")
 	if err := cmd.Execute(context.TODO()); err != nil {
 		return err
 	}

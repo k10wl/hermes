@@ -183,10 +183,14 @@ func createChatAndComplete(
 	ctx := c.GetConfig().ShutdownContext
 	id := uuid.NewString()
 
-	cmd := core.NewCreateChatWithMessageCommand(c, &models.Message{
-		Role:    "user",
-		Content: content,
-	})
+	cmd := core.NewCreateChatWithMessageCommand(
+		c,
+		&models.Message{
+			Role:    "user",
+			Content: content,
+		},
+		"",
+	)
 	if err := cmd.Execute(ctx); err != nil {
 		return err
 	}

@@ -20,7 +20,7 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 		shouldError    bool
 		expectedResult models.Message
 	}
-
+	// XXX having one core instance and one database is fucking painful
 	coreInstance, _ := test_helpers.CreateCore()
 	var currentCommand *core.CreateChatAndCompletionCommand
 
@@ -243,6 +243,100 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 				Content: "> mocked: wrapper - should fill welcome (hello world!)(hello world!) - wrapper",
 			},
 		},
+		{
+			name: "Should trim start of message",
+			init: func() {
+				currentCommand = core.NewCreateChatAndCompletionCommand(
+					coreInstance,
+					core.AssistantRole,
+					`
+
+
+                    hello       `,
+					"",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					test_helpers.MockCompletion,
+				)
+			},
+			shouldError: false,
+			expectedResult: models.Message{
+				ChatID:  8,
+				ID:      16,
+				Role:    core.AssistantRole,
+				Content: "> mocked: hello",
+			},
+		},
+		{
+			name: "Should trim start of message",
+			init: func() {
+				currentCommand = core.NewCreateChatAndCompletionCommand(
+					coreInstance,
+					core.AssistantRole,
+					`
+
+
+                    hello       `,
+					"wrapper",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					test_helpers.MockCompletion,
+				)
+			},
+			shouldError: false,
+			expectedResult: models.Message{
+				ChatID:  9,
+				ID:      18,
+				Role:    core.AssistantRole,
+				Content: "> mocked: wrapper - hello - wrapper",
+			},
+		},
+		{
+			name: "Should trim end of message",
+			init: func() {
+				currentCommand = core.NewCreateChatAndCompletionCommand(
+					coreInstance,
+					core.AssistantRole,
+					`    hello
+
+
+                    `,
+					"",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					test_helpers.MockCompletion,
+				)
+			},
+			shouldError: false,
+			expectedResult: models.Message{
+				ChatID:  10,
+				ID:      20,
+				Role:    core.AssistantRole,
+				Content: "> mocked: hello",
+			},
+		},
+		{
+			name: "Should trim end of message",
+			init: func() {
+				currentCommand = core.NewCreateChatAndCompletionCommand(
+					coreInstance,
+					core.AssistantRole,
+					`     hello
+
+
+
+
+                    `,
+					"wrapper",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					test_helpers.MockCompletion,
+				)
+			},
+			shouldError: false,
+			expectedResult: models.Message{
+				ChatID:  11,
+				ID:      22,
+				Role:    core.AssistantRole,
+				Content: "> mocked: wrapper - hello - wrapper",
+			},
+		},
 	}
 
 	for _, test := range table {
@@ -280,23 +374,22 @@ func TestCreateChatAndCompletionCommand(t *testing.T) {
 func TestCreateCompletionCommand(t *testing.T) {
 	type testCase struct {
 		name           string
-		init           func()
+		init           func() *core.CreateCompletionCommand
 		shouldError    bool
 		expectedResult models.Message
 	}
-
-	coreInstance, db := test_helpers.CreateCore()
-	err := db_helpers.NewSeeder(db, context.Background()).SeedChatsN(1)
-	if err != nil {
-		t.Fatalf("Failed to seed chats: %s\n", err)
-	}
-	var currentCommand *core.CreateCompletionCommand
+	ctx := context.Background()
 
 	table := []testCase{
 		{
 			name: "Should create simple response",
-			init: func() {
-				currentCommand = core.NewCreateCompletionCommand(
+			init: func() *core.CreateCompletionCommand {
+				coreInstance, db := test_helpers.CreateCore()
+				err := db_helpers.NewSeeder(db, ctx).SeedChatsN(1)
+				if err != nil {
+					t.Fatalf("Failed to seed chats: %s\n", err)
+				}
+				return core.NewCreateCompletionCommand(
 					coreInstance,
 					1,
 					core.AssistantRole,
@@ -308,19 +401,162 @@ func TestCreateCompletionCommand(t *testing.T) {
 			},
 			shouldError: false,
 			expectedResult: models.Message{
-				ID:      2,
 				ChatID:  1,
+				ID:      2,
 				Role:    core.AssistantRole,
 				Content: "> mocked: hello world",
+			},
+		},
+		{
+			name: "Should trim start of message",
+			init: func() *core.CreateCompletionCommand {
+				coreInstance, db := test_helpers.CreateCore()
+				err := db_helpers.NewSeeder(db, ctx).SeedChatsN(1)
+				if err != nil {
+					t.Fatalf("Failed to seed chats: %s\n", err)
+				}
+				return core.NewCreateCompletionCommand(
+					coreInstance,
+					1,
+					core.AssistantRole,
+					`
+
+
+                    hello       `,
+					"",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					test_helpers.MockCompletion,
+				)
+			},
+			shouldError: false,
+			expectedResult: models.Message{
+				ChatID:  1,
+				ID:      2,
+				Role:    core.AssistantRole,
+				Content: "> mocked: hello",
+			},
+		},
+		{
+			name: "Should trim start of message",
+			init: func() *core.CreateCompletionCommand {
+				coreInstance, db := test_helpers.CreateCore()
+				if err := db_helpers.CreateTemplate(
+					db,
+					ctx,
+					&models.Template{
+						Name:    "wrapper",
+						Content: `--{{define "wrapper"}}wrapper - --{{.}} - wrapper--{{end}}`,
+					},
+				); err != nil {
+					t.Fatalf("Failed to create template: %s\n", err)
+				}
+
+				if err := db_helpers.NewSeeder(
+					db,
+					ctx,
+				).SeedChatsN(1); err != nil {
+					t.Fatalf("Failed to seed chats: %s\n", err)
+				}
+				return core.NewCreateCompletionCommand(
+					coreInstance,
+					1,
+					core.AssistantRole,
+					`
+
+
+                    hello       `,
+					"wrapper",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					test_helpers.MockCompletion,
+				)
+			},
+			shouldError: false,
+			expectedResult: models.Message{
+				ChatID:  1,
+				ID:      2,
+				Role:    core.AssistantRole,
+				Content: "> mocked: wrapper - hello - wrapper",
+			},
+		},
+		{
+			name: "Should trim end of message",
+			init: func() *core.CreateCompletionCommand {
+				coreInstance, db := test_helpers.CreateCore()
+				if err := db_helpers.NewSeeder(
+					db,
+					ctx,
+				).SeedChatsN(1); err != nil {
+					t.Fatalf("Failed to seed chats: %s\n", err)
+				}
+				return core.NewCreateCompletionCommand(
+					coreInstance,
+					1,
+					core.AssistantRole,
+					`    hello
+
+
+                    `,
+					"",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					test_helpers.MockCompletion,
+				)
+			},
+			shouldError: false,
+			expectedResult: models.Message{
+				ChatID:  1,
+				ID:      2,
+				Role:    core.AssistantRole,
+				Content: "> mocked: hello",
+			},
+		},
+		{
+			name: "Should trim end of message",
+			init: func() *core.CreateCompletionCommand {
+				coreInstance, db := test_helpers.CreateCore()
+				if err := db_helpers.CreateTemplate(
+					db,
+					ctx,
+					&models.Template{
+						Name:    "wrapper",
+						Content: `--{{define "wrapper"}}wrapper - --{{.}} - wrapper--{{end}}`,
+					},
+				); err != nil {
+					t.Fatalf("Failed to create template: %s\n", err)
+				}
+				if err := db_helpers.NewSeeder(
+					db,
+					ctx,
+				).SeedChatsN(1); err != nil {
+					t.Fatalf("Failed to seed chats: %s\n", err)
+				}
+				return core.NewCreateCompletionCommand(
+					coreInstance,
+					1,
+					core.AssistantRole,
+					`     hello
+
+
+
+
+                    `,
+					"wrapper",
+					&ai_clients.Parameters{Model: "gpt-4o"},
+					test_helpers.MockCompletion,
+				)
+			},
+			shouldError: false,
+			expectedResult: models.Message{
+				ChatID:  1,
+				ID:      2,
+				Role:    core.AssistantRole,
+				Content: "> mocked: wrapper - hello - wrapper",
 			},
 		},
 	}
 
 	for _, test := range table {
-		test.init()
-		err := currentCommand.Execute(context.TODO())
-		test.expectedResult.TimestampsToNilForTest__()
-		currentCommand.Result.TimestampsToNilForTest__()
+		cmd := test.init()
+		err := cmd.Execute(context.TODO())
 		if test.shouldError && err == nil {
 			t.Errorf("%s expected to error, but did not\n", test.name)
 			continue
@@ -329,12 +565,14 @@ func TestCreateCompletionCommand(t *testing.T) {
 			t.Errorf("%s unexpected error: %v\n", test.name, err)
 			continue
 		}
-		if !reflect.DeepEqual(test.expectedResult, *currentCommand.Result) {
+		test.expectedResult.TimestampsToNilForTest__()
+		cmd.Result.TimestampsToNilForTest__()
+		if !reflect.DeepEqual(test.expectedResult, *cmd.Result) {
 			t.Errorf(
 				"%s - bad result\nexpected: %+v\nactual:   %+v",
 				test.name,
 				test.expectedResult,
-				*currentCommand.Result,
+				*cmd.Result,
 			)
 		}
 	}
@@ -623,7 +861,7 @@ func TestCreateChat(t *testing.T) {
 	cmd := core.NewCreateChatWithMessageCommand(c, &models.Message{
 		Role:    "user",
 		Content: "hello-world",
-	})
+	}, "")
 	err := cmd.Execute(context.Background())
 	if err != nil {
 		t.Errorf("Unexpected error: %s\n", err)
@@ -659,7 +897,7 @@ func TestCreateChatNames(t *testing.T) {
 				cmd := core.NewCreateChatWithMessageCommand(c, &models.Message{
 					Role:    "user",
 					Content: name,
-				})
+				}, "")
 				return cmd, db
 			},
 			expectToTrim: true,

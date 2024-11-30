@@ -18,26 +18,33 @@ type CreateChatWithMessageCommandResult struct {
 }
 
 type CreateChatWithMessageCommand struct {
-	core    *Core
-	message *models.Message
-	Result  *CreateChatWithMessageCommandResult
+	core     *Core
+	message  *models.Message
+	template string
+	Result   *CreateChatWithMessageCommandResult
 }
 
 func NewCreateChatWithMessageCommand(
 	core *Core,
 	message *models.Message,
+	template string,
 ) *CreateChatWithMessageCommand {
 	return &CreateChatWithMessageCommand{
-		core:    core,
-		message: message,
+		core:     core,
+		message:  message,
+		template: template,
 	}
 }
 
 func (c *CreateChatWithMessageCommand) Execute(ctx context.Context) error {
+	msg, err := c.core.prepareMessage(ctx, c.message.Content, c.template)
+	if err != nil {
+		return err
+	}
 	chat, message, err := c.core.db.CreateChatAndMessage(
 		ctx,
 		c.message.Role,
-		c.message.Content,
+		msg,
 	)
 	if err != nil {
 		return err

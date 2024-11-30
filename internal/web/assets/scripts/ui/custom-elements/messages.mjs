@@ -108,7 +108,7 @@ class MessageCreator {
     div.classList.add("message", `role-${message.role}`);
     div.id = `message-${message.id}`;
     const pre = document.createElement("pre");
-    pre.innerText = message.content;
+    pre.innerText = message.content.trim();
     div.appendChild(pre);
     return div;
   }
