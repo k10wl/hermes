@@ -73,7 +73,7 @@ func (c *Client) readPump(coreInstanse *core.Core, completionFn ai_clients.Compl
 		clientMessage, err := messages.ReadMessage(message)
 		if err != nil || clientMessage == nil {
 			fmt.Fprintf(stderr, "errored upon message read %s\n", err.Error())
-			if err := messages.Broadcast(
+			if err := messages.BroadcastServerEmittedMessage(
 				c.send,
 				messages.NewServerError(
 					uuid.New().String(),
@@ -96,7 +96,7 @@ func (c *Client) readPump(coreInstanse *core.Core, completionFn ai_clients.Compl
 				completionFn,
 			); err != nil {
 				fmt.Fprintf(stderr, "processing error %s\n", err.Error())
-				if err := messages.Broadcast(
+				if err := messages.BroadcastServerEmittedMessage(
 					c.send,
 					messages.NewServerError(
 						clientMessage.GetID(),
@@ -192,7 +192,7 @@ func handleServeWebSockets(
 
 		client.hub.register <- client
 		if r.URL.Query().Get("reconnect") == "true" {
-			err := messages.Broadcast(client.send, messages.NewServerReload())
+			err := messages.BroadcastServerEmittedMessage(client.send, messages.NewServerReload())
 			if err != nil {
 				fmt.Fprintf(config.Stderr, "failed to send refresh message: %s\n", err)
 			}

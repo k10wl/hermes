@@ -12,7 +12,7 @@ import (
 
 type ServerEmittedMessage interface{ __serverMessageSignature() }
 
-func Broadcast(channel chan []byte, message ServerEmittedMessage) error {
+func BroadcastServerEmittedMessage(channel chan []byte, message ServerEmittedMessage) error {
 	if message == nil {
 		return fmt.Errorf(
 			"failed to get message, expected interface, but got nil",
@@ -22,6 +22,10 @@ func Broadcast(channel chan []byte, message ServerEmittedMessage) error {
 	if err != nil {
 		return err
 	}
+	return BroadcastData(channel, data)
+}
+
+func BroadcastData(channel chan []byte, data []byte) error {
 	channel <- data
 	if config, err := settings.GetInstance(); err == nil {
 		fmt.Fprintf(config.Stdoout, "    -<send>-> %s\n", data)

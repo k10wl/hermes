@@ -89,7 +89,7 @@ func (message *ClientRequestReadChat) Process(
 	}
 	err := cmd.Execute(context.TODO())
 	if err != nil {
-		return Broadcast(
+		return BroadcastServerEmittedMessage(
 			coms.Single(),
 			NewServerError(
 				message.ID,
@@ -97,7 +97,7 @@ func (message *ClientRequestReadChat) Process(
 			),
 		)
 	}
-	return Broadcast(
+	return BroadcastServerEmittedMessage(
 		coms.Single(),
 		NewServerReadChat(message.ID, cmd.ChatID, cmd.Result),
 	)
@@ -115,7 +115,7 @@ func (message *ClientPing) Process(
 	_ *core.Core,
 	_ ai_clients.CompletionFn,
 ) error {
-	return Broadcast(coms.Single(), NewServerPong(message.ID))
+	return BroadcastServerEmittedMessage(coms.Single(), NewServerPong(message.ID))
 }
 
 func (message *ClientPing) GetID() string { return message.ID }
@@ -167,7 +167,7 @@ func (message *ClientCreateCompletion) processNewChat(
 	if err := cmd.Execute(context.TODO()); err != nil {
 		return err
 	}
-	if err := Broadcast(
+	if err := BroadcastServerEmittedMessage(
 		coms.Single(),
 		NewServerChatCreated(message.ID, cmd.Result.Chat, cmd.Result.Message),
 	); err != nil {
@@ -187,7 +187,7 @@ func (message *ClientCreateCompletion) processExistingChat(
 	c *core.Core,
 	completionFn ai_clients.CompletionFn,
 ) error {
-	if err := Broadcast(
+	if err := BroadcastServerEmittedMessage(
 		coms.All(),
 		NewServerMessageCreated(
 			message.ID,
@@ -228,12 +228,12 @@ func (message *ClientCreateCompletion) createCompletion(
 	)
 	cmd.ShouldPersistUserMessage(skipPersistingUserMessage)
 	if err := cmd.Execute(context.TODO()); err != nil {
-		return Broadcast(coms.Single(), NewServerError(
+		return BroadcastServerEmittedMessage(coms.Single(), NewServerError(
 			message.ID,
 			err.Error(),
 		))
 	}
-	return Broadcast(
+	return BroadcastServerEmittedMessage(
 		coms.All(),
 		NewServerMessageCreated(message.ID, chatID, cmd.Result),
 	)

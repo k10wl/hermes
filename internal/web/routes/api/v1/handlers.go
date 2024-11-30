@@ -75,7 +75,7 @@ func handleRelay(relay chan []byte) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		relay <- data
+		messages.BroadcastData(relay, data)
 		w.WriteHeader(http.StatusOK)
 	}
 }
