@@ -126,10 +126,6 @@ export class ServerEvents {
     let event;
     while ((event = ServerEvents.#queue.peek())) {
       try {
-        ServerEvents.#unsafeSend(event);
-        event = ServerEvents.#queue.dequeue();
-      } catch (error) {
-        ServerEvents.#error("caught in flush loop", error);
         if (!ServerEvents.connected) {
           const promise = Promise.withResolvers();
           ServerEvents.on(
@@ -137,13 +133,16 @@ export class ServerEvents {
             (data) => data.payload.connected && promise.resolve(null),
           );
           await promise.promise;
-          continue;
         }
+        ServerEvents.#unsafeSend(event);
+        event = ServerEvents.#queue.dequeue();
+      } catch (error) {
         ServerEvents.#error("caught in flush loop", error);
         await sleep(time());
       }
     }
     ServerEvents.#flushing = false;
+    ServerEvents.#log("recovered in flush");
   }
 
   /**
