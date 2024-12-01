@@ -1,5 +1,9 @@
 import { CreateCompletionMessageEvent } from "/assets/scripts/events/client-events-list.mjs";
 import { ServerEvents } from "/assets/scripts/events/server-events.mjs";
+import {
+  ChatCreatedEvent,
+  ServerErrorEvent,
+} from "/assets/scripts/events/server-events-list.mjs";
 import { LocationControll } from "/assets/scripts/lib/navigation/location.mjs";
 import {
   ValidateNumber,
@@ -62,39 +66,21 @@ export class MessageContentForm extends HTMLFormElement {
       },
     });
     ServerEvents.send(message);
-    let eventOff = () => {};
-    let locationControllOff = () => {};
-    if (chat_id === -1) {
-      eventOff = ServerEvents.on("chat-created", (e) => {
-        if (e.id !== message.id) {
+    const off = ServerEvents.on(
+      ["chat-created", "message-created", "server-error"],
+      (event) => {
+        if (event.id !== message.id) {
           return;
         }
-        LocationControll.navigate(`/chats/${e.payload.chat.id}`);
-        this.reset();
-        eventOff();
-        locationControllOff();
-      });
-    } else {
-      eventOff = ServerEvents.on("message-created", (e) => {
-        if (e.id !== message.id) {
+        off();
+        if (event instanceof ChatCreatedEvent) {
+          LocationControll.navigate(`/chats/${event.payload.chat.id}`);
+        }
+        if (event instanceof ServerErrorEvent) {
           return;
         }
         this.reset();
-        eventOff();
-        locationControllOff();
-      });
-    }
-
-    let skip = true;
-    locationControllOff = LocationControll.attach({
-      notify: () => {
-        if (skip) {
-          skip = false;
-          return;
-        }
-        eventOff();
-        locationControllOff();
       },
-    });
+    );
   }
 }

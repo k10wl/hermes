@@ -1,6 +1,5 @@
 import { config } from "/assets/scripts/config.mjs";
 import { assertInstance } from "/assets/scripts/utils/assert-instance.mjs";
-import { currentUrl } from "/assets/scripts/utils/current-url.mjs";
 import { ValidateString } from "/assets/scripts/utils/validate.mjs";
 
 import { CallbackTracker } from "./callback-tracker.mjs";
@@ -187,7 +186,7 @@ export class ServerEvents {
     }
     try {
       ServerEvents.#warn("connection lost, reconnecting...");
-      const res = await fetch(currentUrl(config.server.pathnames.healthCheck));
+      const res = await fetch(config.server.pathnames.healthCheck);
       if (res.status == 200) {
         const url = new URL(ServerEvents.#connection.url);
         url.searchParams.set("reconnect", "true");
@@ -228,5 +227,5 @@ class EmittedServerEventFactory {
   }
 }
 
-ServerEvents.__init(currentUrl(config.server.pathnames.webSocket));
+ServerEvents.__init(config.server.pathnames.webSocket);
 Reflect.set(window, "ServerEvents", ServerEvents);

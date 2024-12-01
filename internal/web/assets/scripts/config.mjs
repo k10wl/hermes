@@ -1,9 +1,11 @@
+import { currentUrl } from "./utils/current-url.mjs";
+
 /**
  * @param {string} leaf
  * @returns {string}
  */
 function apiPathnameV1(leaf) {
-  return "/api/v1/" + leaf;
+  return currentUrl("/api/v1/" + leaf);
 }
 
 export const config = {
