@@ -1,5 +1,6 @@
-import * as assert from "node:assert";
 import test, { describe } from "node:test";
+
+import * as assert from "assert";
 
 import { CallbackTracker } from "./callback-tracker.mjs";
 
