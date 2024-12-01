@@ -1,17 +1,20 @@
 import { config } from "/assets/scripts/config.mjs";
+import { Queue } from "/assets/scripts/lib/queue.mjs";
 import { assertInstance } from "/assets/scripts/utils/assert-instance.mjs";
+import { backoff, exponent } from "/assets/scripts/utils/backoff.mjs";
+import { sleep } from "/assets/scripts/utils/sleep.mjs";
 import { ValidateString } from "/assets/scripts/utils/validate.mjs";
 
 import { CallbackTracker } from "./callback-tracker.mjs";
 import * as clientEventsList from "./client-events-list.mjs";
 import * as serverEventsList from "./server-events-list.mjs";
 
-const __isolatedServiceEvents = {
+const _isolatedServiceEvents = {
   [serverEventsList.ConnectionStatusChangeEvent.canonicalType]:
     serverEventsList.ConnectionStatusChangeEvent,
 };
 
-const serverEvents = {
+const _serverEvents = {
   [serverEventsList.ChatCreatedEvent.canonicalType]:
     serverEventsList.ChatCreatedEvent,
   [serverEventsList.ServerEvent.canonicalType]: serverEventsList.ServerEvent,
@@ -31,16 +34,16 @@ const _clientEvents = {
     clientEventsList.CreateCompletionMessageEvent,
 };
 
-const registeredEvents = {
-  ...serverEvents,
-  ...__isolatedServiceEvents,
+const _registeredEvents = {
+  ..._serverEvents,
+  ..._isolatedServiceEvents,
 };
 
 /** just to be sure that all described events are known and handled */
 (function () {
   /** @type {Record<string, boolean>} */
   const usedEvents = {};
-  Object.values(registeredEvents).forEach((event) => {
+  Object.values(_registeredEvents).forEach((event) => {
     if (usedEvents[event.canonicalType]) {
       throw new Error(
         `redeclaration of registered event ${event.canonicalType}`,
@@ -68,7 +71,9 @@ export class ServerEvents {
   static #connection = null;
   static #reconnectTimeout = 1000;
   static #allowReconnect = true;
-  static #callbackTracker = new CallbackTracker(registeredEvents);
+  static #callbackTracker = new CallbackTracker(_registeredEvents);
+  /** @type {Queue<InstanceType<typeof _clientEvents[keyof typeof _clientEvents]>>} */
+  static #queue = new Queue();
 
   /** @param {string} addr */
   static __init(addr) {
@@ -83,12 +88,12 @@ export class ServerEvents {
     ServerEvents.#addListeners(ServerEvents.#connection);
   }
 
-  /** @type {CallbackTracker<typeof registeredEvents>["on"]} */
+  /** @type {CallbackTracker<typeof _registeredEvents>["on"]} */
   static on(type, callback) {
     return ServerEvents.#callbackTracker.on(type, callback);
   }
 
-  /** @type {CallbackTracker<typeof registeredEvents>["off"]} */
+  /** @type {CallbackTracker<typeof _registeredEvents>["off"]} */
   static off(type, callback) {
     return ServerEvents.#callbackTracker.off(type, callback);
   }
@@ -97,9 +102,56 @@ export class ServerEvents {
    * @param {InstanceType<typeof _clientEvents[keyof typeof _clientEvents]>} event
    */
   static send(event) {
-    assertInstance(ServerEvents.#connection, WebSocket).send(
-      JSON.stringify(event),
-    );
+    const socket = assertInstance(ServerEvents.#connection, WebSocket);
+    if (socket.readyState !== WebSocket.OPEN) {
+      ServerEvents.#queue.enqueue(event);
+      ServerEvents.#flush();
+      return;
+    }
+    try {
+      ServerEvents.#unsafeSend(event);
+    } catch (error) {
+      ServerEvents.#error("error upon sending", event, error);
+    }
+  }
+
+  static #flushing = false;
+  static async #flush() {
+    if (ServerEvents.#flushing) {
+      return;
+    }
+    ServerEvents.#warn("entered recovering flush");
+    ServerEvents.#flushing = true;
+    const time = backoff(10, exponent);
+    let event;
+    while ((event = ServerEvents.#queue.peek())) {
+      try {
+        ServerEvents.#unsafeSend(event);
+        event = ServerEvents.#queue.dequeue();
+      } catch (error) {
+        ServerEvents.#error("caught in flush loop", error);
+        if (!ServerEvents.connected) {
+          const promise = Promise.withResolvers();
+          ServerEvents.on(
+            "connection-status-change",
+            (data) => data.payload.connected && promise.resolve(null),
+          );
+          await promise.promise;
+          continue;
+        }
+        ServerEvents.#error("caught in flush loop", error);
+        await sleep(time());
+      }
+    }
+    ServerEvents.#flushing = false;
+  }
+
+  /**
+   * @param {InstanceType<typeof _clientEvents[keyof typeof _clientEvents]>} event
+   */
+  static #unsafeSend(event) {
+    const socket = assertInstance(ServerEvents.#connection, WebSocket);
+    socket.send(JSON.stringify(event));
   }
 
   /** @param {WebSocket} webSocket */
@@ -146,7 +198,7 @@ export class ServerEvents {
     ServerEvents.#reconnect();
   }
 
-  /** @param {InstanceType<registeredEvents[keyof typeof registeredEvents]>} event */
+  /** @param {InstanceType<_registeredEvents[keyof typeof _registeredEvents]>} event */
   static #notifySubscribers(event) {
     const callbacks = ServerEvents.#callbackTracker.getCallbacks(event.type);
     if (!callbacks) {
@@ -212,18 +264,18 @@ class EmittedServerEventFactory {
   static #typeRegex = /"type":(\s?)+"(?<type>.*?)"/;
   /**
    * @param {unknown} data
-   * @returns {InstanceType<typeof registeredEvents[keyof typeof registeredEvents]>}
+   * @returns {InstanceType<typeof _registeredEvents[keyof typeof _registeredEvents]>}
    */
   static parse(data) {
     const res = ValidateString.parse(
       EmittedServerEventFactory.#typeRegex.exec(ValidateString.parse(data))
         ?.groups?.type,
     );
-    if (!(res in registeredEvents)) {
+    if (!(res in _registeredEvents)) {
       throw new Error("receivd unhandled event");
     }
     // @ts-expect-error literally has check for "in" three lines above
-    return registeredEvents[res].parse(data);
+    return _registeredEvents[res].parse(data);
   }
 }
 
