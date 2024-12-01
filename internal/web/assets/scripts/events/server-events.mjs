@@ -8,6 +8,7 @@ import { ValidateString } from "/assets/scripts/utils/validate.mjs";
 import { CallbackTracker } from "./callback-tracker.mjs";
 import * as clientEventsList from "./client-events-list.mjs";
 import * as serverEventsList from "./server-events-list.mjs";
+import { describe } from "node:test";
 
 const _isolatedServiceEvents = {
   [serverEventsList.ConnectionStatusChangeEvent.canonicalType]:
@@ -128,10 +129,13 @@ export class ServerEvents {
       try {
         if (!ServerEvents.connected) {
           const promise = Promise.withResolvers();
-          ServerEvents.on(
-            "connection-status-change",
-            (data) => data.payload.connected && promise.resolve(null),
-          );
+          const off = ServerEvents.on("connection-status-change", (data) => {
+            if (!data.payload.connected) {
+              return;
+            }
+            promise.resolve(null);
+            off();
+          });
           await promise.promise;
         }
         ServerEvents.#unsafeSend(event);
