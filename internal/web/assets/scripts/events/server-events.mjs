@@ -8,7 +8,6 @@ import { ValidateString } from "/assets/scripts/utils/validate.mjs";
 import { CallbackTracker } from "./callback-tracker.mjs";
 import * as clientEventsList from "./client-events-list.mjs";
 import * as serverEventsList from "./server-events-list.mjs";
-import { describe } from "node:test";
 
 const _isolatedServiceEvents = {
   [serverEventsList.ConnectionStatusChangeEvent.canonicalType]:
