@@ -41,7 +41,7 @@ MAX_TEST_DURATION=5s
 
 test-web:
 	@echo ">> Testing web..."
-	@(cd internal/web && npm run test)
+	@(cd internal/web && npm run ci)
 	@echo ">> Web passed test"
 
 pre-test-app: 

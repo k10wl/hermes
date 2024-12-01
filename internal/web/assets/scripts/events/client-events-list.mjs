@@ -9,17 +9,33 @@ import { ServerEvent } from "./server-events-list.mjs";
 
 class ClientEvent extends ServerEvent {
   /** @type {string} */
-  id = crypto.randomUUID();
+  id;
+
+  /** @param {Partial<Omit<ServerEvent, "id">> & {type: string}} data */
+  constructor(data) {
+    const id = crypto.randomUUID();
+    super({ ...data, id });
+    this.id = id;
+  }
 }
 
 export class RequestReadChatEvent extends ClientEvent {
+  /** @type {"request-read-chat"} */
+  static canonicalType = "request-read-chat";
+
   /** @param {number} chatId  */
   constructor(chatId) {
-    super({ type: "request-read-chat", payload: ValidateNumber.parse(chatId) });
+    super({
+      type: "request-read-chat",
+      payload: ValidateNumber.parse(chatId),
+    });
   }
 }
 
 export class CreateCompletionMessageEvent extends ClientEvent {
+  /** @type {"create-completion"} */
+  static canonicalType = "create-completion";
+
   static #eventValidation = new ValidateObject({
     chat_id: ValidateNumber,
     content: ValidateString,

@@ -178,7 +178,7 @@ describe("should track callbacks", () => {
     );
     assert.strictEqual(
       callbackTracker.getCallbacks("number"),
-      null,
+      undefined,
       "number tracking should have no callbacks",
     );
   });

@@ -3,49 +3,73 @@ import { assertInstance } from "/assets/scripts/utils/assert-instance.mjs";
 import { currentUrl } from "/assets/scripts/utils/current-url.mjs";
 import { ValidateString } from "/assets/scripts/utils/validate.mjs";
 
-import {
-  ChatCreatedEvent,
-  ConnectionStatusChangeEvent,
-  MessageCreatedEvent,
-  ReadChatEvent,
-  ServerErrorEvent,
-  ServerEvent,
-} from "./server-events-list.mjs";
+import { CallbackTracker } from "./callback-tracker.mjs";
+import * as clientEventsList from "./client-events-list.mjs";
+import * as serverEventsList from "./server-events-list.mjs";
 
-/**
- * @typedef {Object} IsolatedServiceEvents
- * @property {ConnectionStatusChangeEvent} connection-status-change
- */
+const __isolatedServiceEvents = {
+  [serverEventsList.ConnectionStatusChangeEvent.canonicalType]:
+    serverEventsList.ConnectionStatusChangeEvent,
+};
 
-/**
- * @typedef {Object} ClientEmittedEvents
- * @property {import("./client-events-list.mjs").RequestReadChatEvent} request-read-chat
- */
+const serverEvents = {
+  [serverEventsList.ChatCreatedEvent.canonicalType]:
+    serverEventsList.ChatCreatedEvent,
+  [serverEventsList.ServerEvent.canonicalType]: serverEventsList.ServerEvent,
+  [serverEventsList.ReadChatEvent.canonicalType]:
+    serverEventsList.ReadChatEvent,
+  [serverEventsList.ServerErrorEvent.canonicalType]:
+    serverEventsList.ServerErrorEvent,
+  [serverEventsList.MessageCreatedEvent.canonicalType]:
+    serverEventsList.MessageCreatedEvent,
+  [serverEventsList.ReloadEvent.canonicalType]: serverEventsList.ReloadEvent,
+};
 
-/**
- * @typedef {Object} ServerEmittedEvents
- * @property {ChatCreatedEvent} chat-created
- * @property {ServerEvent} reload
- * @property {ReadChatEvent} read-chat
- * @property {ServerErrorEvent} server-error
- * @property {MessageCreatedEvent} message-created
- */
+const _clientEvents = {
+  [clientEventsList.RequestReadChatEvent.canonicalType]:
+    clientEventsList.RequestReadChatEvent,
+  [clientEventsList.CreateCompletionMessageEvent.canonicalType]:
+    clientEventsList.CreateCompletionMessageEvent,
+};
 
-/** @typedef { ServerEmittedEvents & IsolatedServiceEvents } RegisteredEvents */
+const registeredEvents = {
+  ...serverEvents,
+  ...__isolatedServiceEvents,
+};
+
+/** just to be sure that all described events are known and handled */
+(function () {
+  /** @type {Record<string, boolean>} */
+  const usedEvents = {};
+  Object.values(registeredEvents).forEach((event) => {
+    if (usedEvents[event.canonicalType]) {
+      throw new Error(
+        `redeclaration of registered event ${event.canonicalType}`,
+      );
+    }
+    usedEvents[event.canonicalType] = true;
+  });
+  Object.values(serverEventsList).forEach((event) => {
+    if (
+      serverEventsList.ServerEvent !== Object.getPrototypeOf(event) &&
+      serverEventsList.ServerEvent !== event
+    ) {
+      throw new Error(
+        `exported non server event from server events list -  ${event}`,
+      );
+    }
+    if (!usedEvents[event.canonicalType]) {
+      throw new Error(`did not registered event ${event.canonicalType}`);
+    }
+  });
+})();
 
 export class ServerEvents {
-  /**
-   * @template {keyof RegisteredEvents} T
-   * @typedef {(data: RegisteredEvents[T]) => void} callback
-   */
-  /** @typedef {{once?: boolean}} options */
-  /** @typedef {() => void} unsubscribe */
   /** @type WebSocket | null */
   static #connection = null;
-  /** @type Map<string, {callback: callback<any>, options: options}[]> */
-  static #listeners = new Map();
   static #reconnectTimeout = 1000;
   static #allowReconnect = true;
+  static #callbackTracker = new CallbackTracker(registeredEvents);
 
   /** @param {string} addr */
   static __init(addr) {
@@ -60,46 +84,18 @@ export class ServerEvents {
     ServerEvents.#addListeners(ServerEvents.#connection);
   }
 
-  /**
-   * @template {keyof RegisteredEvents} T
-   * @param {T} type
-   * @param {callback<T>} callback
-   * @param {object} [options]
-   * @returns {unsubscribe} unsubscribe
-   */
-  static on(type, callback, options = {}) {
-    let events = ServerEvents.#listeners.get(type);
-    ServerEvents.#listeners.get("reload");
-    if (!events) {
-      events = [];
-      ServerEvents.#listeners.set(type, events);
-    }
-    events.push({ callback, options });
-    return () => ServerEvents.off(type, callback);
+  /** @type {CallbackTracker<typeof registeredEvents>["on"]} */
+  static on(type, callback) {
+    return ServerEvents.#callbackTracker.on(type, callback);
   }
 
-  /**
-   * @template {keyof RegisteredEvents} T
-   * @param {T} type
-   * @param {callback<T>} callback
-   */
+  /** @type {CallbackTracker<typeof registeredEvents>["off"]} */
   static off(type, callback) {
-    let events = ServerEvents.#listeners.get(type);
-    if (!events) {
-      return;
-    }
-    const callbackIndex = events.findIndex(
-      (handler) => handler.callback === callback,
-    );
-    if (callbackIndex === -1) {
-      return;
-    }
-    events.splice(callbackIndex, 1);
+    return ServerEvents.#callbackTracker.off(type, callback);
   }
 
   /**
-   * @template {keyof ClientEmittedEvents} T
-   * @param {ClientEmittedEvents[T]} event
+   * @param {InstanceType<typeof _clientEvents[keyof typeof _clientEvents]>} event
    */
   static send(event) {
     assertInstance(ServerEvents.#connection, WebSocket).send(
@@ -117,7 +113,9 @@ export class ServerEvents {
 
   static #onOpen() {
     ServerEvents.#log("connected");
-    ServerEvents.#notifySubscribers(new ConnectionStatusChangeEvent(true));
+    ServerEvents.#notifySubscribers(
+      new serverEventsList.ConnectionStatusChangeEvent(true),
+    );
   }
 
   /** @param {MessageEvent<unknown>} event */
@@ -127,45 +125,52 @@ export class ServerEvents {
         EmittedServerEventFactory.parse(event.data),
       );
     } catch (error) {
-      ServerEvents.#log("failed to handle message", error, event);
+      ServerEvents.#error("failed to handle message", error, event);
     }
   }
 
   /** @param {Event} event */
   static #onClose(event) {
-    ServerEvents.#log("connection closed", event);
-    ServerEvents.#notifySubscribers(new ConnectionStatusChangeEvent(false));
+    ServerEvents.#warn("connection closed", event);
+    ServerEvents.#notifySubscribers(
+      new serverEventsList.ConnectionStatusChangeEvent(false),
+    );
     ServerEvents.#reconnect();
   }
 
   /** @param {Event} event  */
   static #onError(event) {
-    ServerEvents.#log("connection error", event);
-    ServerEvents.#notifySubscribers(new ConnectionStatusChangeEvent(false));
+    ServerEvents.#error("connection error", event);
+    ServerEvents.#notifySubscribers(
+      new serverEventsList.ConnectionStatusChangeEvent(false),
+    );
     ServerEvents.#reconnect();
   }
 
-  /** @param {RegisteredEvents[keyof RegisteredEvents]} event */
+  /** @param {InstanceType<registeredEvents[keyof typeof registeredEvents]>} event */
   static #notifySubscribers(event) {
-    const listeners = ServerEvents.#listeners.get(event.type);
-    if (!listeners) {
+    const callbacks = ServerEvents.#callbackTracker.getCallbacks(event.type);
+    if (!callbacks) {
       return;
     }
-    for (let i = 0; i < listeners.length; i++) {
-      const handler = listeners[i];
-      if (!handler) {
-        continue;
-      }
-      handler.callback(event);
-      if (handler.options.once) {
-        ServerEvents.off(event.type, handler.callback);
-      }
+    for (const callback of callbacks) {
+      callback(/** @type {any} */ (event));
     }
   }
 
   /** @param {any[]} data  */
   static #log(...data) {
     console.log(`[ServerEvents]`, ...data);
+  }
+
+  /** @param {any[]} data  */
+  static #warn(...data) {
+    console.warn(`[ServerEvents]`, ...data);
+  }
+
+  /** @param {any[]} data  */
+  static #error(...data) {
+    console.error(`[ServerEvents]`, ...data);
   }
 
   // TODO reconnect only if tab is opened and active
@@ -181,7 +186,7 @@ export class ServerEvents {
       return;
     }
     try {
-      ServerEvents.#log("connection lost, reconnecting...");
+      ServerEvents.#warn("connection lost, reconnecting...");
       const res = await fetch(currentUrl(config.server.pathnames.healthCheck));
       if (res.status == 200) {
         const url = new URL(ServerEvents.#connection.url);
@@ -204,31 +209,22 @@ export class ServerEvents {
   }
 }
 
-// I HATE ADDING EVERY MESSAGE IN HERE HOLYFUCK CAN THIS BE AUTOMATED???
 class EmittedServerEventFactory {
   static #typeRegex = /"type":(\s?)+"(?<type>.*?)"/;
   /**
    * @param {unknown} data
-   * @returns {RegisteredEvents[keyof RegisteredEvents]}
+   * @returns {InstanceType<typeof registeredEvents[keyof typeof registeredEvents]>}
    */
   static parse(data) {
-    const res = EmittedServerEventFactory.#typeRegex.exec(
-      ValidateString.parse(data),
+    const res = ValidateString.parse(
+      EmittedServerEventFactory.#typeRegex.exec(ValidateString.parse(data))
+        ?.groups?.type,
     );
-    switch (ValidateString.parse(res?.groups?.type)) {
-      case "reload":
-        return ServerEvent.parse(data);
-      case "server-error":
-        return ServerErrorEvent.parse(data);
-      case "chat-created":
-        return ChatCreatedEvent.parse(data);
-      case "message-created":
-        return MessageCreatedEvent.parse(data);
-      case "read-chat":
-        return ReadChatEvent.parse(data);
-      default:
-        throw new Error(`unhandled server event - ${data}`);
+    if (!(res in registeredEvents)) {
+      throw new Error("receivd unhandled event");
     }
+    // @ts-expect-error literally has check for "in" three lines above
+    return registeredEvents[res].parse(data);
   }
 }
 

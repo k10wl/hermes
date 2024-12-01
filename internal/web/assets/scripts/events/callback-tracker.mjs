@@ -3,7 +3,7 @@ export class CallbackTracker {
   /** @typedef {keyof Data} Keys */
   /**
    * @template {Keys} T
-   * @typedef {(data: Data[T]) => void} Callback
+   * @typedef {(data: Data[T] extends abstract new (...args: any) => any ? InstanceType<Data[T]> : Data[T]) => void} Callback
    */
   /** @typedef {() => void} Teardown */
 
@@ -47,13 +47,13 @@ export class CallbackTracker {
 
   /**
    * @template {Keys} T
-   * @param {T} key
-   * @return {((Callback<T>)[]) | null}
+   * @param {string} key
+   * @return {((Callback<T>)[]) | undefined}
    */
   getCallbacks(key) {
     const handlers = this.handlers.get(key);
     if (!handlers) {
-      return null;
+      return;
     }
     return Array.from(handlers.values()).map(({ callback }) => callback);
   }

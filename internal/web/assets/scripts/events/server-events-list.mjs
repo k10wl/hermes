@@ -23,6 +23,9 @@ export class ServerEvent {
   /** @type {unknown} */
   payload;
 
+  /** @type {string} */
+  static canonicalType = "__meant_to_be_overriden__";
+
   /** @param { { id: string, type: string, payload?: unknown } } data */
   constructor(data) {
     this.id = data.id;
@@ -40,7 +43,18 @@ export class ServerEvent {
   }
 }
 
+export class ReloadEvent extends ServerEvent {
+  static canonicalType = /** @type {const} */ ("reload");
+
+  /** @param { ServerEvent } data */
+  constructor(data) {
+    super(data);
+  }
+}
+
 export class ConnectionStatusChangeEvent extends ServerEvent {
+  static canonicalType = /** @type {const} */ ("connection-status-change");
+
   /**
    * @param {  boolean  } connected
    */
@@ -63,6 +77,8 @@ export class ChatCreatedEvent extends ServerEvent {
       redirect: new ValidateOptional(ValidateBoolean),
     }),
   });
+
+  static canonicalType = /** @type {const} */ ("chat-created");
 
   /** @param { ReturnType<ChatCreatedEvent.validate> } data */
   constructor(data) {
@@ -95,6 +111,8 @@ export class ReadChatEvent extends ServerEvent {
       messages: new ValidateArray(Message.validator),
     }),
   });
+
+  static canonicalType = /** @type {const} */ ("read-chat");
 
   /** @param { ReturnType<ReadChatEvent.validate> } data */
   constructor(data) {
@@ -131,6 +149,8 @@ export class ServerErrorEvent extends ServerEvent {
     payload: ValidateString,
   });
 
+  static canonicalType = /** @type {const} */ ("server-error");
+
   /** @param { ReturnType<ServerErrorEvent.validate> } data */
   constructor(data) {
     super(data);
@@ -159,6 +179,8 @@ export class MessageCreatedEvent extends ServerEvent {
       message: Message.validator,
     }),
   });
+
+  static canonicalType = /** @type {const} */ ("message-created");
 
   /** @param { ReturnType<MessageCreatedEvent.validate> } data */
   constructor(data) {
