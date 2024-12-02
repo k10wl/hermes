@@ -578,6 +578,84 @@ func TestCreateCompletionCommand(t *testing.T) {
 	}
 }
 
+func TestCreateCompletionCommandStoreTemplate(t *testing.T) {
+	coreInstance, db := test_helpers.CreateCore()
+	ctx := context.Background()
+	seeder := db_helpers.NewSeeder(db, ctx)
+	if err := seeder.SeedChatsN(1); err != nil {
+		t.Fatalf("failed to seed chats, err: %s\n", err)
+	}
+	if err := db_helpers.CreateTemplate(
+		db,
+		ctx,
+		&models.Template{
+			Name:    "template",
+			Content: `--{{define "template"}}template - --{{.}} - template --{{end}}`,
+		},
+	); err != nil {
+		t.Fatalf("failed to create template, err: %s\n", err)
+	}
+	cmd := core.NewCreateCompletionCommand(
+		coreInstance,
+		1,
+		core.UserRole,
+		"content",
+		"template",
+		&ai_clients.Parameters{Model: "gpt-4o"},
+		test_helpers.MockCompletion,
+	)
+	if err := cmd.Execute(ctx); err != nil {
+		t.Fatalf("failed to execute command, err: %s\n", err)
+	}
+	dbMessages, err := db_helpers.GetMessagesByChatID(db, ctx, 1)
+	if err != nil {
+		t.Fatalf("failed to get created messages, err: %s\n", err)
+	}
+	if dbMessages[0].Content != "template - content - template" {
+		t.Fatalf(
+			"applied template was not stored in database, db content: %s\n",
+			dbMessages[0].Content,
+		)
+	}
+}
+
+func TestCreateChatWithMessageCommandStoreTemplate(t *testing.T) {
+	coreInstance, db := test_helpers.CreateCore()
+	ctx := context.Background()
+	seeder := db_helpers.NewSeeder(db, ctx)
+	if err := seeder.SeedChatsN(1); err != nil {
+		t.Fatalf("failed to seed chats, err: %s\n", err)
+	}
+	if err := db_helpers.CreateTemplate(
+		db,
+		ctx,
+		&models.Template{
+			Name:    "template",
+			Content: `--{{define "template"}}template - --{{.}} - template --{{end}}`,
+		},
+	); err != nil {
+		t.Fatalf("failed to create template, err: %s\n", err)
+	}
+	cmd := core.NewCreateChatWithMessageCommand(
+		coreInstance,
+		&models.Message{Content: "content", Role: core.UserRole},
+		"template",
+	)
+	if err := cmd.Execute(ctx); err != nil {
+		t.Fatalf("failed to execute command, err: %s\n", err)
+	}
+	dbMessages, err := db_helpers.GetMessagesByChatID(db, ctx, 1)
+	if err != nil {
+		t.Fatalf("failed to get created messages, err: %s\n", err)
+	}
+	if dbMessages[0].Content != "template - content - template" {
+		t.Fatalf(
+			"applied template was not stored in database, db content: %s\n",
+			dbMessages[0].Content,
+		)
+	}
+}
+
 func TestCreateTemplateCommand(t *testing.T) {
 	type testCase struct {
 		name         string

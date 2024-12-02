@@ -146,7 +146,7 @@ func completeInChat(
 			&models.Message{
 				ChatID:  chatQuery.Result.ID,
 				Content: content,
-				Role:    "user",
+				Role:    core.UserRole,
 			}),
 	); err == nil {
 		utils.NotifyActiveSessions(c, id, data)
@@ -186,10 +186,10 @@ func createChatAndComplete(
 	cmd := core.NewCreateChatWithMessageCommand(
 		c,
 		&models.Message{
-			Role:    "user",
+			Role:    core.UserRole,
 			Content: content,
 		},
-		"",
+		template,
 	)
 	if err := cmd.Execute(ctx); err != nil {
 		return err
