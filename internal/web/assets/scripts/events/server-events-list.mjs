@@ -69,10 +69,7 @@ export class ChatCreatedEvent extends ServerEvent {
     id: ValidateString,
     type: ValidateString,
     payload: new ValidateObject({
-      chat: new ValidateObject({
-        id: ValidateNumber,
-        name: ValidateString,
-      }),
+      chat: Chat.validator,
       message: Message.validator,
       redirect: new ValidateOptional(ValidateBoolean),
     }),

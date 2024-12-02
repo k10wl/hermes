@@ -5,6 +5,11 @@ import {
 } from "./utils/validate.mjs";
 
 export class Chat {
+  static validator = new ValidateObject({
+    id: ValidateNumber,
+    name: ValidateString,
+  });
+
   /**
    * @param {number} id
    * @param {string} name
