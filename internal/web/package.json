@@ -2,7 +2,8 @@
     "scripts": {
         "test": "node --test",
         "typecheck": "tsc --noEmit --incremental false",
-        "ci": "npm run test && npm run typecheck"
+        "lint": "eslint",
+        "ci": "npm run test && npm run lint && npm run typecheck"
     },
     "devDependencies": {
         "@eslint/js": "^9.10.0",
@@ -15,6 +16,6 @@
         "typescript": "^5.7.2"
     },
     "eslintIgnore": [
-        "*_test.mjs"
+        "*test.mjs"
     ]
 }

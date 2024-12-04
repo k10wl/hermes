@@ -1,10 +1,10 @@
 import { config } from "/assets/scripts/config.mjs";
-import { ServerEvents } from "/assets/scripts/events/server-events.mjs";
-import { LocationControll } from "/assets/scripts/lib/navigation/location.mjs";
+import { assertInstance } from "/assets/scripts/lib/assert-instance.mjs";
+import { currentUrl } from "/assets/scripts/lib/current-url.mjs";
+import { ServerEvents } from "/assets/scripts/lib/events/server-events.mjs";
+import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
+import { ValidateString } from "/assets/scripts/lib/validate.mjs";
 import { Chat } from "/assets/scripts/models.mjs";
-import { assertInstance } from "/assets/scripts/utils/assert-instance.mjs";
-import { currentUrl } from "/assets/scripts/utils/current-url.mjs";
-import { ValidateString } from "/assets/scripts/utils/validate.mjs";
 
 import { PaginatedList } from "./paginated-list.mjs";
 

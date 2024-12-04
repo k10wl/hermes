@@ -1,4 +1,4 @@
-import { Publisher } from "/assets/scripts/utils/publisher.mjs";
+import { Publisher } from "/assets/scripts/lib/publisher.mjs";
 
 export class LocationControll {
   static get pathname() {

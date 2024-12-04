@@ -1,4 +1,4 @@
-import { currentUrl } from "./utils/current-url.mjs";
+import { currentUrl } from "./lib/current-url.mjs";
 
 /**
  * @param {string} leaf

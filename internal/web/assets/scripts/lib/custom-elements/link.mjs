@@ -1,5 +1,5 @@
-import { LocationControll } from "/assets/scripts/lib/navigation/location.mjs";
-import { assertInstance } from "/assets/scripts/utils/assert-instance.mjs";
+import { assertInstance } from "/assets/scripts/lib/assert-instance.mjs";
+import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
 
 export class Link extends HTMLAnchorElement {
   constructor() {

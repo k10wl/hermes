@@ -1,6 +1,6 @@
-import { ServerEvents } from "./events/server-events.mjs";
+import { initCustomElements } from "./lib/custom-elements/init.mjs";
+import { ServerEvents } from "./lib/events/server-events.mjs";
 import { initConnectionIndicator } from "./ui/connection-indicator.mjs";
-import { initCustomElements } from "./ui/custom-elements/init.mjs";
 
 initConnectionIndicator();
 initCustomElements();

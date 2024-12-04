@@ -3,7 +3,7 @@ import {
   ValidateObject,
   ValidateOptional,
   ValidateString,
-} from "/assets/scripts/utils/validate.mjs";
+} from "/assets/scripts/lib/validate.mjs";
 
 import { ServerEvent } from "./server-events-list.mjs";
 

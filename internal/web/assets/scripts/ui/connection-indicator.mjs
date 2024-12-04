@@ -1,5 +1,5 @@
-import { ServerEvents } from "../events/server-events.mjs";
-import { Publisher } from "../utils/publisher.mjs";
+import { ServerEvents } from "/assets/scripts/lib/events/server-events.mjs";
+import { Publisher } from "/assets/scripts/lib/publisher.mjs";
 
 class OnlineObserver {
   #offlineSufix = " - offline";

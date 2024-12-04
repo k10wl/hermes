@@ -1,14 +1,14 @@
-import { CreateCompletionMessageEvent } from "/assets/scripts/events/client-events-list.mjs";
-import { ServerEvents } from "/assets/scripts/events/server-events.mjs";
+import { CreateCompletionMessageEvent } from "/assets/scripts/lib/events/client-events-list.mjs";
+import { ServerEvents } from "/assets/scripts/lib/events/server-events.mjs";
 import {
   ChatCreatedEvent,
   ServerErrorEvent,
-} from "/assets/scripts/events/server-events-list.mjs";
-import { LocationControll } from "/assets/scripts/lib/navigation/location.mjs";
+} from "/assets/scripts/lib/events/server-events-list.mjs";
+import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
 import {
   ValidateNumber,
   ValidateString,
-} from "/assets/scripts/utils/validate.mjs";
+} from "/assets/scripts/lib/validate.mjs";
 
 export class MessageContentForm extends HTMLFormElement {
   /** @type (() => void)[] */

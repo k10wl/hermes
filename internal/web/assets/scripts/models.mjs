@@ -2,7 +2,7 @@ import {
   ValidateNumber,
   ValidateObject,
   ValidateString,
-} from "./utils/validate.mjs";
+} from "/assets/scripts/lib/validate.mjs";
 
 export class Chat {
   static validator = new ValidateObject({

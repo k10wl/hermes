@@ -1,4 +1,4 @@
-import { ValidateString } from "/assets/scripts/utils/validate.mjs";
+import { ValidateString } from "/assets/scripts/lib/validate.mjs";
 
 export class TextAreaAutoresize extends HTMLTextAreaElement {
   /** @type {(()=>void)[]}*/

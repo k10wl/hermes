@@ -1,11 +1,11 @@
 import { config } from "/assets/scripts/config.mjs";
+import { assertInstance } from "/assets/scripts/lib/assert-instance.mjs";
+import { backoff, exponent } from "/assets/scripts/lib/backoff.mjs";
+import { CallbackTracker } from "/assets/scripts/lib/callback-tracker.mjs";
 import { Queue } from "/assets/scripts/lib/queue.mjs";
-import { assertInstance } from "/assets/scripts/utils/assert-instance.mjs";
-import { backoff, exponent } from "/assets/scripts/utils/backoff.mjs";
-import { sleep } from "/assets/scripts/utils/sleep.mjs";
-import { ValidateString } from "/assets/scripts/utils/validate.mjs";
+import { sleep } from "/assets/scripts/lib/sleep.mjs";
+import { ValidateString } from "/assets/scripts/lib/validate.mjs";
 
-import { CallbackTracker } from "./callback-tracker.mjs";
 import * as clientEventsList from "./client-events-list.mjs";
 import * as serverEventsList from "./server-events-list.mjs";
 

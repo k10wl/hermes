@@ -1,3 +1,3 @@
-import { ServerEvents } from "./events/server-events.mjs";
+import { ServerEvents } from "./lib/events/server-events.mjs";
 
 ServerEvents.on("reload", () => window.location.reload());

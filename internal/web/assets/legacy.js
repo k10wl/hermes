@@ -1,11 +1,57 @@
-class Settings {
+class _Theme {
+  /** @type _Settings */
+  #settings;
+
+  /** @param {_Settings} settings */
+  constructor(settings) {
+    this.#settings = settings;
+  }
+
+  load() {
+    this.adjustColors(this.isDark() ? "dark" : "light");
+  }
+
+  isDark() {
+    return this.#settings.get().dark_mode;
+  }
+
+  /**
+   * @param {"light" | "dark"} variant
+   */
+  adjustColors(variant) {
+    document.documentElement.style.setProperty(
+      "--bg-0",
+      `var(--${variant}-bg-0)`,
+    );
+    document.documentElement.style.setProperty(
+      "--bg-1",
+      `var(--${variant}-bg-1)`,
+    );
+    document.documentElement.style.setProperty(
+      "--bg-2",
+      `var(--${variant}-bg-2)`,
+    );
+    document.documentElement.style.setProperty(
+      "--text-0",
+      `var(--${variant}-text-0)`,
+    );
+  }
+
+  swithTheme() {
+    const wasDark = this.isDark();
+    this.adjustColors(wasDark ? "light" : "dark");
+    this.#settings.update({ ...this.#settings.get(), dark_mode: !wasDark });
+  }
+}
+
+class _Settings {
   /**
    * @typedef settings
    * @property {boolean} dark_mode
    * @property {boolean} initted
    */
 
-  /** @type Settings | undefined */
+  /** @type _Settings | undefined */
   static instance;
   #settings;
 
@@ -19,7 +65,7 @@ class Settings {
     if (this.instance) {
       throw new Error("settings already initialized");
     }
-    this.instance = new Settings(settings);
+    this.instance = new _Settings(settings);
     return this.instance;
   }
 

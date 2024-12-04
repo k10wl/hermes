@@ -1,6 +1,6 @@
-import { RequestReadChatEvent } from "/assets/scripts/events/client-events-list.mjs";
-import { ServerEvents } from "/assets/scripts/events/server-events.mjs";
-import { LocationControll } from "/assets/scripts/lib/navigation/location.mjs";
+import { RequestReadChatEvent } from "/assets/scripts/lib/events/client-events-list.mjs";
+import { ServerEvents } from "/assets/scripts/lib/events/server-events.mjs";
+import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
 import { SoundManager } from "/assets/scripts/lib/sound-manager.mjs";
 
 export class Messages extends HTMLElement {
@@ -59,7 +59,7 @@ class MessagesViewObserver {
     this.container = container;
   }
 
-  /** @param {import( "/assets/scripts/events/server-events-list.mjs").ReadChatEvent} readChatEvent  */
+  /** @param {import( "../events/server-events-list.mjs").ReadChatEvent} readChatEvent  */
   notify(readChatEvent) {
     this.container.innerHTML = "";
     this.container.append(
@@ -72,7 +72,7 @@ class MessagesViewObserver {
 
 class AudioNotificaitonsObserver {
   /**
-   * @param {import("/assets/scripts/events/server-events-list.mjs").MessageCreatedEvent } event
+   * @param {import("../events/server-events-list.mjs").MessageCreatedEvent } event
    */
   notify(event) {
     if (event.payload.message.role === "user") {
@@ -92,7 +92,7 @@ class MessageCreatedObserver {
   constructor(container) {
     this.#container = container;
   }
-  /** @param {import("/assets/scripts/events/server-events-list.mjs").MessageCreatedEvent } event  */
+  /** @param {import("../events/server-events-list.mjs").MessageCreatedEvent } event  */
   notify(event) {
     if (event.payload.chat_id !== LocationControll.chatId) {
       return;

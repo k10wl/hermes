@@ -1,4 +1,3 @@
-import { Chat, Message } from "/assets/scripts/models.mjs";
 import {
   ValidateArray,
   ValidateBoolean,
@@ -6,7 +5,8 @@ import {
   ValidateObject,
   ValidateOptional,
   ValidateString,
-} from "/assets/scripts/utils/validate.mjs";
+} from "/assets/scripts/lib/validate.mjs";
+import { Chat, Message } from "/assets/scripts/models.mjs";
 
 export class ServerEvent {
   static #eventValidation = new ValidateObject({
