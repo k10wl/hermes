@@ -1,9 +1,9 @@
 import {
-  ValidateNumber,
-  ValidateObject,
-  ValidateOptional,
-  ValidateString,
-} from "/assets/scripts/lib/validate.mjs";
+  AssertNumber,
+  AssertObject,
+  AssertOptional,
+  AssertString,
+} from "/assets/scripts/lib/assert.mjs";
 
 import { ServerEvent } from "./server-events-list.mjs";
 
@@ -27,7 +27,7 @@ export class RequestReadChatEvent extends ClientEvent {
   constructor(chatId) {
     super({
       type: "request-read-chat",
-      payload: ValidateNumber.parse(chatId),
+      payload: AssertNumber.check(chatId),
     });
   }
 }
@@ -36,13 +36,13 @@ export class CreateCompletionMessageEvent extends ClientEvent {
   /** @type {"create-completion"} */
   static canonicalType = "create-completion";
 
-  static #eventValidation = new ValidateObject({
-    chat_id: ValidateNumber,
-    content: ValidateString,
-    parameters: new ValidateObject({
-      model: ValidateString,
-      max_tokens: new ValidateOptional(ValidateNumber),
-      temperature: new ValidateOptional(ValidateNumber),
+  static #eventValidation = new AssertObject({
+    chat_id: AssertNumber,
+    content: AssertString,
+    parameters: new AssertObject({
+      model: AssertString,
+      max_tokens: new AssertOptional(AssertNumber),
+      temperature: new AssertOptional(AssertNumber),
     }),
   });
 
@@ -56,6 +56,6 @@ export class CreateCompletionMessageEvent extends ClientEvent {
 
   /** @param {unknown} data */
   validatePayload(data) {
-    return CreateCompletionMessageEvent.#eventValidation.parse(data);
+    return CreateCompletionMessageEvent.#eventValidation.check(data);
   }
 }

@@ -1,17 +1,17 @@
 import {
-  ValidateArray,
-  ValidateBoolean,
-  ValidateNumber,
-  ValidateObject,
-  ValidateOptional,
-  ValidateString,
-} from "/assets/scripts/lib/validate.mjs";
+  AssertArray,
+  AssertBoolean,
+  AssertNumber,
+  AssertObject,
+  AssertOptional,
+  AssertString,
+} from "/assets/scripts/lib/assert.mjs";
 import { Chat, Message } from "/assets/scripts/models.mjs";
 
 export class ServerEvent {
-  static #eventValidation = new ValidateObject({
-    id: ValidateString,
-    type: ValidateString,
+  static #eventValidation = new AssertObject({
+    id: AssertString,
+    type: AssertString,
   });
 
   /** @type {string} */
@@ -36,9 +36,7 @@ export class ServerEvent {
   /** @param {unknown} data */
   static parse(data) {
     return new ServerEvent(
-      ServerEvent.#eventValidation.parse(
-        JSON.parse(ValidateString.parse(data)),
-      ),
+      ServerEvent.#eventValidation.check(JSON.parse(AssertString.check(data))),
     );
   }
 }
@@ -60,18 +58,18 @@ export class ConnectionStatusChangeEvent extends ServerEvent {
    */
   constructor(connected) {
     super({ id: crypto.randomUUID(), type: "connection-status-change" });
-    this.payload = { connected: ValidateBoolean.parse(connected) };
+    this.payload = { connected: AssertBoolean.check(connected) };
   }
 }
 
 export class ChatCreatedEvent extends ServerEvent {
-  static #eventValidation = new ValidateObject({
-    id: ValidateString,
-    type: ValidateString,
-    payload: new ValidateObject({
+  static #eventValidation = new AssertObject({
+    id: AssertString,
+    type: AssertString,
+    payload: new AssertObject({
       chat: Chat.validator,
       message: Message.validator,
-      redirect: new ValidateOptional(ValidateBoolean),
+      redirect: new AssertOptional(AssertBoolean),
     }),
   });
 
@@ -90,22 +88,22 @@ export class ChatCreatedEvent extends ServerEvent {
   /** @param {unknown} data */
   static parse(data) {
     return new ChatCreatedEvent(
-      ChatCreatedEvent.validate(JSON.parse(ValidateString.parse(data))),
+      ChatCreatedEvent.validate(JSON.parse(AssertString.check(data))),
     );
   }
 
   /** @param {unknown} data */
   static validate(data) {
-    return ChatCreatedEvent.#eventValidation.parse(data);
+    return ChatCreatedEvent.#eventValidation.check(data);
   }
 }
 
 export class ReadChatEvent extends ServerEvent {
-  static #eventValidation = new ValidateObject({
-    id: ValidateString,
-    type: ValidateString,
-    payload: new ValidateObject({
-      messages: new ValidateArray(Message.validator),
+  static #eventValidation = new AssertObject({
+    id: AssertString,
+    type: AssertString,
+    payload: new AssertObject({
+      messages: new AssertArray(Message.validator),
     }),
   });
 
@@ -119,9 +117,7 @@ export class ReadChatEvent extends ServerEvent {
 
   /** @param {unknown} data */
   static parse(data) {
-    const parsed = ReadChatEvent.validate(
-      JSON.parse(ValidateString.parse(data)),
-    );
+    const parsed = ReadChatEvent.validate(JSON.parse(AssertString.check(data)));
     return new ReadChatEvent({
       ...parsed,
       payload: {
@@ -135,15 +131,15 @@ export class ReadChatEvent extends ServerEvent {
 
   /** @param {unknown} data */
   static validate(data) {
-    return ReadChatEvent.#eventValidation.parse(data);
+    return ReadChatEvent.#eventValidation.check(data);
   }
 }
 
 export class ServerErrorEvent extends ServerEvent {
-  static #eventValidation = new ValidateObject({
-    id: ValidateString,
-    type: ValidateString,
-    payload: ValidateString,
+  static #eventValidation = new AssertObject({
+    id: AssertString,
+    type: AssertString,
+    payload: AssertString,
   });
 
   static canonicalType = /** @type {const} */ ("server-error");
@@ -157,22 +153,22 @@ export class ServerErrorEvent extends ServerEvent {
   /** @param {unknown} data */
   static parse(data) {
     return new ServerErrorEvent(
-      ServerErrorEvent.validate(JSON.parse(ValidateString.parse(data))),
+      ServerErrorEvent.validate(JSON.parse(AssertString.check(data))),
     );
   }
 
   /** @param {unknown} data */
   static validate(data) {
-    return ServerErrorEvent.#eventValidation.parse(data);
+    return ServerErrorEvent.#eventValidation.check(data);
   }
 }
 
 export class MessageCreatedEvent extends ServerEvent {
-  static #eventValidation = new ValidateObject({
-    id: ValidateString,
-    type: ValidateString,
-    payload: new ValidateObject({
-      chat_id: ValidateNumber,
+  static #eventValidation = new AssertObject({
+    id: AssertString,
+    type: AssertString,
+    payload: new AssertObject({
+      chat_id: AssertNumber,
       message: Message.validator,
     }),
   });
@@ -188,7 +184,7 @@ export class MessageCreatedEvent extends ServerEvent {
   /** @param {unknown} data */
   static parse(data) {
     const parsed = MessageCreatedEvent.validate(
-      JSON.parse(ValidateString.parse(data)),
+      JSON.parse(AssertString.check(data)),
     );
     return new MessageCreatedEvent({
       ...parsed,
@@ -201,6 +197,6 @@ export class MessageCreatedEvent extends ServerEvent {
 
   /** @param {unknown} data */
   static validate(data) {
-    return MessageCreatedEvent.#eventValidation.parse(data);
+    return MessageCreatedEvent.#eventValidation.check(data);
   }
 }

@@ -1,3 +1,4 @@
+import { AssertNumber, AssertString } from "/assets/scripts/lib/assert.mjs";
 import { CreateCompletionMessageEvent } from "/assets/scripts/lib/events/client-events-list.mjs";
 import { ServerEvents } from "/assets/scripts/lib/events/server-events.mjs";
 import {
@@ -5,10 +6,6 @@ import {
   ServerErrorEvent,
 } from "/assets/scripts/lib/events/server-events-list.mjs";
 import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
-import {
-  ValidateNumber,
-  ValidateString,
-} from "/assets/scripts/lib/validate.mjs";
 
 export class MessageContentForm extends HTMLFormElement {
   /** @type (() => void)[] */
@@ -54,8 +51,8 @@ export class MessageContentForm extends HTMLFormElement {
     e.preventDefault();
     /** @type {string | number | undefined} */
     let chat_id = LocationControll.pathname.split("/").at(-1);
-    chat_id = ValidateNumber.parse(chat_id ? +chat_id : -1);
-    const content = ValidateString.parse(new FormData(this).get("content"));
+    chat_id = AssertNumber.check(chat_id ? +chat_id : -1);
+    const content = AssertString.check(new FormData(this).get("content"));
     const message = new CreateCompletionMessageEvent({
       chat_id,
       content: content,

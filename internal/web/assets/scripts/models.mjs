@@ -1,13 +1,13 @@
 import {
-  ValidateNumber,
-  ValidateObject,
-  ValidateString,
-} from "/assets/scripts/lib/validate.mjs";
+  AssertNumber,
+  AssertObject,
+  AssertString,
+} from "/assets/scripts/lib/assert.mjs";
 
 export class Chat {
-  static validator = new ValidateObject({
-    id: ValidateNumber,
-    name: ValidateString,
+  static validator = new AssertObject({
+    id: AssertNumber,
+    name: AssertString,
   });
 
   /**
@@ -21,11 +21,11 @@ export class Chat {
 }
 
 export class Message {
-  static validator = new ValidateObject({
-    id: ValidateNumber,
-    chat_id: ValidateNumber,
-    content: ValidateString,
-    role: ValidateString,
+  static validator = new AssertObject({
+    id: AssertNumber,
+    chat_id: AssertNumber,
+    content: AssertString,
+    role: AssertString,
   });
 
   /** @param {{

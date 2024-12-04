@@ -1,10 +1,10 @@
 import { config } from "/assets/scripts/config.mjs";
+import { AssertString } from "/assets/scripts/lib/assert.mjs";
 import { assertInstance } from "/assets/scripts/lib/assert-instance.mjs";
 import { backoff, exponent } from "/assets/scripts/lib/backoff.mjs";
 import { CallbackTracker } from "/assets/scripts/lib/callback-tracker.mjs";
 import { Queue } from "/assets/scripts/lib/queue.mjs";
 import { sleep } from "/assets/scripts/lib/sleep.mjs";
-import { ValidateString } from "/assets/scripts/lib/validate.mjs";
 
 import * as clientEventsList from "./client-events-list.mjs";
 import * as serverEventsList from "./server-events-list.mjs";
@@ -269,8 +269,8 @@ class EmittedServerEventFactory {
    * @returns {InstanceType<typeof _registeredEvents[keyof typeof _registeredEvents]>}
    */
   static parse(data) {
-    const res = ValidateString.parse(
-      EmittedServerEventFactory.#typeRegex.exec(ValidateString.parse(data))
+    const res = AssertString.check(
+      EmittedServerEventFactory.#typeRegex.exec(AssertString.check(data))
         ?.groups?.type,
     );
     if (!(res in _registeredEvents)) {

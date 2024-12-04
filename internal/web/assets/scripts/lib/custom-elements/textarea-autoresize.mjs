@@ -1,4 +1,4 @@
-import { ValidateString } from "/assets/scripts/lib/validate.mjs";
+import { AssertString } from "/assets/scripts/lib/assert.mjs";
 
 export class TextAreaAutoresize extends HTMLTextAreaElement {
   /** @type {(()=>void)[]}*/
@@ -88,7 +88,7 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
       return;
     }
     try {
-      this.value += ValidateString.parse(e.clipboardData?.getData("text"));
+      this.value += AssertString.check(e.clipboardData?.getData("text"));
       this.focus();
     } catch {
       // whatever, just don't explode

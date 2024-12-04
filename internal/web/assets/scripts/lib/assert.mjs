@@ -2,12 +2,12 @@
  * @class
  * @template T
  * @typedef Assertion
- * @property {(data: unknown) => T} parse
+ * @property {(data: unknown) => T} check
  */
 
-export class ValidateNumber {
+export class AssertNumber {
   /** @param {unknown} data */
-  static parse(data) {
+  static check(data) {
     if (typeof data !== "number" || isNaN(data)) {
       throw new Error(`expected number but got ${typeof data}`);
     }
@@ -15,11 +15,11 @@ export class ValidateNumber {
   }
 }
 
-export class ValidateString {
+export class AssertString {
   /**
    * @param {unknown} data
    */
-  static parse(data) {
+  static check(data) {
     if (typeof data !== "string") {
       throw new Error(`expected string but got ${typeof data}`);
     }
@@ -28,7 +28,7 @@ export class ValidateString {
 }
 
 /** @template T */
-export class ValidateOptional {
+export class AssertOptional {
   #validator;
   /** @param {Assertion<T>} validator  */
   constructor(validator) {
@@ -36,19 +36,19 @@ export class ValidateOptional {
   }
 
   /** @param {unknown} data  */
-  parse(data) {
+  check(data) {
     if (data === undefined) {
       return undefined;
     }
-    return this.#validator.parse(data);
+    return this.#validator.check(data);
   }
 }
 
-export class ValidateBoolean {
+export class AssertBoolean {
   /**
    * @param {unknown} data
    */
-  static parse(data) {
+  static check(data) {
     if (typeof data !== "boolean") {
       throw new Error(`expected boolean but got ${typeof data}`);
     }
@@ -57,7 +57,7 @@ export class ValidateBoolean {
 }
 
 /** @template K, T=Record<string, Assertion<K>> */
-export class ValidateObject {
+export class AssertObject {
   #shape;
   /** @param {T} shape */
   constructor(shape) {
@@ -66,16 +66,16 @@ export class ValidateObject {
 
   /**
    * @param {unknown} data
-   * @returns { { [K in keyof T]: ReturnType<T[K]['parse']> } }
+   * @returns { { [K in keyof T]: ReturnType<T[K]['check']> } }
    */
-  parse(data) {
+  check(data) {
     if (typeof data !== "object" || Array.isArray(data) || data === null) {
       throw new Error(`expected object but got ${typeof data}`);
     }
     for (const [key, assertion] of Object.entries(
       /** @type {any} to reset type  */ (this.#shape),
     )) {
-      assertion.parse(/** @type Record<string, unknown> */ (data)[key]);
+      assertion.check(/** @type Record<string, unknown> */ (data)[key]);
     }
     /** @type {any} to reset type */
     const _data = data;
@@ -84,7 +84,7 @@ export class ValidateObject {
 }
 
 /** @template K, T=Assertion<K> */
-export class ValidateArray {
+export class AssertArray {
   #shape;
   /** @param {T} shape */
   constructor(shape) {
@@ -93,17 +93,62 @@ export class ValidateArray {
 
   /**
    * @param {unknown} data
-   * @returns { ReturnType<T['parse']>[] } }
+   * @returns { ReturnType<T['check']>[] } }
    */
-  parse(data) {
+  check(data) {
     if (!Array.isArray(data)) {
       throw new Error(`expected array but got ${typeof data}`);
     }
     for (const value of data) {
-      /** @type Assertion<K> */ (this.#shape).parse(value);
+      /** @type Assertion<K> */ (this.#shape).check(value);
     }
     /** @type {any} to reset type */
     const _data = data;
     return _data;
+  }
+}
+
+/** @template T */
+export class AssertInstance {
+  #instance;
+  /** @param {T} instance */
+  constructor(instance) {
+    this.#instance = instance;
+  }
+  instance() {
+    return this.#instance;
+  }
+
+  /**
+   * @param {unknown} data
+   * @returns {InstanceType<T>}
+   */
+  check(data) {
+    // @ts-ignore check happens here
+    if (!(data instanceof this.#instance)) {
+      throw new Error(
+        `Object ${data} does not have the right type '${this.#instance}'!`,
+      );
+    }
+    /** @type {any} */
+    const any = data;
+    return any;
+  }
+
+  /**
+   * @template K
+   * @returns {K}
+   * @param {unknown} obj
+   * @param {new (data: any) => K} type
+   */
+  static checkOnce(obj, type) {
+    if (obj instanceof type) {
+      /** @type {any} */
+      const any = obj;
+      /** @type {K} */
+      const t = any;
+      return t;
+    }
+    throw new Error(`Object ${obj} does not have the right type '${type}'!`);
   }
 }

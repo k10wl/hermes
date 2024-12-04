@@ -1,9 +1,9 @@
 import { config } from "/assets/scripts/config.mjs";
+import { AssertString } from "/assets/scripts/lib/assert.mjs";
 import { assertInstance } from "/assets/scripts/lib/assert-instance.mjs";
 import { currentUrl } from "/assets/scripts/lib/current-url.mjs";
 import { ServerEvents } from "/assets/scripts/lib/events/server-events.mjs";
 import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
-import { ValidateString } from "/assets/scripts/lib/validate.mjs";
 import { Chat } from "/assets/scripts/models.mjs";
 
 import { PaginatedList } from "./paginated-list.mjs";
@@ -61,7 +61,7 @@ export class Chats extends HTMLElement {
         return;
       }
       target.scrollIntoView({ block: "nearest" });
-      LocationControll.navigate(ValidateString.parse(target.href));
+      LocationControll.navigate(AssertString.check(target.href));
     });
 
     this.#cleanup.push(
