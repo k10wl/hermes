@@ -1,4 +1,4 @@
-import { assertInstance } from "/assets/scripts/lib/assert-instance.mjs";
+import { AssertInstance } from "/assets/scripts/lib/assert.mjs";
 import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
 
 export class Link extends HTMLAnchorElement {
@@ -11,7 +11,7 @@ export class Link extends HTMLAnchorElement {
       return;
     }
     LocationControll.navigate(
-      assertInstance(event.currentTarget, HTMLAnchorElement).href,
+      AssertInstance.once(event.currentTarget, HTMLAnchorElement).href,
     );
     event.preventDefault();
   }

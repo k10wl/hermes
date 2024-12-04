@@ -1,6 +1,5 @@
 import { config } from "/assets/scripts/config.mjs";
-import { AssertString } from "/assets/scripts/lib/assert.mjs";
-import { assertInstance } from "/assets/scripts/lib/assert-instance.mjs";
+import { AssertInstance, AssertString } from "/assets/scripts/lib/assert.mjs";
 import { backoff, exponent } from "/assets/scripts/lib/backoff.mjs";
 import { CallbackTracker } from "/assets/scripts/lib/callback-tracker.mjs";
 import { Queue } from "/assets/scripts/lib/queue.mjs";
@@ -102,7 +101,7 @@ export class ServerEvents {
    * @param {InstanceType<typeof _clientEvents[keyof typeof _clientEvents]>} event
    */
   static send(event) {
-    const socket = assertInstance(ServerEvents.#connection, WebSocket);
+    const socket = AssertInstance.once(ServerEvents.#connection, WebSocket);
     if (socket.readyState !== WebSocket.OPEN) {
       ServerEvents.#queue.enqueue(event);
       ServerEvents.#flush();
@@ -152,7 +151,7 @@ export class ServerEvents {
    * @param {InstanceType<typeof _clientEvents[keyof typeof _clientEvents]>} event
    */
   static #unsafeSend(event) {
-    const socket = assertInstance(ServerEvents.#connection, WebSocket);
+    const socket = AssertInstance.once(ServerEvents.#connection, WebSocket);
     socket.send(JSON.stringify(event));
   }
 

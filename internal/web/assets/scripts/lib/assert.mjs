@@ -141,7 +141,7 @@ export class AssertInstance {
    * @param {unknown} obj
    * @param {new (data: any) => K} type
    */
-  static checkOnce(obj, type) {
+  static once(obj, type) {
     if (obj instanceof type) {
       /** @type {any} */
       const any = obj;

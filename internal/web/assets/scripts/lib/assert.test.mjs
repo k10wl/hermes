@@ -227,7 +227,7 @@ describe("instance assertion", () => {
   test("should assert instance", () => {
     const initial = new ArrayBuffer();
     /** @type {ArrayBuffer} */
-    const checked = AssertInstance.checkOnce(initial, ArrayBuffer);
+    const checked = AssertInstance.once(initial, ArrayBuffer);
     assert.equal(
       initial,
       checked,
@@ -235,7 +235,7 @@ describe("instance assertion", () => {
     );
   });
   test("should throw if data does not follow instance", () => {
-    assert.throws(() => AssertInstance.checkOnce(42069, ArrayBuffer));
+    assert.throws(() => AssertInstance.once(42069, ArrayBuffer));
   });
 
   class Test {

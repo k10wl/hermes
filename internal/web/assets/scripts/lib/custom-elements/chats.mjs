@@ -1,6 +1,5 @@
 import { config } from "/assets/scripts/config.mjs";
-import { AssertString } from "/assets/scripts/lib/assert.mjs";
-import { assertInstance } from "/assets/scripts/lib/assert-instance.mjs";
+import { AssertInstance, AssertString } from "/assets/scripts/lib/assert.mjs";
 import { currentUrl } from "/assets/scripts/lib/current-url.mjs";
 import { ServerEvents } from "/assets/scripts/lib/events/server-events.mjs";
 import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
@@ -23,7 +22,7 @@ export class Chats extends HTMLElement {
   connectedCallback() {
     const query = this.getElementsByTagName("hermes-paginated-list");
     const list = /** @type {PaginatedList<Chat>} */ (
-      assertInstance(query[0], PaginatedList)
+      AssertInstance.once(query[0], PaginatedList)
     );
 
     const activeChatObserver = new ActiveChatObserver(list);
@@ -35,7 +34,7 @@ export class Chats extends HTMLElement {
         /** @type {HTMLElement | undefined} */
         let el = undefined;
         try {
-          el = assertInstance(window.document.activeElement, HTMLElement);
+          el = AssertInstance.once(window.document.activeElement, HTMLElement);
         } catch {
           // whatever
         }
@@ -90,17 +89,17 @@ export class Chats extends HTMLElement {
     /** @type {ReturnType<Chats['getSibling']>} */
     const res = { prev: null, next: null };
     for (let i = 0; i < all.length; i++) {
-      const el = assertInstance(all[i], HTMLAnchorElement);
+      const el = AssertInstance.once(all[i], HTMLAnchorElement);
       if (el.href !== path) {
         continue;
       }
       try {
-        res.prev = assertInstance(all[i - 1], HTMLAnchorElement);
+        res.prev = AssertInstance.once(all[i - 1], HTMLAnchorElement);
       } catch {
         res.prev = null;
       }
       try {
-        res.next = assertInstance(all[i + 1], HTMLAnchorElement);
+        res.next = AssertInstance.once(all[i + 1], HTMLAnchorElement);
       } catch {
         res.next = null;
       }
@@ -198,7 +197,7 @@ class ActiveChatObserver {
     if (!selected) {
       return;
     }
-    this.updateActive(assertInstance(selected, HTMLAnchorElement));
+    this.updateActive(AssertInstance.once(selected, HTMLAnchorElement));
   }
 
   /** @param {HTMLAnchorElement | null} element  */
