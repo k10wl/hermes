@@ -124,31 +124,22 @@ export class AssertInstance {
    * @returns {InstanceType<T>}
    */
   check(data) {
-    // @ts-ignore check happens here
-    if (!(data instanceof this.#instance)) {
-      throw new Error(
-        `Object ${data} does not have the right type '${this.#instance}'!`,
-      );
-    }
-    /** @type {any} */
-    const any = data;
-    return any;
+    return AssertInstance.once(data, this.#instance);
   }
 
   /**
    * @template K
-   * @returns {K}
-   * @param {unknown} obj
-   * @param {new (data: any) => K} type
+   * @param {unknown} data
+   * @param {K} type
+   * @returns {InstanceType<K>}
    */
-  static once(obj, type) {
-    if (obj instanceof type) {
+  static once(data, type) {
+    // @ts-expect-error expected to throw on bad data
+    if (data instanceof type) {
       /** @type {any} */
-      const any = obj;
-      /** @type {K} */
-      const t = any;
-      return t;
+      const any = data;
+      return any;
     }
-    throw new Error(`Object ${obj} does not have the right type '${type}'!`);
+    throw new Error(`Data ${data} does not have the right type '${type}'!`);
   }
 }
