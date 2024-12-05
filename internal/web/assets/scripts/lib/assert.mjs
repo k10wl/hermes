@@ -115,9 +115,6 @@ export class AssertInstance {
   constructor(instance) {
     this.#instance = instance;
   }
-  instance() {
-    return this.#instance;
-  }
 
   /**
    * @param {unknown} data
