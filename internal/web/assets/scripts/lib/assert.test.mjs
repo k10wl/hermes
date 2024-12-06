@@ -10,6 +10,7 @@ import {
   AssertObject,
   AssertOptional,
   AssertString,
+  AssertTruthy,
 } from "./assert.mjs";
 
 const primitives = {
@@ -33,7 +34,10 @@ describe("number assertion", () => {
   test("should throw if data is not number", () => {
     const { number, ...withoutNumber } = primitives;
     for (const testData of Object.values(withoutNumber)) {
-      assert.throws(() => nubmerAssertion.check(testData));
+      assert.throws(
+        () => nubmerAssertion.check(testData, "custom error reason"),
+        /custom error reason/,
+      );
     }
   });
 });
@@ -51,7 +55,10 @@ describe("boolean assertion", () => {
   test("should throw if data is not boolean", () => {
     const { truthy, falsy, ...withoutString } = primitives;
     for (const testData of Object.values(withoutString)) {
-      assert.throws(() => booleanAssertion.check(testData));
+      assert.throws(
+        () => booleanAssertion.check(testData, "custom error reason"),
+        /custom error reason/,
+      );
     }
   });
 });
@@ -66,29 +73,42 @@ describe("string assertion", () => {
   test("should throw if data is not string", () => {
     const { string, ...withoutString } = primitives;
     for (const testData of Object.values(withoutString)) {
-      assert.throws(() => stringAssertion.check(testData));
+      assert.throws(
+        () => stringAssertion.check(testData, "custom error reason"),
+        /custom error reason/,
+      );
     }
   });
 });
 
 describe("optional", () => {
   test("primitive", () => {
-    const optionalStringAssertion = new AssertOptional(AssertString);
+    const optionalStringAssertion = new AssertOptional(
+      AssertString,
+      "custom error reason",
+    );
     /** @type {string | undefined} */
     let stringCheck = optionalStringAssertion.check(undefined);
     assert.equal(stringCheck, undefined, "should allow undefined");
     stringCheck = optionalStringAssertion.check("test");
     assert.equal(stringCheck, "test", "should assert propper type");
     assert.throws(
-      () => optionalStringAssertion.check({}),
+      () => optionalStringAssertion.check({}, "inline error reason"),
+      /(custom error reason).*(inline error reason)/,
       "should throw with wrong type",
     );
   });
 
   test("object property", () => {
-    const optionalObjectAssertion = new AssertObject({
-      optional: new AssertOptional(AssertString),
-    });
+    const optionalObjectAssertion = new AssertObject(
+      {
+        optional: new AssertOptional(
+          AssertString,
+          "nested custom error reason",
+        ),
+      },
+      "custom error reason",
+    );
     /** @type {{ optional: string | undefined }} */
     let data = optionalObjectAssertion.check({});
     assert.deepEqual(data, {}, "should skip optional key");
@@ -101,7 +121,12 @@ describe("optional", () => {
       "should assert optional key if present",
     );
     assert.throws(
-      () => optionalObjectAssertion.check({ optional: 1234 }),
+      () =>
+        optionalObjectAssertion.check(
+          { optional: 1234 },
+          "inline error reason",
+        ),
+      /(custom error reason).*(inline error reason)/,
       "should throw if optional value has wrong type",
     );
   });
@@ -111,17 +136,23 @@ describe("object assertion", () => {
   class Test {
     constructor() {}
   }
-  const objectAssertion = new AssertObject({
-    string: AssertString,
-    number: AssertNumber,
-    boolean: AssertBoolean,
-    object: new AssertObject({
-      nestedString: AssertString,
-      nestedBoolean: AssertBoolean,
-    }),
-    array: new AssertArray(AssertString),
-    instance: new AssertInstance(Test),
-  });
+  const objectAssertion = new AssertObject(
+    {
+      string: AssertString,
+      number: AssertNumber,
+      boolean: AssertBoolean,
+      object: new AssertObject(
+        {
+          nestedString: AssertString,
+          nestedBoolean: AssertBoolean,
+        },
+        "nested error reason",
+      ),
+      array: new AssertArray(AssertString, "nested error reason"),
+      instance: new AssertInstance(Test, "nested error reason"),
+    },
+    "custom error reason",
+  );
   test("should return object", () => {
     const testData = {
       string: "string",
@@ -204,7 +235,22 @@ describe("object assertion", () => {
       },
     ];
     for (const testData of testDataArray) {
-      assert.throws(() => objectAssertion.check(testData));
+      assert.throws(
+        () => objectAssertion.check(testData, "inline error reason"),
+        (error) => {
+          if (!(error instanceof Error)) {
+            return false;
+          }
+          if (/(object)|(optional)|(array)/.test(error.message)) {
+            return /(nested error reason).*(custom error reason).*(inline error reason)/.test(
+              error.message,
+            );
+          }
+          return /(custom error reason).*(inline error reason)/.test(
+            error.message,
+          );
+        },
+      );
     }
   });
 });
@@ -212,6 +258,7 @@ describe("object assertion", () => {
 describe("array assertion", () => {
   const arrayAssertion = new AssertArray(
     new AssertObject({ id: AssertString }),
+    "custom error reason",
   );
   test("should return array", () => {
     /** @type {{id: string}[]} */
@@ -219,7 +266,10 @@ describe("array assertion", () => {
     assert.deepStrictEqual(data, [{ id: "qwerty-1" }, { id: "qwerty-2" }]);
   });
   test("should throw if data does not comply schema", () => {
-    assert.throws(() => arrayAssertion.check(["1234", 12340]));
+    assert.throws(
+      () => arrayAssertion.check(["1234", 12340], "inline error reason"),
+      /(custom error reason).*(inline error reason)/,
+    );
   });
 });
 
@@ -235,7 +285,10 @@ describe("instance assertion", () => {
     );
   });
   test("should throw if data does not follow instance", () => {
-    assert.throws(() => AssertInstance.once(42069, ArrayBuffer));
+    assert.throws(
+      () => AssertInstance.once(42069, ArrayBuffer, "custom error reason"),
+      /custom error reason/,
+    );
   });
 
   class Test {
@@ -243,17 +296,31 @@ describe("instance assertion", () => {
     constructor() {}
   }
   test("should assert if initiated with constructor", () => {
-    const assertion = new AssertInstance(Test);
+    const assertion = new AssertInstance(Test, "custom error reason");
     const test = new Test();
     /** @type {InstanceType<typeof Test>} foo */
     const checked = assertion.check(test);
     assert.equal(checked, test, "should reutrn same array buffer after check");
   });
   test("should throw if data does not follow instance", () => {
-    const assertion = new AssertInstance(Test);
+    const assertion = new AssertInstance(Test, "custom error reason");
     assert.throws(
-      () => assertion.check(""),
+      () => assertion.check("", "inline error reason"),
+      /(custom error reason).*(inline error reason)/,
       "should reutrn same array buffer after check",
+    );
+  });
+});
+
+describe("AssertTruthy", () => {
+  test("should not throw an error for true assertion", () => {
+    assert.doesNotThrow(() => AssertTruthy.check(true));
+  });
+
+  test("should throw an error for false assertion", () => {
+    assert.throws(
+      () => AssertTruthy.check(false, "custom error reason"),
+      /custom error reason/,
     );
   });
 });
