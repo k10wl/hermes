@@ -31,7 +31,7 @@ dev-all: dev-build dev-run
 
 watch:
 	@echo "Running dev version in watch mode..."
-	@APP_NAME=$(DEV_APP_NAME) air -- serve --port $(DEV_PORT)
+	@APP_NAME=$(DEV_APP_NAME) HERMES_MOCK_COMPLETION=true air -- serve --port $(DEV_PORT)
 
 clean:
 	@echo "Cleaning up..."

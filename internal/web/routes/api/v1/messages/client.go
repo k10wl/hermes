@@ -168,7 +168,7 @@ func (message *ClientCreateCompletion) processNewChat(
 		return err
 	}
 	if err := BroadcastServerEmittedMessage(
-		coms.Single(),
+		coms.All(),
 		NewServerChatCreated(message.ID, cmd.Result.Chat, cmd.Result.Message),
 	); err != nil {
 		return err
