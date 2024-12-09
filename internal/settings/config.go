@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-const Version = "4.6.2"
+const Version = "4.6.3"
 const VersionDate = "2024-12-09"
 
 const DefaultDatabaseName = "main.db"
@@ -33,6 +33,7 @@ type Settings struct {
 	Stdin           io.Reader
 	Stdoout         io.Writer
 	Stderr          io.Writer
+	MockCompletion  bool
 }
 
 type Providers struct {

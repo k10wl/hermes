@@ -13,4 +13,8 @@ func loadEnv(c *Config) {
 	c.OpenAIKey = os.Getenv(HermesOpenAIApiKeyName)
 	c.AnthropicKey = os.Getenv(HermesAnthropicApiKeyName)
 	c.DatabaseDSN = os.Getenv("HERMES_DB_DNS")
+	mockCompletion := os.Getenv("HERMES_MOCK_COMPLETION")
+	if mockCompletion != "" {
+		c.MockCompletion = true
+	}
 }

@@ -15,6 +15,9 @@ var (
 )
 
 func selectClient(input string, providers *settings.Providers) (client, error) {
+	if config, err := settings.GetInstance(); err == nil && config.MockCompletion {
+		return mock{}, nil
+	}
 	str := strings.SplitN(input, "-", 2)
 	if len(str) < 2 {
 		return nil, fmt.Errorf("failed to get provider %q - use gpt or claude", input)
