@@ -32,7 +32,11 @@
 {{end}}
 
 {{define "chats-list"}}
-<hermes-chats id="chats-list"></hermes-chats>
+<hermes-chats id="chats-list">
+    <a is="hermes-link" href="/" id="new-chat" class="chat-link">
+        New chat
+    </a>
+</hermes-chats>
 {{end}}
 
 {{define "chat-link"}}
