@@ -19,55 +19,8 @@
 </head>
 
 <body>
-    <main>
-        {{template "chats-list" . }}
-        {{template "chat-content" .}}
-        <div style="display: none;">
-            <template id="template-message">{{template "message"}}</template>
-        </div>
-    </main>
+    <hermes-scene></hermes-scene>
 </body>
 
 </html>
-{{end}}
-
-{{define "chats-list"}}
-<hermes-chats id="chats-list">
-    <a is="hermes-link" href="/" id="new-chat" class="chat-link">
-        New chat
-    </a>
-</hermes-chats>
-{{end}}
-
-{{define "chat-link"}}
-<a is="hermes-link" href="/chats/{{.ID}}" id="chat-{{.ID}}" class="chat-link">
-    {{if .Name}}{{.Name}}{{else}}unnamed{{end}}
-</a>
-{{end}}
-
-{{define "chat-content"}}
-<div id="chat-content">
-    {{template "messages-list" .}}
-    {{template "form"}}
-</div>
-{{end}}
-
-{{define "messages-list"}}
-<div id="messages-list-wrapper">
-    <hermes-messages></hermes-messages>
-</div>
-{{end}}
-
-{{define "message"}}
-<div class="message {{if .Role}}role-{{.Role}}{{end}}" id="message-{{.ID}}">
-    <pre>{{.Content}}</pre>
-</div>
-{{end}}
-
-{{define "form"}}
-<form id="message-form" is="hermes-message-content-form">
-    <textarea id="message-input" is="hermes-textarea-autoresize" focus-on-input="true" max-rows="8" name="content"
-        placeholder="Type message..." autofocus></textarea>
-    <button id="message-submit-button" type="submit">send</button>
-</form>
 {{end}}

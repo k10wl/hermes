@@ -1,4 +1,8 @@
-import { AssertNumber, AssertString } from "/assets/scripts/lib/assert.mjs";
+import {
+  AssertInstance,
+  AssertNumber,
+  AssertString,
+} from "/assets/scripts/lib/assert.mjs";
 import { CreateCompletionMessageEvent } from "/assets/scripts/lib/events/client-events-list.mjs";
 import { ServerEvents } from "/assets/scripts/lib/events/server-events.mjs";
 import {
@@ -6,6 +10,7 @@ import {
   ServerErrorEvent,
 } from "/assets/scripts/lib/events/server-events-list.mjs";
 import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
+import { TextAreaAutoresize } from "./textarea-autoresize.mjs";
 
 export class MessageContentForm extends HTMLFormElement {
   /** @type (() => void)[] */
@@ -30,6 +35,17 @@ export class MessageContentForm extends HTMLFormElement {
       // TODO maybe persist messages somewhere?
       LocationControll.attach({ notify: () => this.reset() }),
     );
+  }
+
+  reset() {
+    super.reset();
+    this.querySelectorAll("textarea").forEach((el) => {
+      try {
+        AssertInstance.once(el, TextAreaAutoresize).autoresize();
+      } catch {
+        // just don't explode
+      }
+    });
   }
 
   disconnectedCallback() {

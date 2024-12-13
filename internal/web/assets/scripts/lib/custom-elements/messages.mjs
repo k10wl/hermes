@@ -1,7 +1,6 @@
 import { RequestReadChatEvent } from "/assets/scripts/lib/events/client-events-list.mjs";
 import { ServerEvents } from "/assets/scripts/lib/events/server-events.mjs";
 import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
-import { SoundManager } from "/assets/scripts/lib/sound-manager.mjs";
 
 export class Messages extends HTMLElement {
   /** @type {(() => void)[]} */
@@ -17,12 +16,10 @@ export class Messages extends HTMLElement {
     const messagesViewObserver = new MessagesViewObserver(container);
     const routeObserver = new RouteObserver(container);
     const messageCreatedObserver = new MessageCreatedObserver(container);
-    const audioNotificationObserver = new AudioNotificaitonsObserver();
     this.#cleanupOnDisconnect.push(
       LocationControll.attach(routeObserver),
       ServerEvents.on("message-created", (data) => {
         messageCreatedObserver.notify(data);
-        audioNotificationObserver.notify(data);
       }),
       ServerEvents.on("read-chat", (data) => messagesViewObserver.notify(data)),
     );
@@ -38,14 +35,23 @@ export class Messages extends HTMLElement {
 class RouteObserver {
   container;
 
+  /** @type {number | null} */
+  #last = null;
+
   /** @param {HTMLElement} container  */
   constructor(container) {
     this.container = container;
   }
 
   notify() {
-    if (LocationControll.chatId) {
-      ServerEvents.send(new RequestReadChatEvent(LocationControll.chatId));
+    const chatId = LocationControll.chatId;
+    const prev = this.#last;
+    this.#last = chatId;
+    if (prev === chatId) {
+      return;
+    }
+    if (chatId) {
+      ServerEvents.send(new RequestReadChatEvent(chatId));
       return;
     }
     this.container.innerHTML = "";
@@ -70,22 +76,6 @@ class MessagesViewObserver {
   }
 }
 
-class AudioNotificaitonsObserver {
-  /**
-   * @param {import("../events/server-events-list.mjs").MessageCreatedEvent } event
-   */
-  notify(event) {
-    if (event.payload.message.role === "user") {
-      return;
-    }
-    if (event.payload.chat_id === LocationControll.chatId) {
-      SoundManager.play("message-in-local");
-      return;
-    }
-    SoundManager.play("message-in-global");
-  }
-}
-
 class MessageCreatedObserver {
   #container;
   /** @param {HTMLElement} container  */
@@ -105,7 +95,7 @@ class MessageCreator {
   /** @param {import("/assets/scripts/models.mjs").Message} message  */
   static createElement(message) {
     const div = document.createElement("div");
-    div.classList.add("message", `role-${message.role}`);
+    div.classList.add("message", `role-${message.role}`, "selectable");
     div.id = `message-${message.id}`;
     const pre = document.createElement("pre");
     pre.innerText = message.content.trim();

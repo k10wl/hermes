@@ -16,12 +16,17 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
     this.#focusOnInput();
     const resizeObserver = new ResizeObserver(this.autoresize);
     this.addEventListener("input", this.autoresize);
+    this.addEventListener("change", this.autoresize);
     window.addEventListener("resize", this.autoresize);
     resizeObserver.observe(this);
-    this.#textAreaAutoresizeCleanup.push(resizeObserver.disconnect, () => {
-      this.removeEventListener("input", this.autoresize);
-      window.removeEventListener("resize", this.autoresize);
-    });
+    this.#textAreaAutoresizeCleanup.push(
+      () => resizeObserver.disconnect(),
+      () => {
+        this.removeEventListener("input", this.autoresize);
+        this.removeEventListener("change", this.autoresize);
+        window.removeEventListener("resize", this.autoresize);
+      },
+    );
   }
 
   disconnectedCallback() {
@@ -29,7 +34,7 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
   }
 
   autoresize() {
-    this.style.height = "auto";
+    this.style.height = "0px";
     this.style.height = this.scrollHeight + "px";
   }
 
@@ -69,6 +74,7 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
       e.altKey ||
       e.metaKey ||
       e.ctrlKey ||
+      "Escape" === e.key ||
       "Enter" === e.key ||
       "Tab" === e.key ||
       "ArrowLeft" === e.key ||

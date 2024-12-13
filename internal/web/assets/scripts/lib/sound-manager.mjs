@@ -1,3 +1,6 @@
+import { ServerEvents } from "./events/server-events.mjs";
+import { LocationControll } from "./location-control.mjs";
+
 export class SoundManager {
   /** @typedef {keyof typeof SoundManager['availableSounds']} SoundName */
 
@@ -32,3 +35,14 @@ export class SoundManager {
     audio.onerror = teardown;
   }
 }
+
+ServerEvents.on("message-created", (event) => {
+  if (event.payload.message.role === "user") {
+    return;
+  }
+  if (event.payload.chat_id === LocationControll.chatId) {
+    SoundManager.play("message-in-local");
+    return;
+  }
+  SoundManager.play("message-in-global");
+});

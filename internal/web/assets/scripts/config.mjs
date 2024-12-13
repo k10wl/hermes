@@ -1,4 +1,3 @@
-import { AssertInstance } from "./lib/assert.mjs";
 import { currentUrl } from "./lib/current-url.mjs";
 
 /**
@@ -17,15 +16,6 @@ export const config = {
     },
   },
   chats: {
-    paginationLimit: Math.min(
-      100,
-      Math.floor(
-        window.innerHeight /
-          AssertInstance.once(
-            document.getElementById("new-chat"),
-            HTMLAnchorElement,
-          ).clientHeight,
-      ),
-    ),
+    paginationLimit: Math.min(100, Math.floor(window.innerHeight / 25)),
   },
 };

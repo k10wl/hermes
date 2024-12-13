@@ -17,6 +17,7 @@ export class Chats extends HTMLElement {
 <hermes-paginated-list>
     <a is="hermes-link" href="/" class="chat-link">New chat</a>
 </hermes-paginated-list>`;
+    this.findNextChat = this.findNextChat.bind(this);
   }
 
   connectedCallback() {
@@ -29,45 +30,18 @@ export class Chats extends HTMLElement {
     const iterator = new ChatsIterator();
     const rendrer = new ChatsRenderer(activeChatObserver);
 
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        /** @type {HTMLElement | undefined} */
-        let el = undefined;
-        try {
-          el = AssertInstance.once(window.document.activeElement, HTMLElement);
-        } catch {
-          // whatever
-        }
-        if (el) {
-          el.blur();
-        } else {
-          LocationControll.navigate("/");
-        }
-        return;
-      }
-      if (!e.altKey) {
-        return;
-      }
-      const dir =
-        e.key === "ArrowDown" ? "next" : e.key === "ArrowUp" ? "prev" : null;
-      if (dir === null) {
-        return;
-      }
-      e.stopPropagation();
-      e.preventDefault();
-      const target = this.getSibling()[dir];
-      if (target === null) {
-        return;
-      }
-      target.scrollIntoView({ block: "nearest" });
-      LocationControll.navigate(AssertString.check(target.href));
-    });
+    // TODO KEY MANAGER!!!
+    window.addEventListener("keydown", this.findNextChat);
 
     this.#cleanup.push(
       LocationControll.attach(activeChatObserver),
       ServerEvents.on("chat-created", (data) => {
         list.prepandNodes(rendrer.createElement(data.payload.chat));
       }),
+      () => {
+        console.log("removing find next chat listener");
+        window.removeEventListener("keydown", this.findNextChat);
+      },
     );
 
     list.setIterator(iterator);
@@ -75,7 +49,45 @@ export class Chats extends HTMLElement {
     list.init();
   }
 
-  disconenctedCallback() {
+  /**
+   * @param {KeyboardEvent} e
+   */
+  findNextChat(e) {
+    if (e.key === "Escape") {
+      /** @type {HTMLElement | undefined} */
+      let el = undefined;
+      try {
+        el = AssertInstance.once(window.document.activeElement, HTMLElement);
+      } catch {
+        // whatever
+      }
+      if (el) {
+        el.blur();
+      }
+      if ((el === document.body || !el) && LocationControll.chatId) {
+        LocationControll.navigate("/");
+      }
+      return;
+    }
+    if (!e.altKey) {
+      return;
+    }
+    const dir =
+      e.key === "ArrowDown" ? "next" : e.key === "ArrowUp" ? "prev" : null;
+    if (dir === null) {
+      return;
+    }
+    e.stopPropagation();
+    e.preventDefault();
+    const target = this.getSibling()[dir];
+    if (target === null) {
+      return;
+    }
+    target.scrollIntoView({ block: "nearest" });
+    LocationControll.navigate(AssertString.check(target.href));
+  }
+
+  disconnectedCallback() {
     for (const cleanup of this.#cleanup) {
       cleanup();
     }

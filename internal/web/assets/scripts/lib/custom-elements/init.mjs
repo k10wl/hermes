@@ -20,8 +20,6 @@ const elements = [
   ["message-content-form", MessageContentForm, { extends: "form" }],
 ];
 
-export function initCustomElements() {
-  for (const [name, instance, options] of elements) {
-    customElements.define(withPrefix(name), instance, options);
-  }
+for (const [name, instance, options] of elements) {
+  customElements.define(withPrefix(name), instance, options);
 }
