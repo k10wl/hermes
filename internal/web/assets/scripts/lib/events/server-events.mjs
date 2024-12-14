@@ -88,8 +88,8 @@ export class ServerEvents {
   }
 
   /** @type {CallbackTracker<typeof _registeredEvents>["on"]} */
-  static on(type, callback) {
-    return ServerEvents.#callbackTracker.on(type, callback);
+  static on(...args) {
+    return ServerEvents.#callbackTracker.on(...args);
   }
 
   /** @type {CallbackTracker<typeof _registeredEvents>["off"]} */

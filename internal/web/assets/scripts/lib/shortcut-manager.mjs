@@ -26,8 +26,8 @@ export class ShortcutManager {
   /**
    * @type {CallbackTracker<Structure>["on"]}
    */
-  static keydown(key, callback) {
-    return ShortcutManager.#keydownTracker.on(key, callback);
+  static keydown(...args) {
+    return ShortcutManager.#keydownTracker.on(...args);
   }
 
   /**
