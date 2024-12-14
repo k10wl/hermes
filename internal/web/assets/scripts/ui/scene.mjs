@@ -2,6 +2,7 @@ import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
 
 import { html } from "../lib/html.mjs";
 
+const maxWidth = `max-width: min(calc(100% - 16px), 100ch);`;
 const messageContentForm = html`
   <style>
     #message-form {
@@ -13,7 +14,7 @@ const messageContentForm = html`
 
     #message-content-input {
       max-height: 50vh;
-      max-width: min(calc(100% - 16px), 90ch);
+      ${maxWidth}
       width: 100%;
       background: var(--bg-2);
       color: var(--text-0);
@@ -63,27 +64,7 @@ const messageContentForm = html`
 `;
 
 const scenes = {
-  templates: html`
-    <style>
-      main {
-        height: 100%;
-        display: grid;
-        place-items: center;
-        text-align: center;
-      }
-    </style>
-
-    <main>
-      <div>
-        <h1>under construction</h1>
-        <a is="hermes-link" href="/" id="new-chat" class="chat-link">
-          back to chats
-        </a>
-      </div>
-    </main>
-  `,
-
-  home: html`
+  "/": html`
     <style>
       main {
         height: 100%;
@@ -92,7 +73,6 @@ const scenes = {
         padding: 16px;
       }
       form {
-        max-width: 60ch;
         width: 100%;
       }
     </style>
@@ -100,7 +80,43 @@ const scenes = {
     <main>${messageContentForm}</main>
   `,
 
-  chats: html`
+  "/chats": html`
+    <style>
+      main {
+        height: 100%;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        overflow: auto;
+      }
+
+      hermes-chats {
+        ${maxWidth}
+        width: 100%;
+      }
+
+      a {
+        margin: 0.25rem 0;
+        color: var(--text-0);
+        display: block;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        border: 1px solid rgb(from var(--primary) r g b / 0.25);
+        text-decoration: none;
+        transition: border-color var(--color-transition-duration);
+      }
+
+      a:hover {
+        border-color: var(--primary);
+      }
+    </style>
+
+    <main>
+      <hermes-chats></hermes-chats>
+    </main>
+  `,
+
+  "/chats/{id}": html`
     <style>
       #chats-list {
         padding: 5px 0;
@@ -136,17 +152,6 @@ const scenes = {
     </style>
 
     <style>
-      main {
-        display: grid;
-        grid-template-columns: 250px 1fr;
-      }
-
-      #templates {
-        position: fixed;
-        right: 0;
-        top: 0;
-      }
-
       #chat-content {
         height: 100vh;
         max-height: 100vh;
@@ -155,17 +160,23 @@ const scenes = {
         grid-template-rows: 1fr auto;
       }
 
-      #messages-list-wrapper {
+      #scrollable-message-wrapper {
         max-height: 100%;
         overflow: auto;
         display: flex;
         flex-direction: column-reverse;
       }
 
-      #messages-list {
-        margin: 0 auto;
+      #messages-width-wrapper {
+        ${maxWidth}
+        display: flex;
+        justify-content: center;
+        align-self: center;
         width: 100%;
-        max-width: 120ch;
+      }
+
+      #messages-list {
+          width: 100%;
       }
 
       .message {
@@ -186,6 +197,7 @@ const scenes = {
       .role-assistant {
         color: var(--text-0);
         border-bottom-left-radius: 0;
+        border-color: rgb(from var(--primary) r g b / 0.33);
       }
 
       .role-user {
@@ -196,20 +208,34 @@ const scenes = {
     </style>
 
     <main>
-      <hermes-chats id="chats-list">
-        <a is="hermes-link" href="/" id="new-chat" class="chat-link">
-          New chat
-        </a>
-      </hermes-chats>
       <div id="chat-content">
-        <div id="messages-list-wrapper">
-          <hermes-messages></hermes-messages>
-          <a tabindex="1" id="templates" is="hermes-link" href="/templates">
-            go to templates
-          </a>
+        <div id="scrollable-message-wrapper">
+          <div id="messages-width-wrapper">
+            <hermes-messages id="messages-list"></hermes-messages>
+          </div>
         </div>
 
         <div class="input-form-wrapper">${messageContentForm}</div>
+      </div>
+    </main>
+  `,
+
+  "/templates": html`
+    <style>
+      main {
+        height: 100%;
+        display: grid;
+        place-items: center;
+        text-align: center;
+      }
+    </style>
+
+    <main>
+      <div>
+        <h1>under construction</h1>
+        <a is="hermes-link" href="/" id="new-chat" class="chat-link">
+          back to chats
+        </a>
       </div>
     </main>
   `,
@@ -253,19 +279,26 @@ class Scene extends HTMLElement {
   #scenePicker(pathname) {
     if (pathname.startsWith("/templates")) {
       return {
-        name: "templates",
-        html: scenes.templates,
+        name: "/templates",
+        html: scenes["/templates"],
       };
     }
-    if (LocationControll.chatId) {
+    const isChats = pathname.startsWith("/chats");
+    if (isChats && LocationControll.chatId) {
       return {
-        name: "chats",
-        html: scenes.chats,
+        name: "/chats/{id}",
+        html: scenes["/chats/{id}"],
+      };
+    }
+    if (isChats) {
+      return {
+        name: "/chats",
+        html: scenes["/chats"],
       };
     }
     return {
-      name: "home",
-      html: scenes.home,
+      name: "/",
+      html: scenes["/"],
     };
   }
 }
