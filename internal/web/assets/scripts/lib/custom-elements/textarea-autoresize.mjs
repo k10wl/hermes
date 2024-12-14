@@ -1,5 +1,7 @@
 import { AssertString } from "/assets/scripts/lib/assert.mjs";
 
+import { ShortcutManager } from "../shortcut-manager.mjs";
+
 export class TextAreaAutoresize extends HTMLTextAreaElement {
   /** @type {(()=>void)[]}*/
   #textAreaAutoresizeCleanup = [];
@@ -55,21 +57,22 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
     if (typeof focusOnInput === "undefined") {
       return;
     }
-    window.addEventListener("keydown", this.focusOnKeydown);
     window.addEventListener("paste", this.focusOnPaste);
-    this.#textAreaAutoresizeCleanup.push(() => {
-      window.removeEventListener("keydown", this.focusOnKeydown);
-      window.removeEventListener("paste", this.focusOnPaste);
-    });
+    this.#textAreaAutoresizeCleanup.push(
+      ShortcutManager.keydown("<*>", this.focusOnKeydown),
+      () => {
+        window.removeEventListener("paste", this.focusOnPaste);
+      },
+    );
   }
 
   /** @param {KeyboardEvent} e  */
   focusOnKeydown(e) {
     if (
-      document.activeElement === this ||
-      document.activeElement === null ||
-      document.activeElement.tagName === "TEXTAREA" ||
-      document.activeElement.tagName === "INPUT" ||
+      e.target === this ||
+      e.target === null ||
+      document.activeElement?.tagName === "TEXTAREA" ||
+      document.activeElement?.tagName === "INPUT" ||
       e.shiftKey ||
       e.altKey ||
       e.metaKey ||

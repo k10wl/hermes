@@ -9,12 +9,14 @@ export class ShortcutManager {
    * - C is optional and indicates Ctrl
    * - S is optional and indicates Shift
    * - KeyA is mandatory and indicates key code - {@link https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code}
+   * - * indicates any key
    *
    * Examples:
    * - <M-KeyP>    - meta/alt + p
    * - <C-ArrowUp> - ctrl + arrow up
    * - <C-S-KeyA>  - ctrl + shift + a
    * - <KeyT>      - t
+   * - <*>         - on any key
    */
 
   /** @typedef {Record<ShortcutNotation, KeyboardEvent>} Structure */
@@ -51,10 +53,16 @@ export class ShortcutManager {
       return; // for node tests
     }
     window.addEventListener("keydown", (event) => {
-      const callbacks = ShortcutManager.#keydownTracker.getCallbacks(
+      const keySpecificCallbacks = ShortcutManager.#keydownTracker.getCallbacks(
         ShortcutManager.eventToNotation(event),
       );
-      if (!callbacks) {
+      const matchAllCallbacks =
+        ShortcutManager.#keydownTracker.getCallbacks("<*>");
+      const callbacks = [
+        ...(keySpecificCallbacks ?? []),
+        ...(matchAllCallbacks ?? []),
+      ];
+      if (callbacks.length === 0) {
         return;
       }
       let shouldBreak = false;

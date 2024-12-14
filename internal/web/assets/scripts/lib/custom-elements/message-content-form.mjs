@@ -12,6 +12,7 @@ import {
 import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
 
 import { TextAreaAutoresize } from "./textarea-autoresize.mjs";
+import { ShortcutManager } from "../shortcut-manager.mjs";
 
 export class MessageContentForm extends HTMLFormElement {
   /** @type (() => void)[] */
@@ -28,13 +29,10 @@ export class MessageContentForm extends HTMLFormElement {
   }
 
   connectedCallback() {
-    window.addEventListener("keydown", this.detectKeyboardSubmit);
     this.#messageContentFormCleanup.push(
-      () => {
-        window.removeEventListener("keydown", this.detectKeyboardSubmit);
-      },
       // TODO maybe persist messages somewhere?
       LocationControll.attach({ notify: () => this.reset() }),
+      ShortcutManager.keydown("<Enter>", this.detectKeyboardSubmit),
     );
   }
 
@@ -55,7 +53,7 @@ export class MessageContentForm extends HTMLFormElement {
 
   /** @param {KeyboardEvent} e */
   detectKeyboardSubmit(e) {
-    if (e.key !== "Enter" || e.shiftKey || e.metaKey || e.ctrlKey) {
+    if (e.shiftKey || e.metaKey || e.ctrlKey) {
       return;
     }
     e.preventDefault();

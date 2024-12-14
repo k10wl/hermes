@@ -6,6 +6,7 @@ import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
 import { Chat } from "/assets/scripts/models.mjs";
 
 import { PaginatedList } from "./paginated-list.mjs";
+import { ShortcutManager } from "../shortcut-manager.mjs";
 
 export class Chats extends HTMLElement {
   /** @type {(() => void)[]} */
@@ -17,7 +18,7 @@ export class Chats extends HTMLElement {
 <hermes-paginated-list>
     <a is="hermes-link" href="/" class="chat-link">New chat</a>
 </hermes-paginated-list>`;
-    this.findNextChat = this.findNextChat.bind(this);
+    this.findNextChat = this.navigateInDir.bind(this);
   }
 
   connectedCallback() {
@@ -30,18 +31,13 @@ export class Chats extends HTMLElement {
     const iterator = new ChatsIterator();
     const rendrer = new ChatsRenderer(activeChatObserver);
 
-    // TODO KEY MANAGER!!!
-    window.addEventListener("keydown", this.findNextChat);
-
     this.#cleanup.push(
       LocationControll.attach(activeChatObserver),
       ServerEvents.on("chat-created", (data) => {
         list.prepandNodes(rendrer.createElement(data.payload.chat));
       }),
-      () => {
-        console.log("removing find next chat listener");
-        window.removeEventListener("keydown", this.findNextChat);
-      },
+      ShortcutManager.keydown("<M-ArrowUp>", this.navigateInDir("prev")),
+      ShortcutManager.keydown("<M-ArrowDown>", this.navigateInDir("next")),
     );
 
     list.setIterator(iterator);
@@ -49,42 +45,39 @@ export class Chats extends HTMLElement {
     list.init();
   }
 
+  // XXX maybe into separate file?
   /**
-   * @param {KeyboardEvent} e
+   * @param {KeyboardEvent} event
    */
-  findNextChat(e) {
-    if (e.key === "Escape") {
-      /** @type {HTMLElement | undefined} */
-      let el = undefined;
-      try {
-        el = AssertInstance.once(window.document.activeElement, HTMLElement);
-      } catch {
-        // whatever
+  navigatheHome(event) {
+    /** @type {HTMLElement | undefined} */
+    let el = undefined;
+    try {
+      el = AssertInstance.once(event.target, HTMLElement);
+      el.blur();
+    } catch {
+      // whatever
+    }
+    if ((el === document.body || !el) && LocationControll.chatId) {
+      LocationControll.navigate("/");
+    }
+  }
+
+  /**
+   * @param {"prev" | "next"} dir
+   * @returns {(event: KeyboardEvent) => void}
+   */
+  navigateInDir(dir) {
+    return (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      const target = this.getSibling()[dir];
+      if (target === null) {
+        return;
       }
-      if (el) {
-        el.blur();
-      }
-      if ((el === document.body || !el) && LocationControll.chatId) {
-        LocationControll.navigate("/");
-      }
-      return;
-    }
-    if (!e.altKey) {
-      return;
-    }
-    const dir =
-      e.key === "ArrowDown" ? "next" : e.key === "ArrowUp" ? "prev" : null;
-    if (dir === null) {
-      return;
-    }
-    e.stopPropagation();
-    e.preventDefault();
-    const target = this.getSibling()[dir];
-    if (target === null) {
-      return;
-    }
-    target.scrollIntoView({ block: "nearest" });
-    LocationControll.navigate(AssertString.check(target.href));
+      target.scrollIntoView({ block: "nearest" });
+      LocationControll.navigate(AssertString.check(target.href));
+    };
   }
 
   disconnectedCallback() {
