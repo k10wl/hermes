@@ -5,8 +5,8 @@ import { ServerEvents } from "/assets/scripts/lib/events/server-events.mjs";
 import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
 import { Chat } from "/assets/scripts/models.mjs";
 
-import { PaginatedList } from "./paginated-list.mjs";
 import { ShortcutManager } from "../shortcut-manager.mjs";
+import { PaginatedList } from "./paginated-list.mjs";
 
 export class Chats extends HTMLElement {
   /** @type {(() => void)[]} */
