@@ -10,6 +10,7 @@ import {
   ServerErrorEvent,
 } from "/assets/scripts/lib/events/server-events-list.mjs";
 import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
+
 import { TextAreaAutoresize } from "./textarea-autoresize.mjs";
 
 export class MessageContentForm extends HTMLFormElement {
