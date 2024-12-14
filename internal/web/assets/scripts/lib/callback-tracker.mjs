@@ -9,7 +9,7 @@ export class CallbackTracker {
 
   /** @param {Data} _data used only in JSDoc, but is passed as value to allow using static types without JSDoc comments */
   constructor(_data) {
-    /** @typedef {Map<Callback<any>, ({callback: Callback<any>, teardown: Teardown})>} CallbackWithTeardown */
+    /** @typedef {Map<Callback<any>, ({callback: Callback<any>, teardown: Teardown, priority: number})>} CallbackWithTeardown */
     /** @type {Map<Keys, CallbackWithTeardown>} */
     this.handlers = new Map();
   }
@@ -18,18 +18,20 @@ export class CallbackTracker {
    * @template {Keys | Keys[]} T
    * @param {T} key
    * @param {Callback<T extends Keys[] ? T[number] : T>} callback
+   * @param {{priority: number}} [options]
    * @returns {Teardown}
    */
-  on(key, callback) {
+  on(key, callback, options = { priority: 1 }) {
     if (!Array.isArray(key)) {
       return this.#onSingle(
         /** @type {any} shut up, JSDoc, this type is definitely narrowed */ (
           key
         ),
         callback,
+        options,
       );
     }
-    return this.#onMultiple(key, callback);
+    return this.#onMultiple(key, callback, options);
   }
 
   /**
@@ -62,19 +64,21 @@ export class CallbackTracker {
    * @template {Keys} T
    * @param {T} key
    * @param {Callback<T>} callback
+   * @param {{priority: number}} options
    * @returns {Teardown}
    */
-  #onSingle(key, callback) {
-    let handlers = this.handlers.get(key);
-    if (!handlers) {
-      handlers = new Map();
-      this.handlers.set(key, handlers);
-    }
+  #onSingle(key, callback, options) {
     const handler = {
       callback,
       teardown: this.#teardown(key, callback),
+      priority: options.priority,
     };
-    handlers.set(callback, handler);
+    const existingHandlers = this.handlers.get(key)?.entries().toArray() ?? [];
+    existingHandlers.push([callback, handler]);
+    this.handlers.set(
+      key,
+      new Map(existingHandlers.sort(([, a], [, b]) => b.priority - a.priority)),
+    );
     return handler.teardown;
   }
 
@@ -82,10 +86,11 @@ export class CallbackTracker {
    * @template {Keys[]} T
    * @param {T} keys
    * @param {Callback<T[number]>} callback
+   * @param {{priority: number}} options
    * @returns {Teardown}
    */
-  #onMultiple(keys, callback) {
-    const teardown = keys.map((key) => this.#onSingle(key, callback));
+  #onMultiple(keys, callback, options) {
+    const teardown = keys.map((key) => this.#onSingle(key, callback, options));
     return () => teardown.forEach((cb) => cb());
   }
 

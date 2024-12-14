@@ -183,4 +183,21 @@ describe("should track callbacks", () => {
       "number tracking should have no callbacks",
     );
   });
+
+  test("should respect 'priority'", () => {
+    const callbackTracker = new CallbackTracker(
+      sampleDatasetForCompletionCheck,
+    );
+    const lowest = () => {};
+    const mid = () => {};
+    const highest = () => {};
+    callbackTracker.on("string", lowest); // implicitly 1
+    callbackTracker.on("string", highest, { priority: 3 });
+    callbackTracker.on("string", mid, { priority: 2 });
+    assert.deepEqual(
+      callbackTracker.getCallbacks("string"),
+      [highest, mid, lowest],
+      "failed to retrieve callbacks in priority order",
+    );
+  });
 });
