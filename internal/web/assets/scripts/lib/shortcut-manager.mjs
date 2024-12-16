@@ -1,3 +1,5 @@
+// TODO chaining keys will be useful for closing stuff "<Escape> <Escape>"
+
 import { CallbackTracker } from "./callback-tracker.mjs";
 
 export class ShortcutManager {
@@ -19,7 +21,8 @@ export class ShortcutManager {
    * - <*>         - on any key
    */
 
-  /** @typedef {Record<ShortcutNotation, KeyboardEvent>} Structure */
+  /** @typedef {KeyboardEvent & {notation: string}} KeyboardEventWithNotation */
+  /** @typedef {Record<ShortcutNotation, KeyboardEventWithNotation>} Structure */
 
   static #keydownTracker = new CallbackTracker(/** @type {Structure} */ ({}));
 
@@ -48,35 +51,46 @@ export class ShortcutManager {
     return `<${modifiers}${event.code}>`;
   }
 
-  static __init__ = (() => {
-    if (typeof window === "undefined") {
-      return; // for node tests
-    }
+  /**
+   * @param {KeyboardEventWithNotation} event
+   * @returns {((event: KeyboardEventWithNotation) => void)[]}
+   */
+  static #getKeydownCallbacks(event) {
+    const keySpecificCallbacks = ShortcutManager.#keydownTracker.getCallbacks(
+      event.notation,
+      "<*>",
+    );
+    return keySpecificCallbacks;
+  }
+
+  static #addKeydownListener() {
     window.addEventListener("keydown", (event) => {
-      const keySpecificCallbacks = ShortcutManager.#keydownTracker.getCallbacks(
-        ShortcutManager.eventToNotation(event),
-      );
-      const matchAllCallbacks =
-        ShortcutManager.#keydownTracker.getCallbacks("<*>");
-      const callbacks = [
-        ...(keySpecificCallbacks ?? []),
-        ...(matchAllCallbacks ?? []),
-      ];
+      const eventWithNotation = Object.assign(event, {
+        notation: ShortcutManager.eventToNotation(event),
+      });
+      const callbacks = ShortcutManager.#getKeydownCallbacks(eventWithNotation);
       if (callbacks.length === 0) {
         return;
       }
       let shouldBreak = false;
       for (const callback of callbacks) {
         const originalStopPropagation = event.stopPropagation.bind(event);
-        event.stopPropagation = () => {
+        eventWithNotation.stopPropagation = () => {
           shouldBreak = true;
           originalStopPropagation();
         };
-        callback(event);
+        callback(eventWithNotation);
         if (shouldBreak) {
           break;
         }
       }
     });
+  }
+
+  static __init__ = (() => {
+    if (typeof window === "undefined") {
+      return; // for node tests
+    }
+    ShortcutManager.#addKeydownListener();
   })();
 }

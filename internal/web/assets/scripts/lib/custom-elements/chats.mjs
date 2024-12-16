@@ -16,7 +16,7 @@ export class Chats extends HTMLElement {
     super();
     this.innerHTML = `
 <hermes-paginated-list>
-    <a is="hermes-link" href="/" class="chat-link">New chat</a>
+    <!--<a is="hermes-link" href="/" class="chat-link">New chat</a>-->
 </hermes-paginated-list>`;
     this.findNextChat = this.navigateInDir.bind(this);
   }

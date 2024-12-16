@@ -16,12 +16,15 @@ export class LocationControll {
     return this.#publisher.attach(observer);
   }
 
-  /** @param {string} href  */
-  static navigate(href) {
-    if (window.location.href === href) {
+  /** @param {string} target  */
+  static navigate(target) {
+    if (
+      window.location.href === target ||
+      window.location.pathname === target
+    ) {
       return;
     }
-    window.history.pushState({}, "", href);
+    window.history.pushState({}, "", target);
     LocationControll.#update();
   }
 

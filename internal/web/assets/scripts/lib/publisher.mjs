@@ -1,7 +1,7 @@
 /**
  * @template T
  * @typedef Observer
- * @property {(value: T) => void} notify
+ * @property {(current: T, previous: T) => void} notify
  * @class
  */
 
@@ -42,13 +42,25 @@ export class Publisher {
 
   /** @param {T | ((currentValue: T) => T)} value */
   update(value) {
-    this.value = value instanceof Function ? value(this.value) : value;
-    this.notify();
+    const update = value instanceof Function ? value(this.value) : value;
+    if (update === this.value) {
+      return;
+    }
+    const previous = this.value;
+    this.value = update;
+    this.#notifyWithPrevious(previous);
+  }
+
+  /**
+   * @param {T} previous
+   */
+  #notifyWithPrevious(previous) {
+    for (let i = 0; i < this.#observers.length; i++) {
+      this.#observers[i]?.notify(this.value, previous);
+    }
   }
 
   notify() {
-    for (let i = 0; i < this.#observers.length; i++) {
-      this.#observers[i]?.notify(this.value);
-    }
+    this.#notifyWithPrevious(this.value);
   }
 }

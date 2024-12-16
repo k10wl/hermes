@@ -17,6 +17,7 @@
 *,
 *::before,
 *::after {
+  /*user-select: none;*/
   box-sizing: border-box;
 }
 
@@ -43,4 +44,13 @@ body {
 
 .primary-bg {
   background: var(--primary);
+}
+
+.selectable {
+  &,
+  &::before,
+  &::after,
+  & > * {
+    user-select: text;
+  }
 }

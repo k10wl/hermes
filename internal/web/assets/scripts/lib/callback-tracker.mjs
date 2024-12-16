@@ -49,15 +49,17 @@ export class CallbackTracker {
 
   /**
    * @template {Keys} T
-   * @param {string} key
-   * @return {((Callback<T>)[]) | undefined}
+   * @param {string[]} keys
+   * @return {((Callback<T>)[])}
    */
-  getCallbacks(key) {
-    const handlers = this.handlers.get(key);
-    if (!handlers) {
-      return;
+  getCallbacks(...keys) {
+    const handlers = [];
+    for (const key of keys) {
+      handlers.push(...(this.handlers.get(key)?.values().toArray() ?? []));
     }
-    return Array.from(handlers.values()).map(({ callback }) => callback);
+    return handlers
+      .sort((a, b) => b.priority - a.priority)
+      .map(({ callback }) => callback);
   }
 
   /**

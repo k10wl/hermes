@@ -68,16 +68,33 @@ const scenes = {
     <style>
       main {
         height: 100%;
-        display: grid;
-        place-items: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
         padding: 16px;
+        gap: 1rem;
       }
+
       form {
         width: 100%;
       }
+
+      span {
+        color: rgb(from var(--text-0) r g b / 0.33);
+      }
+
+      code {
+        border: 1px solid rgb(from var(--text-0) r g b / 0.33);
+        border-radius: 0.2rem;
+        padding: 0.1rem 0.2rem;
+      }
     </style>
 
-    <main>${messageContentForm}</main>
+    <main>
+      ${messageContentForm}
+      <span>Press <code>Ctrl+P</code> for Control Panel</span>
+    </main>
   `,
 
   "/chats": html`
@@ -101,7 +118,7 @@ const scenes = {
         display: block;
         padding: 0.5rem 1rem;
         border-radius: 0.5rem;
-        border: 1px solid rgb(from var(--primary) r g b / 0.25);
+        border: 1px solid rgb(from var(--text-0) r g b / 0.25);
         text-decoration: none;
         transition: border-color var(--color-transition-duration);
       }

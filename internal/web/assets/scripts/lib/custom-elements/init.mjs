@@ -1,3 +1,4 @@
+import { ControlPanel } from "./control-panel.mjs";
 import { Chats } from "./chats.mjs";
 import { Link } from "./link.mjs";
 import { MessageContentForm } from "./message-content-form.mjs";
@@ -18,6 +19,7 @@ const elements = [
   ["messages", Messages],
   ["textarea-autoresize", TextAreaAutoresize, { extends: "textarea" }],
   ["message-content-form", MessageContentForm, { extends: "form" }],
+  ["control-panel", ControlPanel],
 ];
 
 for (const [name, instance, options] of elements) {
