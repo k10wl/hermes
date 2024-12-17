@@ -16,6 +16,7 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
     this.focusOnPaste = this.focusOnPaste.bind(this);
     this.#limitHeight();
     this.#focusOnInput();
+    this.autoresize();
     const resizeObserver = new ResizeObserver(this.autoresize);
     this.addEventListener("input", this.autoresize);
     this.addEventListener("change", this.autoresize);
@@ -68,23 +69,28 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
 
   /** @param {KeyboardEvent} e  */
   focusOnKeydown(e) {
+    const target = ShortcutManager.getTarget(e);
     if (
-      e.target === this ||
-      e.target === null ||
+      target === this ||
+      target === null ||
       document.activeElement?.tagName === "TEXTAREA" ||
       document.activeElement?.tagName === "INPUT" ||
       e.shiftKey ||
       e.altKey ||
       e.metaKey ||
       e.ctrlKey ||
-      "Escape" === e.key ||
-      "Enter" === e.key ||
-      "Tab" === e.key ||
-      "ArrowLeft" === e.key ||
-      "ArrowRight" === e.key ||
-      "ArrowTop" === e.key ||
-      "ArrowBottom" === e.key ||
-      " " === e.key
+      "Escape" === e.code ||
+      "Enter" === e.code ||
+      "Tab" === e.code ||
+      "ArrowLeft" === e.code ||
+      "ArrowRight" === e.code ||
+      "ArrowUp" === e.code ||
+      "ArrowDown" === e.code ||
+      "PageUp" === e.code ||
+      "PageDown" === e.code ||
+      "Home" === e.code ||
+      "End" === e.code ||
+      "Space" === e.code
     ) {
       return;
     }

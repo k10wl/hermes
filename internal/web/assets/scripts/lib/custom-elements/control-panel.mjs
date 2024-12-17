@@ -1,6 +1,7 @@
 import { AssertInstance } from "../assert.mjs";
 import { html } from "../html.mjs";
 import { LocationControll } from "../location-control.mjs";
+import { MovableList } from "../movable-list.mjs";
 import { Publisher } from "../publisher.mjs";
 import { ShortcutManager } from "../shortcut-manager.mjs";
 import { TextAreaAutoresize } from "./textarea-autoresize.mjs";
@@ -18,57 +19,12 @@ class Action {
 
 const assertInput = new AssertInstance(TextAreaAutoresize);
 
-class MovableList {
-  #cursor = new Publisher(0);
-
-  #elementsParent;
-
-  /**
-   * @param {HTMLElement} elementsParent
-   * @param {(current: number, previous: number) => void} notify
-   */
-  constructor(elementsParent, notify) {
-    this.#elementsParent = elementsParent;
-    this.#cursor.attach({ notify: notify });
-  }
-
-  /**
-   * @param {-1 | 1} direction
-   */
-  move(direction) {
-    this.#cursor.update((value) => {
-      const newValue = value + direction;
-      const bounds = this.#elementsParent.children.length;
-      if (newValue < 0) {
-        return bounds - 1;
-      }
-      if (newValue >= bounds) {
-        return 0;
-      }
-      return newValue;
-    });
-  }
-
-  /** @param {number} update */
-  set cursor(update) {
-    this.#cursor.update(update);
-    this.#cursor.notify();
-  }
-
-  /** @returns {number} */
-  get cursor() {
-    return this.#cursor.value;
-  }
-
-  notify() {
-    this.#cursor.notify();
-  }
-}
+export const controlPalanelVisibility = new Publisher(false);
 
 export class ControlPanel extends HTMLElement {
   /** @type {(() => void)[]} */
   #cleanup = [];
-  #visible = new Publisher(false);
+  #visible = controlPalanelVisibility;
   #movableList;
 
   constructor() {
@@ -248,6 +204,7 @@ export class ControlPanel extends HTMLElement {
         position: fixed;
         inset: 0;
         background: rgb(from var(--bg-0) r g b / 0.75);
+        z-index: 99999;
       }
 
       #container {

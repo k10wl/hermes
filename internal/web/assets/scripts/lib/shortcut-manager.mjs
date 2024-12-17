@@ -1,5 +1,6 @@
 // TODO chaining keys will be useful for closing stuff "<Escape> <Escape>"
 
+import { AssertInstance } from "./assert.mjs";
 import { CallbackTracker } from "./callback-tracker.mjs";
 
 export class ShortcutManager {
@@ -85,6 +86,22 @@ export class ShortcutManager {
         }
       }
     });
+  }
+
+  /**
+   * @param {KeyboardEvent} event
+   * @returns {HTMLElement | null}
+   */
+  static getTarget(event) {
+    try {
+      return AssertInstance.once(
+        // @ts-expect-error - https://developer.mozilla.org/en-US/docs/Web/API/Event/explicitOriginalTarget
+        event.explicitOriginalTarget ?? event.target,
+        HTMLElement,
+      );
+    } catch {
+      return null;
+    }
   }
 
   static __init__ = (() => {

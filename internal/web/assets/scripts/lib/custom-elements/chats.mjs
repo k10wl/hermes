@@ -27,12 +27,10 @@ export class Chats extends HTMLElement {
       AssertInstance.once(query[0], PaginatedList)
     );
 
-    const activeChatObserver = new ActiveChatObserver(list);
     const iterator = new ChatsIterator();
-    const rendrer = new ChatsRenderer(activeChatObserver);
+    const rendrer = new ChatsRenderer();
 
     this.#cleanup.push(
-      LocationControll.attach(activeChatObserver),
       ServerEvents.on("chat-created", (data) => {
         list.prepandNodes(rendrer.createElement(data.payload.chat));
       }),
@@ -115,18 +113,6 @@ export class Chats extends HTMLElement {
 }
 
 class ChatsRenderer {
-  #activeProvider;
-
-  /**
-   * @param {{
-   *   activePathname: string,
-   *   updateActive: (el: HTMLAnchorElement) => void,
-   * }} provider
-   */
-  constructor(provider) {
-    this.#activeProvider = provider;
-  }
-
   /** @param {Chat} chat  */
   createElement(chat) {
     const a = document.createElement("a", { is: "hermes-link" });
@@ -134,9 +120,6 @@ class ChatsRenderer {
     a.href = href;
     a.id = "chat-" + chat.id;
     a.classList.add("chat-link");
-    if (chat.id === LocationControll.chatId) {
-      this.#activeProvider.updateActive(a);
-    }
     a.innerText = chat.name.replaceAll(/(\n|\s)+/gi, " ");
     return a;
   }
@@ -173,45 +156,5 @@ class ChatsIterator {
     const chats = await this.#fetchChats();
     this.#updateState(chats);
     return chats;
-  }
-}
-
-class ActiveChatObserver {
-  /** @type {HTMLAnchorElement | null} */
-  #active = null;
-  #container;
-
-  activePathname = "";
-
-  /** @param {HTMLElement} container  */
-  constructor(container) {
-    this.#container = container;
-  }
-
-  /** @param {HTMLAnchorElement | null} element  */
-  updateActive(element) {
-    this.#removeActive(this.#active);
-    this.#active = element;
-    this.#setActive(this.#active);
-  }
-
-  /** @param {string} pathname */
-  notify(pathname) {
-    this.activePathname = pathname;
-    const selected = this.#container.querySelector(`a[href="${pathname}"]`);
-    if (!selected) {
-      return;
-    }
-    this.updateActive(AssertInstance.once(selected, HTMLAnchorElement));
-  }
-
-  /** @param {HTMLAnchorElement | null} element  */
-  #setActive(element) {
-    element?.classList.add("primary-bg");
-  }
-
-  /** @param {HTMLAnchorElement | null} element  */
-  #removeActive(element) {
-    element?.classList.remove("primary-bg");
   }
 }

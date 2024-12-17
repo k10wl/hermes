@@ -1,7 +1,13 @@
-import { ControlPanel } from "./control-panel.mjs";
+import "./form.mjs";
+import "./message-form.mjs";
+import "./scenes/chats-list.mjs";
+import "./scenes/existing-chat.mjs";
+import "./scenes/new-chat.mjs";
+
+// XXX this was such a shitty idea tbh
 import { Chats } from "./chats.mjs";
+import { ControlPanel } from "./control-panel.mjs";
 import { Link } from "./link.mjs";
-import { MessageContentForm } from "./message-content-form.mjs";
 import { Messages } from "./messages.mjs";
 import { PaginatedList } from "./paginated-list.mjs";
 import { TextAreaAutoresize } from "./textarea-autoresize.mjs";
@@ -18,7 +24,6 @@ const elements = [
   ["chats", Chats],
   ["messages", Messages],
   ["textarea-autoresize", TextAreaAutoresize, { extends: "textarea" }],
-  ["message-content-form", MessageContentForm, { extends: "form" }],
   ["control-panel", ControlPanel],
 ];
 

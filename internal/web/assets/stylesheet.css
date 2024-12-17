@@ -12,12 +12,14 @@
   --dark-text-0: #ffffff;
 
   --color-transition-duration: 200ms;
+
+  --container: min(calc(100% - 1rem), 100ch);
 }
 
 *,
 *::before,
 *::after {
-  /*user-select: none;*/
+  user-select: none;
   box-sizing: border-box;
 }
 
