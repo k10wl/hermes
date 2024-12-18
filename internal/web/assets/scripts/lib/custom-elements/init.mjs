@@ -1,4 +1,5 @@
 import "./form.mjs";
+import "./header.mjs";
 import "./message-form.mjs";
 import "./scenes/chats-list.mjs";
 import "./scenes/existing-chat.mjs";

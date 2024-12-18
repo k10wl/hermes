@@ -14,6 +14,8 @@
   --color-transition-duration: 200ms;
 
   --container: min(calc(100% - 1rem), 100ch);
+
+  --header-height: 1.5rem;
 }
 
 *,
@@ -21,6 +23,10 @@
 *::after {
   user-select: none;
   box-sizing: border-box;
+}
+
+.red {
+  background-color: red !important;
 }
 
 body {

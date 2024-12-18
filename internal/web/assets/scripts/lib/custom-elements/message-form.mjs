@@ -11,68 +11,12 @@ import { LocationControll } from "../location-control.mjs";
 export class MessageForm extends HTMLElement {
   constructor() {
     super();
-    this.shadow = this.attachShadow({ mode: "closed" });
-    this.shadow.innerHTML = html`
-      <style>
-        form {
-          display: flex;
-          justify-content: center;
-          align-items: flex-end;
-          gap: 8px;
-        }
-
-        textarea {
-          max-height: 50vh;
-          width: 100%;
-          background: var(--bg-2);
-          color: var(--text-0);
-          padding: 0.5rem 1rem 0;
-          margin: 0px;
-          border-radius: 20px;
-          resize: none;
-          outline: none;
-          border: none;
-        }
-
-        textarea:invalid + button {
-          background: var(--bg-2);
-          color: rgb(from var(--text-0) r g b / 0.25);
-          cursor: auto;
-        }
-
-        button {
-          --_size: 32px;
-          transition: all var(--color-transition-duration);
-          flex-shrink: 0;
-          background: var(--primary);
-          font-size: calc(var(--_size) * 0.66);
-          color: var(--text);
-          outline: none;
-          border: none;
-          border-radius: var(--_size);
-          width: var(--_size);
-          height: var(--_size);
-          cursor: pointer;
-        }
-      </style>
-
-      <form is="hermes-form">
-        <textarea
-          id="message-content-input"
-          is="hermes-textarea-autoresize"
-          focus-on-input="true"
-          max-rows="12"
-          name="content"
-          placeholder="Type message"
-          autofocus
-          required
-        ></textarea>
-        <button id="submit-message" type="submit">↑</button>
-      </form>
-    `;
+    this.shadow = this.attachShadow({ mode: "open" });
   }
 
   connectedCallback() {
+    this.#render();
+
     const form = AssertInstance.once(
       this.shadow.querySelector("form"),
       HTMLFormElement,
@@ -111,6 +55,67 @@ export class MessageForm extends HTMLElement {
         },
       );
     });
+  }
+
+  #render() {
+    this.shadow.innerHTML = html`
+      <style>
+        form {
+          display: flex;
+          justify-content: center;
+          align-items: flex-end;
+          gap: 8px;
+        }
+
+        textarea {
+          max-height: 50vh;
+          width: 100%;
+          background: var(--bg-2);
+          color: var(--text-0);
+          padding: 0.5rem 1rem 0;
+          margin: 0px;
+          border-radius: 20px;
+          resize: none;
+          outline: none;
+          border: none;
+        }
+
+        textarea:invalid + button {
+          background: var(--bg-2);
+          color: rgb(from var(--text-0) r g b / 0.25);
+          cursor: auto;
+        }
+
+        button {
+          --_size: 32px;
+          transition: all var(--color-transition-duration);
+          flex-shrink: 0;
+          background: var(--primary);
+          font-size: calc(var(--_size) * 0.66);
+          color: var(--text);
+          outline-color: transparent;
+          border-color: transparent;
+          border-radius: var(--_size);
+          width: var(--_size);
+          height: var(--_size);
+          cursor: pointer;
+        }
+      </style>
+
+      <form is="hermes-form">
+        <textarea
+          id="message-content-input"
+          is="hermes-textarea-autoresize"
+          focus-on-input="true"
+          max-rows="12"
+          name="content"
+          placeholder="${this.getAttribute("placeholder") ?? "message..."}"
+          autofocus
+          required
+        ></textarea>
+        <button id="submit-message" type="submit">↑</button>
+      </form>
+    `;
   }
 }
 

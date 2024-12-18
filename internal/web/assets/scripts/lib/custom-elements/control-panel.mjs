@@ -6,7 +6,7 @@ import { Publisher } from "../publisher.mjs";
 import { ShortcutManager } from "../shortcut-manager.mjs";
 import { TextAreaAutoresize } from "./textarea-autoresize.mjs";
 
-class Action {
+export class Action {
   /**
    * @param {string} name
    * @param {() => (void | Promise<void>)} action
@@ -39,9 +39,11 @@ export class ControlPanel extends HTMLElement {
     this.#movableList = new MovableList(
       this.matchesContainer,
       (current, previous) => {
-        this.matchesContainer.children
-          .item(previous)
-          ?.classList.remove("under-cursor");
+        if (previous) {
+          this.matchesContainer.children
+            .item(previous)
+            ?.classList.remove("under-cursor");
+        }
         this.matchesContainer.children
           .item(current)
           ?.classList.add("under-cursor");
@@ -146,7 +148,14 @@ export class ControlPanel extends HTMLElement {
             ),
 
             ShortcutManager.keydown(
-              ["<ArrowUp>", "<ArrowDown>", "<C-KeyN>", "<C-KeyP>", "<Tab>"],
+              [
+                "<ArrowUp>",
+                "<ArrowDown>",
+                "<C-KeyN>",
+                "<C-KeyP>",
+                "<Tab>",
+                "<S-Tab>",
+              ],
               (event) => {
                 /** @type {1 | -1} */
                 let dir;
@@ -158,6 +167,7 @@ export class ControlPanel extends HTMLElement {
                     break;
                   case "<ArrowUp>":
                   case "<C-KeyP>":
+                  case "<S-Tab>":
                     dir = -1;
                     break;
                   default:

@@ -1,4 +1,3 @@
-import { AssertInstance } from "../../assert.mjs";
 import { html } from "../../html.mjs";
 import { controlPalanelVisibility } from "../control-panel.mjs";
 
@@ -6,7 +5,7 @@ const HERMES_SHORTCUTS_TAG_NAME = "hermes-new-chat-shortcuts";
 customElements.define(
   HERMES_SHORTCUTS_TAG_NAME,
   class Shortcuts extends HTMLElement {
-    /** @type {{name: string, key: string, onclick?: () => void}[]} */
+    /** @type {{name: string, key: string, onclick: () => void}[]} */
     static #list = [
       {
         name: "Control Panel",
@@ -22,10 +21,15 @@ customElements.define(
       this.shadow = this.attachShadow({ mode: "closed" });
       this.shadow.innerHTML = html`
         <style>
+          :host {
+            --default-color: rgb(from var(--text-0) r g b / 0.33);
+            --hover-color: var(--text-0);
+          }
+
           ul {
             display: grid;
             gap: 0.25rem;
-            color: rgb(from var(--text-0) r g b / 0.33);
+            color: var(--default-color);
             font-size: 0.75rem;
             padding: 0;
             margin: 0;
@@ -45,26 +49,23 @@ customElements.define(
           }
 
           button {
+            --color: var(--default-color);
             background: transparent;
-            outline: none;
-            border: none;
+            outline-color: transparent;
+            border-color: transparent;
             cursor: pointer;
-            code:hover {
-              --color: rgb(from var(--primary) r g b / 1);
-            }
-          }
-
-          code {
-            --color: rgb(from var(--text-0) r g b / 0.33);
+            border: 1px solid var(--color);
+            padding: 0.1rem 0.2rem;
             --transition: var(--color-transition-duration);
             transition:
               color var(--transition),
               border-color var(--transition);
-            margin-right: auto;
             border-radius: 0.2rem;
-            padding: 0.1rem 0.2rem;
-            border: 1px solid var(--color);
+            margin: 0;
             color: var(--color);
+            &:hover {
+              --color: var(--hover-color);
+            }
           }
         </style>
 
@@ -74,7 +75,9 @@ customElements.define(
               (shortcut) => html`
                 <li>
                   <span>${shortcut.name}</span>
-                  <button><code>${shortcut.key}</code></button>
+                  <div>
+                    <button>${shortcut.key}</button>
+                  </div>
                 </li>
               `,
             )
@@ -116,7 +119,7 @@ export class CreateChatScene extends HTMLElement {
       </style>
 
       <main>
-        <hermes-message-form></hermes-message-form>
+        <hermes-message-form placeholder="create chat..."></hermes-message-form>
         <${HERMES_SHORTCUTS_TAG_NAME}></${HERMES_SHORTCUTS_TAG_NAME}>
       </main>
     `;

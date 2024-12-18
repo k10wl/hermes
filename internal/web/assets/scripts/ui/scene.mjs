@@ -23,7 +23,7 @@ const scenes = {
       <div>
         <h1>under construction</h1>
         <a is="hermes-link" href="/" id="new-chat" class="chat-link">
-          back to chats
+          back to new chat
         </a>
       </div>
     </main>
@@ -38,6 +38,7 @@ class Scene extends HTMLElement {
 
   constructor() {
     super();
+    this.shadow = this.attachShadow({ mode: "closed" });
   }
 
   connectedCallback() {
@@ -58,7 +59,7 @@ class Scene extends HTMLElement {
       return;
     }
     this.#activeSceneName = name;
-    this.innerHTML = html;
+    this.shadow.innerHTML = html;
   }
 
   /**

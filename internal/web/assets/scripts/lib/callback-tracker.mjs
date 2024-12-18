@@ -50,12 +50,15 @@ export class CallbackTracker {
   /**
    * @template {Keys} T
    * @param {string[]} keys
-   * @return {((Callback<T>)[])}
+   * @return {((Callback<T>)[]) | undefined}
    */
   getCallbacks(...keys) {
     const handlers = [];
     for (const key of keys) {
       handlers.push(...(this.handlers.get(key)?.values().toArray() ?? []));
+    }
+    if (handlers.length === 0) {
+      return undefined;
     }
     return handlers
       .sort((a, b) => b.priority - a.priority)

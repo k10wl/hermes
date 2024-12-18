@@ -1,7 +1,7 @@
 /**
  * @template T
  * @typedef Observer
- * @property {(current: T, previous: T) => void} notify
+ * @property {(current: T, previous: T | undefined) => void} notify
  * @class
  */
 
@@ -52,7 +52,7 @@ export class Publisher {
   }
 
   /**
-   * @param {T} previous
+   * @param {T | undefined} previous
    */
   #notifyWithPrevious(previous) {
     for (let i = 0; i < this.#observers.length; i++) {
@@ -61,6 +61,11 @@ export class Publisher {
   }
 
   notify() {
-    this.#notifyWithPrevious(this.value);
+    this.#notifyWithPrevious(undefined);
+  }
+
+  /** @param {ConcreteObserver} observer */
+  notifySingle(observer) {
+    observer.notify(this.value, undefined);
   }
 }

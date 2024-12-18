@@ -61,7 +61,7 @@ export class ShortcutManager {
       event.notation,
       "<*>",
     );
-    return keySpecificCallbacks;
+    return keySpecificCallbacks ?? [];
   }
 
   static #addKeydownListener() {
@@ -101,6 +101,28 @@ export class ShortcutManager {
       );
     } catch {
       return null;
+    }
+  }
+
+  /**
+   * @param {unknown} data
+   * @returns {boolean}
+   */
+  static isInteractiveElement(data) {
+    try {
+      const element = AssertInstance.once(data, HTMLElement);
+      return (
+        element.tagName === "BUTTON" ||
+        element.tagName === "TEXTAREA" ||
+        element.tagName === "INPUT" ||
+        element.tagName === "A" ||
+        element.tagName === "SELECT" ||
+        element.tagName === "DETAILS" ||
+        element.tagName === "SUMMARY" ||
+        element.hasAttribute("contenteditable")
+      );
+    } catch {
+      return false;
     }
   }
 

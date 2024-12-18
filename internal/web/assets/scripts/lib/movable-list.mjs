@@ -7,7 +7,7 @@ export class MovableList {
 
   /**
    * @param {HTMLElement} elementsParent
-   * @param {(current: number, previous: number) => void} notify
+   * @param {(current: number, previous?: number) => void} notify
    */
   constructor(elementsParent, notify) {
     this.#elementsParent = elementsParent;

@@ -9,10 +9,9 @@ export class LocationControll {
   static #ready = false;
 
   /**
-   * @param {{notify: (route: string) => void}} observer
+   * @param {Parameters<Publisher<string>['attach']>[0]} observer
    */
   static attach(observer) {
-    observer.notify(LocationControll.pathname);
     return this.#publisher.attach(observer);
   }
 

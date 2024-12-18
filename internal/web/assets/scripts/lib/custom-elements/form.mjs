@@ -35,7 +35,13 @@ export class Form extends HTMLFormElement {
 
   /** @param {KeyboardEvent} e */
   detectKeyboardSubmit(e) {
-    if (e.shiftKey || e.metaKey || e.ctrlKey) {
+    const target = ShortcutManager.getTarget(e);
+    if (
+      e.shiftKey ||
+      e.metaKey ||
+      e.ctrlKey ||
+      (ShortcutManager.isInteractiveElement(target) && !this.contains(target))
+    ) {
       return;
     }
     e.preventDefault();
