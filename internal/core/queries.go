@@ -103,3 +103,31 @@ func (q *GetTemplatesByRegexp) Execute(ctx context.Context) error {
 	q.Result = templates
 	return err
 }
+
+type GetTemplatesQuery struct {
+	core   *Core
+	Result []*models.Template
+	after  int64
+	limit  int64
+	name   string
+}
+
+func NewGetTemplatesQuery(
+	c *Core,
+	startBeforeID int64,
+	limit int64,
+	name string,
+) *GetTemplatesQuery {
+	return &GetTemplatesQuery{
+		core:  c,
+		after: startBeforeID,
+		limit: limit,
+		name:  name,
+	}
+}
+
+func (q *GetTemplatesQuery) Execute(ctx context.Context) error {
+	res, err := q.core.db.GetTemplates(ctx, q.after, q.limit, q.name)
+	q.Result = res
+	return err
+}

@@ -2,7 +2,6 @@ package messages
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/models"
 	"github.com/k10wl/hermes/internal/settings"
-	"github.com/k10wl/hermes/internal/validator"
 )
 
 const (
@@ -33,15 +31,6 @@ type ClientEmittedMessage interface {
 	GetID() string
 }
 
-func typeDetector(data []byte) (string, error) {
-	type typeDetector struct {
-		Type string `json:"type,required"`
-	}
-	var t typeDetector
-	err := json.Unmarshal(data, &t)
-	return t.Type, err
-}
-
 func ReadMessage(data []byte) (ClientEmittedMessage, error) {
 	if config, err := settings.GetInstance(); err == nil {
 		fmt.Fprintf(config.Stdoout, "   <-<read>-  %s\n", data)
@@ -58,6 +47,8 @@ func ReadMessage(data []byte) (ClientEmittedMessage, error) {
 		msg = &ClientCreateCompletion{}
 	case "request-read-chat":
 		msg = &ClientRequestReadChat{}
+	case "request-read-templates":
+		msg = &ClientReadTemplates{}
 	}
 	if msg == nil {
 		return nil, fmt.Errorf("received unknown message type\n")
@@ -237,13 +228,4 @@ func (message *ClientCreateCompletion) createCompletion(
 		coms.All(),
 		NewServerMessageCreated(message.ID, chatID, cmd.Result),
 	)
-}
-
-func decode(receiver any, data []byte) error {
-	err := json.Unmarshal(data, receiver)
-	if err != nil {
-		return err
-	}
-	err = validator.Validate.Struct(receiver)
-	return err
 }

@@ -121,3 +121,12 @@ func (s SQLite3) RemoveActiveSession(activeSession *models.ActiveSession) error 
 func (s SQLite3) GetActiveSessionByDatabaseDNS(databaseDNS string) (*models.ActiveSession, error) {
 	return getActiveSession(s.DB.QueryRowContext, context.Background(), databaseDNS)
 }
+
+func (s SQLite3) GetTemplates(
+	ctx context.Context,
+	after int64,
+	limit int64,
+	name string,
+) ([]*models.Template, error) {
+	return getTemplates(s.DB.QueryContext, ctx, after, limit, name)
+}

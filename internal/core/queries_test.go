@@ -304,3 +304,145 @@ func TestGetChatsQuery(t *testing.T) {
 		}
 	}
 }
+
+func TestTemplatesQuery(t *testing.T) {
+	type subject struct {
+		cmd      *core.GetTemplatesQuery
+		expected []models.Template
+	}
+	type testCase struct {
+		name    string
+		prepare func() subject
+	}
+
+	table := []testCase{
+		{
+			name: "should return all templates",
+			prepare: func() subject {
+				c, db := test_helpers.CreateCore()
+				seeder := db_helpers.NewSeeder(db, context.Background())
+				templates, err := seeder.SeedTemplatesN(2)
+				if err != nil {
+					t.Fatalf("failed to seed templates - %q", err)
+				}
+				expected := test_helpers.UnpointerSlice(templates)
+				slices.Reverse(expected)
+				return subject{
+					cmd:      core.NewGetTemplatesQuery(c, -1, -1, ""),
+					expected: expected,
+				}
+			},
+		},
+
+		{
+			name: "should return limited amount of answers",
+			prepare: func() subject {
+				c, db := test_helpers.CreateCore()
+				seeder := db_helpers.NewSeeder(db, context.Background())
+				templates, err := seeder.SeedTemplatesN(100)
+				if err != nil {
+					t.Fatalf("failed to seed templates - %q", err)
+				}
+				expected := test_helpers.UnpointerSlice(templates)
+				slices.Reverse(expected)
+				return subject{
+					cmd:      core.NewGetTemplatesQuery(c, -1, 10, ""),
+					expected: expected[:10],
+				}
+			},
+		},
+
+		{
+			name: "should return results after specified id",
+			prepare: func() subject {
+				c, db := test_helpers.CreateCore()
+				seeder := db_helpers.NewSeeder(db, context.Background())
+				templates, err := seeder.SeedTemplatesN(100)
+				if err != nil {
+					t.Fatalf("failed to seed templates - %q", err)
+				}
+				expected := test_helpers.UnpointerSlice(templates)
+				slices.Reverse(expected)
+				return subject{
+					cmd:      core.NewGetTemplatesQuery(c, 91, 10, ""),
+					expected: expected[10:20],
+				}
+			},
+		},
+
+		{
+			name: "should return partial results if out of bounds",
+			prepare: func() subject {
+				c, db := test_helpers.CreateCore()
+				seeder := db_helpers.NewSeeder(db, context.Background())
+				templates, err := seeder.SeedTemplatesN(100)
+				if err != nil {
+					t.Fatalf("failed to seed templates - %q", err)
+				}
+				expected := test_helpers.UnpointerSlice(templates)
+				slices.Reverse(expected)
+				return subject{
+					cmd:      core.NewGetTemplatesQuery(c, 6, 10, ""),
+					expected: expected[95:],
+				}
+			},
+		},
+
+		{
+			name: "should return all results if startBeforeID is -1 and limit is -1",
+			prepare: func() subject {
+				c, db := test_helpers.CreateCore()
+				seeder := db_helpers.NewSeeder(db, context.Background())
+				templates, err := seeder.SeedTemplatesN(100)
+				if err != nil {
+					t.Fatalf("failed to seed templates - %q", err)
+				}
+				expected := test_helpers.UnpointerSlice(templates)
+				slices.Reverse(expected)
+				return subject{
+					cmd:      core.NewGetTemplatesQuery(c, -1, -1, ""),
+					expected: expected,
+				}
+			},
+		},
+
+		{
+			name: "should search name matches",
+			prepare: func() subject {
+				c, db := test_helpers.CreateCore()
+				seeder := db_helpers.NewSeeder(db, context.Background())
+				_, err := seeder.SeedTemplatesN(100)
+				if err != nil {
+					t.Fatalf("failed to seed templates - %q", err)
+				}
+				return subject{
+					cmd: core.NewGetTemplatesQuery(c, -1, -1, "22"),
+					expected: []models.Template{
+						{
+							Name:    "22",
+							ID:      22,
+							Content: `--{{template "22"}}22--{{end}}`,
+						},
+					},
+				}
+			},
+		},
+	}
+
+	for _, test := range table {
+		sub := test.prepare()
+		err := sub.cmd.Execute(context.Background())
+		if err != nil {
+			t.Fatalf("unexpected error in %q - %q", test.name, err)
+		}
+		actual := test_helpers.UnpointerSlice(test_helpers.ResetSliceTime(sub.cmd.Result))
+		if !reflect.DeepEqual(sub.expected, actual) {
+			t.Fatalf(
+				"did not get expected result in %q\nexpected: %+v\nactual:   %+v\n",
+				test.name,
+				sub.expected,
+				actual,
+			)
+		}
+	}
+}

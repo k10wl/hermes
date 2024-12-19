@@ -319,6 +319,72 @@ func getTemplatesByRegexp(
 
 }
 
+const getTemplatesQueryBase = `
+SELECT
+    id,
+    name,
+    content,
+    created_at,
+    updated_at,
+    deleted_at
+FROM
+    templates`
+
+var getTemplatesAfterQuery = fmt.Sprintf(`
+%s
+WHERE
+    deleted_at IS NULL AND
+    id < ? AND
+    name LIKE ?
+ORDER BY id DESC
+LIMIT ?;`, getTemplatesQueryBase)
+
+var getTemplatesQuery = fmt.Sprintf(`
+%s
+WHERE
+    deleted_at IS NULL AND
+    name LIKE ?
+ORDER BY id DESC
+LIMIT ?;`, getTemplatesQueryBase)
+
+func getTemplates(
+	executor queryRows,
+	ctx context.Context,
+	after int64,
+	limit int64,
+	name string,
+) ([]*models.Template, error) {
+	refinedName := "%" + name + "%"
+	var rows *sql.Rows
+	var err error
+	if after > 0 {
+		rows, err = executor(ctx, getTemplatesAfterQuery, after, refinedName, limit)
+	} else {
+		rows, err = executor(ctx, getTemplatesQuery, refinedName, limit)
+	}
+	if err != nil {
+		return nil, err
+	}
+	templates := []*models.Template{}
+	var rowErr error
+	for rows.Next() {
+		var templateDoc models.Template
+		if err := rows.Scan(
+			&templateDoc.ID,
+			&templateDoc.Name,
+			&templateDoc.Content,
+			&templateDoc.CreatedAt,
+			&templateDoc.UpdatedAt,
+			&templateDoc.DeletedAt,
+		); err != nil {
+			rowErr = err
+			break
+		}
+		templates = append(templates, &templateDoc)
+	}
+	return templates, rowErr
+}
+
 const deleteTemplateByNameQuery = `
 UPDATE templates
 SET deleted_at = CURRENT_TIMESTAMP

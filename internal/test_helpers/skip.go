@@ -7,6 +7,6 @@ import (
 
 func Skip(t *testing.T) {
 	if os.Getenv("HERMES_TEST_HELPERS_SKIP") == "true" {
-		t.SkipNow()
+		t.Skip("===[skipping test helper]===")
 	}
 }

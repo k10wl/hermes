@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/k10wl/hermes/internal/models"
+	"github.com/k10wl/hermes/internal/test_helpers"
 	"github.com/k10wl/hermes/internal/test_helpers/db_helpers"
 )
 
@@ -31,6 +32,24 @@ func TestCreateTemplate(t *testing.T) {
 	if !reflect.DeepEqual(expected, actual) {
 		t.Fatalf(
 			"Expected and actual results are different\nexpected: %+v\nactual:   %+v\n",
+			expected,
+			actual,
+		)
+	}
+}
+
+func TestGenerateTemplatesSliceN(t *testing.T) {
+	test_helpers.Skip(t)
+	messages := db_helpers.GenerateTemplateSliceN(3)
+	actual := test_helpers.UnpointerSlice(messages)
+	expected := []models.Template{
+		{ID: 1, Content: `--{{template "1"}}1--{{end}}`, Name: "1"},
+		{ID: 2, Content: `--{{template "2"}}2--{{end}}`, Name: "2"},
+		{ID: 3, Content: `--{{template "3"}}3--{{end}}`, Name: "3"},
+	}
+	if !reflect.DeepEqual(expected, actual) {
+		t.Errorf(
+			"Bad result in generating messages slice\nexpected: %+v\nactual:   %+v\n",
 			expected,
 			actual,
 		)
