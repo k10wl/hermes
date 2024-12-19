@@ -88,22 +88,6 @@ func (q *GetTemplatesByNamesQuery) Execute(ctx context.Context) error {
 	return err
 }
 
-type GetTemplatesByRegexp struct {
-	Core   *Core
-	Result []*models.Template
-	regexp string
-}
-
-func NewGetTemplatesByRegexp(c *Core, regexp string) *GetTemplatesByRegexp {
-	return &GetTemplatesByRegexp{Core: c, regexp: regexp}
-}
-
-func (q *GetTemplatesByRegexp) Execute(ctx context.Context) error {
-	templates, err := q.Core.db.GetTemplatesByRegexp(ctx, q.regexp)
-	q.Result = templates
-	return err
-}
-
 type GetTemplatesQuery struct {
 	core   *Core
 	Result []*models.Template
