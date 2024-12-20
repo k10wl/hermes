@@ -105,3 +105,76 @@ func TestGetTemplatesWithName(t *testing.T) {
 		)
 	}
 }
+
+func TestGetTemplateByID(t *testing.T) {
+	client, db, teardown := setupWebSocketTest(t)
+	defer teardown()
+
+	seeder := db_helpers.NewSeeder(db, context.Background())
+	templates, err := seeder.SeedTemplatesN(10)
+	if err != nil {
+		t.Fatalf("error upon seeding templates - %s\n", err)
+	}
+
+	id := 2
+	if err := client.WriteMessage(
+		websocket.TextMessage,
+		[]byte(fmt.Sprintf(
+			`{"id": %q, "type": "request-read-template", "payload": {"id": %d}}`,
+			sharedID,
+			id,
+		)),
+	); err != nil {
+		t.Fatalf("Failed to send request read template message from client, error: %v\n", err)
+	}
+
+	_, data, err := client.ReadMessage()
+	if err != nil {
+		t.Fatalf("Failed to read request template message: %v\n", err)
+	}
+
+	resData := new(messages.ServerReadTemplate)
+	if err := json.Unmarshal(data, resData); err != nil {
+		t.Fatalf("failed to unmarshal response - %s\ndata: %s\n", err, data)
+	}
+
+	resData.Payload.Template.TimestampsToNilForTest__()
+	actual := *resData.Payload.Template
+	expected := *templates[id-1]
+	if !reflect.DeepEqual(actual, expected) {
+		t.Fatalf(
+			"Failed to read template, results differ from expected.\nexpected: %+v\nactual:   %+v\n",
+			expected,
+			actual,
+		)
+	}
+}
+
+func TestGetTemplateByIDErrorsUponNonExisting(t *testing.T) {
+	client, _, teardown := setupWebSocketTest(t)
+	defer teardown()
+
+	if err := client.WriteMessage(
+		websocket.TextMessage,
+		[]byte(fmt.Sprintf(
+			`{"id": %q, "type": "request-read-template", "payload": {"id": 99999}}`,
+			sharedID,
+		)),
+	); err != nil {
+		t.Fatalf("Failed to send request read template message from client, error: %v\n", err)
+	}
+
+	_, data, err := client.ReadMessage()
+	if err != nil {
+		t.Fatalf("Failed to read request template message: %v\n", err)
+	}
+
+	resData := new(messages.ServerError)
+	if err := json.Unmarshal(data, resData); err != nil {
+		t.Fatalf(
+			"Expected error, but got something else\nUnmarshal error: %s\n data: %s\n",
+			err.Error(),
+			data,
+		)
+	}
+}

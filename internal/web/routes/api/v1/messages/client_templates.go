@@ -43,3 +43,36 @@ func (message *ClientReadTemplates) Process(
 }
 
 func (message *ClientReadTemplates) GetID() string { return message.ID }
+
+type ClientReadTemplatePayload struct {
+	ID int64 `json:"id" validate:"required"`
+}
+
+type ClientReadTemplate struct {
+	ID      string                    `json:"id,required"      validate:"required,uuid4"`
+	Type    string                    `json:"type,required"    validate:"required"`
+	Payload ClientReadTemplatePayload `json:"payload,required" validate:"required"`
+}
+
+func (message *ClientReadTemplate) Process(
+	comms CommunicationChannel,
+	c *core.Core,
+	_ ai_clients.CompletionFn,
+) error {
+	cmd := core.NewGetTemplateByIDQuery(
+		c,
+		message.Payload.ID,
+	)
+	if err := cmd.Execute(context.Background()); err != nil {
+		return BroadcastServerEmittedMessage(
+			comms.Single(),
+			NewServerError(message.ID, err.Error()),
+		)
+	}
+	return BroadcastServerEmittedMessage(
+		comms.Single(),
+		NewServerReadTemplate(message.ID, cmd.Result),
+	)
+}
+
+func (message *ClientReadTemplate) GetID() string { return message.ID }

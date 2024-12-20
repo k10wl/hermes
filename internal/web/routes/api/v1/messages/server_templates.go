@@ -25,3 +25,27 @@ func NewServerReadTemplates(
 }
 
 func (message ServerReadTemplates) __serverMessageSignature() {}
+
+type ServerReadTemplatePayload struct {
+	Template *models.Template `json:"template,required"`
+}
+
+type ServerReadTemplate struct {
+	ID      string                    `json:"id,required"       validate:"required,uuid4"`
+	Type    string                    `json:"type,required"`
+	Payload ServerReadTemplatePayload `json:"payload,omitempty"`
+}
+
+func NewServerReadTemplate(
+	id string,
+	template *models.Template,
+) *ServerReadTemplate {
+	return &ServerReadTemplate{
+		ID:   id,
+		Type: "read-template",
+		Payload: ServerReadTemplatePayload{
+			Template: template,
+		}}
+}
+
+func (message ServerReadTemplate) __serverMessageSignature() {}

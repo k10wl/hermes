@@ -49,6 +49,8 @@ func ReadMessage(data []byte) (ClientEmittedMessage, error) {
 		msg = &ClientRequestReadChat{}
 	case "request-read-templates":
 		msg = &ClientReadTemplates{}
+	case "request-read-template":
+		msg = &ClientReadTemplate{}
 	}
 	if msg == nil {
 		return nil, fmt.Errorf("received unknown message type\n")
