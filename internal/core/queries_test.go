@@ -334,7 +334,7 @@ func TestTemplatesQuery(t *testing.T) {
 		sub := test.prepare()
 		err := sub.cmd.Execute(context.Background())
 		if err != nil {
-			t.Fatalf("unexpected error in %q - %q", test.name, err)
+			t.Fatalf("unexpected error in %q - %q\n", test.name, err)
 		}
 		actual := test_helpers.UnpointerSlice(test_helpers.ResetSliceTime(sub.cmd.Result))
 		if !reflect.DeepEqual(sub.expected, actual) {
@@ -343,6 +343,72 @@ func TestTemplatesQuery(t *testing.T) {
 				test.name,
 				sub.expected,
 				actual,
+			)
+		}
+	}
+}
+
+func TestTemplateByIDQuery(t *testing.T) {
+	type subject struct {
+		cmd         *core.GetTemplateByIDQuery
+		expected    models.Template
+		expectError bool
+	}
+	type testCase struct {
+		name    string
+		prepare func() subject
+	}
+
+	table := []testCase{
+		{
+			name: "should return template by id",
+			prepare: func() subject {
+				c, db := test_helpers.CreateCore()
+				seeder := db_helpers.NewSeeder(db, context.Background())
+				templates, err := seeder.SeedTemplatesN(3)
+				if err != nil {
+					t.Fatalf("failed to seed templates - %q", err)
+				}
+				id := 2
+				return subject{
+					cmd:         core.NewGetTemplateByIDQuery(c, int64(id)),
+					expected:    *templates[id-1],
+					expectError: false,
+				}
+			},
+		},
+
+		{
+			name: "should return error if given ID does not exist",
+			prepare: func() subject {
+				c, _ := test_helpers.CreateCore()
+				return subject{
+					cmd:         core.NewGetTemplateByIDQuery(c, 999),
+					expectError: true,
+				}
+			},
+		},
+	}
+
+	for _, test := range table {
+		sub := test.prepare()
+		err := sub.cmd.Execute(context.Background())
+		if sub.expectError {
+			if err == nil {
+				t.Fatalf("expected error in %q but it didn't: %+v\n", test.name, sub)
+			}
+			continue
+		}
+		if err != nil {
+			t.Fatalf("unexpected error in %q - %q\n", test.name, err)
+		}
+		sub.cmd.Result.TimestampsToNilForTest__()
+		if !reflect.DeepEqual(sub.expected, *sub.cmd.Result) {
+			t.Fatalf(
+				"did not get expected result in %q\nexpected: %+v\nactual:   %+v\n",
+				test.name,
+				sub.expected,
+				*sub.cmd.Result,
 			)
 		}
 	}

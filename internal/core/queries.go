@@ -115,3 +115,22 @@ func (q *GetTemplatesQuery) Execute(ctx context.Context) error {
 	q.Result = res
 	return err
 }
+
+type GetTemplateByIDQuery struct {
+	core   *Core
+	id     int64
+	Result *models.Template
+}
+
+func NewGetTemplateByIDQuery(c *Core, id int64) *GetTemplateByIDQuery {
+	return &GetTemplateByIDQuery{
+		core: c,
+		id:   id,
+	}
+}
+
+func (q *GetTemplateByIDQuery) Execute(ctx context.Context) error {
+	res, err := q.core.db.GetTemplateByID(ctx, q.id)
+	q.Result = res
+	return err
+}

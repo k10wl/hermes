@@ -284,41 +284,6 @@ func getTemplatesByNames(
 	return templates, rowErr
 }
 
-const getTemplatesByRegexpQuery = `
-SELECT id, name, content, created_at, updated_at, deleted_at FROM templates
-WHERE name LIKE $1 AND deleted_at IS NULL;
-`
-
-func getTemplatesByRegexp(
-	executor queryRows,
-	ctx context.Context,
-	regexp string,
-) ([]*models.Template, error) {
-	rows, err := executor(ctx, getTemplatesByRegexpQuery, regexp)
-	if err != nil {
-		return nil, err
-	}
-	templates := []*models.Template{}
-	var rowErr error
-	for rows.Next() {
-		var templateDoc models.Template
-		if err := rows.Scan(
-			&templateDoc.ID,
-			&templateDoc.Name,
-			&templateDoc.Content,
-			&templateDoc.CreatedAt,
-			&templateDoc.UpdatedAt,
-			&templateDoc.DeletedAt,
-		); err != nil {
-			rowErr = err
-			break
-		}
-		templates = append(templates, &templateDoc)
-	}
-	return templates, rowErr
-
-}
-
 const getTemplatesQueryBase = `
 SELECT
     id,
@@ -347,6 +312,17 @@ WHERE
 ORDER BY id DESC
 LIMIT ?;`, getTemplatesQueryBase)
 
+func scanTemplate(scan func(dest ...any) error, receiver *models.Template) error {
+	return scan(
+		&receiver.ID,
+		&receiver.Name,
+		&receiver.Content,
+		&receiver.CreatedAt,
+		&receiver.UpdatedAt,
+		&receiver.DeletedAt,
+	)
+}
+
 func getTemplates(
 	executor queryRows,
 	ctx context.Context,
@@ -369,20 +345,31 @@ func getTemplates(
 	var rowErr error
 	for rows.Next() {
 		var templateDoc models.Template
-		if err := rows.Scan(
-			&templateDoc.ID,
-			&templateDoc.Name,
-			&templateDoc.Content,
-			&templateDoc.CreatedAt,
-			&templateDoc.UpdatedAt,
-			&templateDoc.DeletedAt,
-		); err != nil {
+		if err := scanTemplate(rows.Scan, &templateDoc); err != nil {
 			rowErr = err
 			break
 		}
 		templates = append(templates, &templateDoc)
 	}
 	return templates, rowErr
+}
+
+var getTemplateByIDQuery = fmt.Sprintf(`%s
+WHERE
+    id = ?`, getTemplatesQueryBase)
+
+func getTemplateByID(
+	executor queryRow,
+	ctx context.Context,
+	id int64,
+) (*models.Template, error) {
+	row := executor(ctx, getTemplateByIDQuery, id)
+	err := row.Err()
+	if err != nil {
+		return nil, err
+	}
+	var template models.Template
+	return &template, scanTemplate(row.Scan, &template)
 }
 
 const deleteTemplateByNameQuery = `

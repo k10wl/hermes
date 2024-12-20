@@ -88,13 +88,6 @@ func (s SQLite3) GetTemplatesByNames(
 	return getTemplatesByNames(s.DB.QueryContext, ctx, name)
 }
 
-func (s SQLite3) GetTemplatesByRegexp(
-	ctx context.Context,
-	regexp string,
-) ([]*models.Template, error) {
-	return getTemplatesByRegexp(s.DB.QueryContext, ctx, regexp)
-}
-
 func (s SQLite3) DeleteTemplateByName(
 	ctx context.Context,
 	name string,
@@ -129,4 +122,11 @@ func (s SQLite3) GetTemplates(
 	name string,
 ) ([]*models.Template, error) {
 	return getTemplates(s.DB.QueryContext, ctx, after, limit, name)
+}
+
+func (s SQLite3) GetTemplateByID(
+	ctx context.Context,
+	id int64,
+) (*models.Template, error) {
+	return getTemplateByID(s.DB.QueryRowContext, ctx, id)
 }

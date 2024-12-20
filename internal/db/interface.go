@@ -45,16 +45,16 @@ type Client interface {
 		ctx context.Context,
 		names []string,
 	) ([]*models.Template, error)
-	GetTemplatesByRegexp(
-		ctx context.Context,
-		regexp string,
-	) ([]*models.Template, error)
 	GetTemplates(
 		ctx context.Context,
 		after int64,
 		limit int64,
 		name string,
 	) ([]*models.Template, error)
+	GetTemplateByID(
+		ctx context.Context,
+		id int64,
+	) (*models.Template, error)
 	DeleteTemplateByName(
 		ctx context.Context,
 		name string,
