@@ -41,3 +41,18 @@ export class Message {
     this.content = message.content;
   }
 }
+
+export class Template {
+  static validator = new AssertObject({
+    id: AssertNumber,
+    name: AssertString,
+    content: AssertString,
+  });
+
+  /** @param {ReturnType<Template.validator['check']>} template  */
+  constructor(template) {
+    this.id = template.id;
+    this.name = template.name;
+    this.content = template.content;
+  }
+}

@@ -2,32 +2,13 @@ import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
 
 import { html } from "../lib/html.mjs";
 
+// TODO picker fn that calculates match based on score
 const scenes = {
   "/": html`<hermes-new-chat-scene></hermes-new-chat-scene>`,
-
   "/chats": html`<hermes-chats-list-scene></hermes-chats-list-scene>`,
-
   "/chats/{id}": html`<hermes-existing-chat-scene></hermes-existing-chat-scene>`,
-
-  "/templates": html`
-    <style>
-      main {
-        height: 100%;
-        display: grid;
-        place-items: center;
-        text-align: center;
-      }
-    </style>
-
-    <main>
-      <div>
-        <h1>under construction</h1>
-        <a is="hermes-link" href="/" id="new-chat" class="chat-link">
-          back to new chat
-        </a>
-      </div>
-    </main>
-  `,
+  "/templates": html`<hermes-templates-list-scene></hermes-templates-list-scene>`,
+  "/templates/{id}": html`<hermes-view-template-scene></hermes-view-template-scene>`,
 };
 
 class Scene extends HTMLElement {
@@ -68,6 +49,12 @@ class Scene extends HTMLElement {
    */
   #scenePicker(pathname) {
     if (pathname.startsWith("/templates")) {
+      if (/\d+$/.test(pathname)) {
+        return {
+          name: "/templates/{id}",
+          html: scenes["/templates/{id}"],
+        };
+      }
       return {
         name: "/templates",
         html: scenes["/templates"],

@@ -1,12 +1,13 @@
 import {
   AssertArray,
   AssertBoolean,
+  AssertInstance,
   AssertNumber,
   AssertObject,
   AssertOptional,
   AssertString,
 } from "/assets/scripts/lib/assert.mjs";
-import { Chat, Message } from "/assets/scripts/models.mjs";
+import { Chat, Message, Template } from "/assets/scripts/models.mjs";
 
 export class ServerEvent {
   static #eventValidation = new AssertObject({
@@ -198,5 +199,69 @@ export class MessageCreatedEvent extends ServerEvent {
   /** @param {unknown} data */
   static validate(data) {
     return MessageCreatedEvent.#eventValidation.check(data);
+  }
+}
+
+export class ReadTemplatesEvent extends ServerEvent {
+  static #eventValidation = new AssertObject({
+    id: AssertString,
+    type: AssertString,
+    payload: new AssertObject({
+      templates: new AssertArray(new AssertInstance(Template)),
+    }),
+  });
+
+  static canonicalType = /** @type {const} */ ("read-templates");
+
+  /** @param { ReturnType<ReadTemplatesEvent.validate> } data */
+  constructor(data) {
+    super(data);
+    this.payload = data.payload;
+  }
+
+  /** @param {unknown} data */
+  static parse(data) {
+    /** @type {ReadTemplatesEvent} or at least it should be */
+    const parsed = JSON.parse(AssertString.check(data));
+    parsed.payload.templates = parsed.payload.templates.map(
+      (template) => new Template(template),
+    );
+    return new ReadTemplatesEvent(ReadTemplatesEvent.validate(parsed));
+  }
+
+  /** @param {unknown} data */
+  static validate(data) {
+    return ReadTemplatesEvent.#eventValidation.check(data);
+  }
+}
+
+export class ReadTemplateEvent extends ServerEvent {
+  static #eventValidation = new AssertObject({
+    id: AssertString,
+    type: AssertString,
+    payload: new AssertObject({
+      template: new AssertInstance(Template),
+    }),
+  });
+
+  static canonicalType = /** @type {const} */ ("read-template");
+
+  /** @param { ReturnType<ReadTemplateEvent.validate> } data */
+  constructor(data) {
+    super(data);
+    this.payload = data.payload;
+  }
+
+  /** @param {unknown} data */
+  static parse(data) {
+    /** @type {ReadTemplateEvent} or at least it should be */
+    const parsed = JSON.parse(AssertString.check(data));
+    parsed.payload.template = new Template(parsed.payload.template);
+    return new ReadTemplateEvent(ReadTemplateEvent.validate(parsed));
+  }
+
+  /** @param {unknown} data */
+  static validate(data) {
+    return ReadTemplateEvent.#eventValidation.check(data);
   }
 }

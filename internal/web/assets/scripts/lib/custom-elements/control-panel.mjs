@@ -39,7 +39,7 @@ export class ControlPanel extends HTMLElement {
     this.#movableList = new MovableList(
       this.matchesContainer,
       (current, previous) => {
-        if (previous) {
+        if (previous !== undefined) {
           this.matchesContainer.children
             .item(previous)
             ?.classList.remove("under-cursor");
@@ -336,4 +336,7 @@ ActionStore.add(
     LocationControll.navigate("/chats/" + data[0].id);
   }),
   new Action("open: chats history", () => LocationControll.navigate("/chats")),
+  new Action("open: templates history", () =>
+    LocationControll.navigate("/templates"),
+  ),
 );

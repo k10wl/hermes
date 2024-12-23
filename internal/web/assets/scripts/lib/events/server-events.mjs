@@ -24,6 +24,10 @@ const _serverEvents = {
   [serverEventsList.MessageCreatedEvent.canonicalType]:
     serverEventsList.MessageCreatedEvent,
   [serverEventsList.ReloadEvent.canonicalType]: serverEventsList.ReloadEvent,
+  [serverEventsList.ReadTemplatesEvent.canonicalType]:
+    serverEventsList.ReadTemplatesEvent,
+  [serverEventsList.ReadTemplateEvent.canonicalType]:
+    serverEventsList.ReadTemplateEvent,
 };
 
 const _clientEvents = {
@@ -31,6 +35,10 @@ const _clientEvents = {
     clientEventsList.RequestReadChatEvent,
   [clientEventsList.CreateCompletionMessageEvent.canonicalType]:
     clientEventsList.CreateCompletionMessageEvent,
+  [clientEventsList.RequestReadTemplatesEvent.canonicalType]:
+    clientEventsList.RequestReadTemplatesEvent,
+  [clientEventsList.RequestReadTemplateEvent.canonicalType]:
+    clientEventsList.RequestReadTemplateEvent,
 };
 
 const _registeredEvents = {

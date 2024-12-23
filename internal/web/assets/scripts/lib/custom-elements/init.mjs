@@ -4,6 +4,8 @@ import "./message-form.mjs";
 import "./scenes/chats-list.mjs";
 import "./scenes/existing-chat.mjs";
 import "./scenes/new-chat.mjs";
+import "./scenes/templates-list.mjs";
+import "./scenes/view-template.mjs";
 
 // XXX this was such a shitty idea tbh
 import { Chats } from "./chats.mjs";

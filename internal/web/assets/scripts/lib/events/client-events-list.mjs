@@ -59,3 +59,47 @@ export class CreateCompletionMessageEvent extends ClientEvent {
     return CreateCompletionMessageEvent.#eventValidation.check(data);
   }
 }
+
+export class RequestReadTemplatesEvent extends ClientEvent {
+  static canonicalType = /** @type {const} */ "request-read-templates";
+
+  static #eventValidation = new AssertObject({
+    name: AssertString,
+    start_before_id: AssertNumber,
+    limit: AssertNumber,
+  });
+
+  /** @param {ReturnType<RequestReadTemplatesEvent['validatePayload']>} payload  */
+  constructor(payload) {
+    super({
+      type: RequestReadTemplatesEvent.canonicalType,
+    });
+    this.payload = this.validatePayload(payload);
+  }
+
+  /** @param {unknown} data */
+  validatePayload(data) {
+    return RequestReadTemplatesEvent.#eventValidation.check(data);
+  }
+}
+
+export class RequestReadTemplateEvent extends ClientEvent {
+  static canonicalType = /** @type {const} */ "request-read-template";
+
+  static #eventValidation = new AssertObject({
+    id: AssertNumber,
+  });
+
+  /** @param {ReturnType<RequestReadTemplateEvent['validatePayload']>} payload  */
+  constructor(payload) {
+    super({
+      type: RequestReadTemplateEvent.canonicalType,
+    });
+    this.payload = this.validatePayload(payload);
+  }
+
+  /** @param {unknown} data */
+  validatePayload(data) {
+    return RequestReadTemplateEvent.#eventValidation.check(data);
+  }
+}
