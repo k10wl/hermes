@@ -4,6 +4,8 @@ import { LocationControll } from "../location-control.mjs";
 import { MovableList } from "../movable-list.mjs";
 import { Publisher } from "../publisher.mjs";
 import { ShortcutManager } from "../shortcut-manager.mjs";
+import { stringMatching } from "../string-matching.mjs";
+import { withCache } from "../with-cache.mjs";
 import { TextAreaAutoresize } from "./textarea-autoresize.mjs";
 
 export class Action {
@@ -20,6 +22,8 @@ export class Action {
 const assertInput = new AssertInstance(TextAreaAutoresize);
 
 export const controlPalanelVisibility = new Publisher(false);
+
+const stringMatchingWithCache = withCache(stringMatching);
 
 export class ControlPanel extends HTMLElement {
   /** @type {(() => void)[]} */
@@ -60,10 +64,19 @@ export class ControlPanel extends HTMLElement {
         await el.action();
         this.#visible.update(false);
       };
-      anchor.innerHTML = el.name.replace(
-        this.input.value,
-        html`<span class="highlight">${this.input.value}</span>`,
-      );
+      anchor.innerHTML = el.name
+        .split("")
+        .map((char, i) => {
+          const { ok, matches } = stringMatchingWithCache(
+            el.name,
+            this.input.value,
+          );
+          if (!ok || !matches[i]) {
+            return char;
+          }
+          return html`<span class="highlight">${char}</span>`;
+        })
+        .join("");
       return anchor;
     });
     this.matchesContainer.append(...elements);
@@ -324,7 +337,7 @@ export class ActionStore {
       .values()
       .toArray()
       .flat()
-      .filter((action) => action.name.includes(query));
+      .filter((action) => stringMatchingWithCache(action.name, query).ok);
   }
 }
 
