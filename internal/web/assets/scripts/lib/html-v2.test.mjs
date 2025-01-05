@@ -12,7 +12,7 @@ import { AssertInstance, AssertString } from "./assert.mjs";
  */
 function compileModularScripts(name) {
   const path = import.meta.dirname + name.replace(/^\./g, "");
-  const importMatcher = /import .* from "(?<path>.*)";/gm;
+  const importMatcher = /import .*? from "(?<path>.*?)";/gms;
   let text = readFileSync(path, {
     encoding: "utf8",
     flag: "r",
@@ -23,6 +23,7 @@ function compileModularScripts(name) {
   matches.forEach((match) => {
     text = text.replace(
       match[0],
+
       compileModularScripts(AssertString.check(match.groups?.path)),
     );
   });
@@ -454,6 +455,39 @@ describe("html", () => {
       buttons.item(1).innerHTML,
       "Counter 2: <span>1</span>",
       "expected counter 2 to increment after click",
+    );
+  });
+
+  test("should render html publisher as dom contents", () => {
+    const jsdom = _prepareJSDOM();
+    const html = jsdom.window.html;
+    const publisher = new jsdom.window.Publisher(html`<span>foo</span>`);
+
+    const el = jsdom.window.document.createElement("div");
+    el.append(html`<div>${publisher}</div>`);
+
+    assert.equal(
+      el.innerHTML,
+      "<div><span>foo</span></div>",
+      "expected html publisher to be interprited as dom nodes",
+    );
+
+    const click = new jsdom.window.Publisher(0);
+    publisher.update(
+      html`<button onclick="${() => click.update(1)}">${click}</button>`,
+    );
+
+    assert.equal(
+      el.innerHTML,
+      "<div><button>0</button></div>",
+      "expected inner html to be updated on publisher update",
+    );
+
+    el.querySelector("button")?.dispatchEvent(new jsdom.window.Event("click"));
+    assert.equal(
+      el.innerHTML,
+      "<div><button>1</button></div>",
+      "expected inner publisher to update its value",
     );
   });
 });

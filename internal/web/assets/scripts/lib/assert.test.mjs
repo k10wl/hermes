@@ -11,6 +11,7 @@ import {
   AssertOptional,
   AssertString,
   AssertTruthy,
+  safeAssertion,
 } from "./assert.mjs";
 
 const primitives = {
@@ -332,4 +333,17 @@ describe("AssertTruthy", () => {
       /custom error reason/,
     );
   });
+});
+
+describe("assertSafe", () => {
+  assert.equal(
+    safeAssertion(() => AssertString.check("foo")),
+    "foo",
+    "expected return of same value on success",
+  );
+  assert.equal(
+    safeAssertion(() => AssertString.check(1234)),
+    null,
+    "expected to return null on assertion failure",
+  );
 });

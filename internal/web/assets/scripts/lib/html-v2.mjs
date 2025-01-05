@@ -1,4 +1,9 @@
-import { AssertInstance, AssertNumber, AssertString } from "./assert.mjs";
+import {
+  AssertInstance,
+  AssertNumber,
+  AssertString,
+  safeAssertion,
+} from "./assert.mjs";
 import { Publisher } from "./publisher.mjs";
 
 const tmpHolderElementTagName =
@@ -213,12 +218,20 @@ export function html(...params) {
 
           // meeeeeeeeh, this is leaky...
           Reflect.set(parent, "notify", (/** @type {unknown} */ value) => {
-            parent.innerHTML = `${value}`;
+            parent.innerHTML = "";
+            parent.append(
+              safeAssertion(() => AssertInstance.once(value, Node)) ||
+                `${value}`,
+            );
           });
 
           publisher.subscribe(/** @type {any} it's fine */ (parent));
 
-          parent.innerHTML = `${publisher.value}`;
+          parent.innerHTML = "";
+          parent.append(
+            safeAssertion(() => AssertInstance.once(publisher.value, Node)) ||
+              `${publisher.value}`,
+          );
           break;
         }
 

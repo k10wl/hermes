@@ -235,3 +235,16 @@ export class AssertTruthy {
 function combineString(...strings) {
   return strings.filter(Boolean).join(" - ");
 }
+
+/**
+ * @template {Function} T
+ * @param {T} fn
+ * @returns {ReturnType<T> | null}
+ */
+export function safeAssertion(fn) {
+  try {
+    return fn();
+  } catch {
+    return null;
+  }
+}
