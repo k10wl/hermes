@@ -45,9 +45,9 @@ type WebSettings struct {
 }
 
 type Template struct {
-	ID      int64  `json:"id"`
-	Name    string `json:"name"`
-	Content string `json:"content"`
+	ID      int64  `json:"id"      validate:"required"`
+	Name    string `json:"name"    validate:"required"`
+	Content string `json:"content" validate:"required"`
 	Timestamps
 }
 

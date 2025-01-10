@@ -712,6 +712,14 @@ func TestCreateTemplateCommand(t *testing.T) {
 			t.Errorf("%q failed to get created template: %v\n", test.name, err)
 			continue
 		}
+		if test.template != command.Result.Content {
+			t.Errorf(
+				"%q - did not return template after upsert\nexpected: %+v\nactual:   %+v\n",
+				test.name,
+				test.template,
+				tmpl,
+			)
+		}
 		if test.template != tmpl[0].Content {
 			t.Errorf(
 				"%q - bad result\nexpected: %+v\nactual:   %+v\n",
@@ -907,13 +915,24 @@ func TestEditTemplateByName(t *testing.T) {
 			t.Errorf("%q failed to edit template\n\n", test.name)
 			continue
 		}
-		actual := getTemplates.Result[0].Content
-		if expected != actual {
+		dbRecord := getTemplates.Result[0]
+		dbRecord.TimestampsToNilForTest__()
+		command.Result.TimestampsToNilForTest__()
+		if !reflect.DeepEqual(dbRecord, command.Result) {
+			t.Errorf(
+				"%q did not return result stored in db\nexpected: %+v\nactual:   %+v\n\n",
+				test.name,
+				dbRecord,
+				command.Result,
+			)
+			continue
+		}
+		if expected != dbRecord.Content {
 			t.Errorf(
 				"%q bad result\nexpected: %v\nactual:   %v\n\n",
 				test.name,
 				expected,
-				actual,
+				dbRecord.Content,
 			)
 			continue
 		}

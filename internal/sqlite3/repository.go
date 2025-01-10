@@ -395,23 +395,25 @@ UPDATE templates
 SET 
     content = ?,
     updated_at = ?
-WHERE name = ?;
+WHERE name = ?
+RETURNING id, name, content, created_at, updated_at, deleted_at
 `
 
 func editTemplateByName(
-	executor execute,
+	executor queryRow,
 	ctx context.Context,
 	name string,
 	content string,
-) (bool, error) {
-	result, err := executor(ctx, editTemplateByNameQuery, content, time.Now(), name)
-	if err != nil {
-		return false, err
+) (*models.Template, error) {
+	result := executor(ctx, editTemplateByNameQuery, content, time.Now(), name)
+	if err := result.Err(); err != nil {
+		return nil, err
 	}
-	if affected, err := result.RowsAffected(); err != nil || affected == 0 {
-		return false, err
+	tmp := new(models.Template)
+	if err := scanTemplate(result.Scan, tmp); err != nil {
+		return nil, err
 	}
-	return true, nil
+	return tmp, nil
 }
 
 const createActiveSessionQuery = `

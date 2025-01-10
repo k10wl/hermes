@@ -218,6 +218,7 @@ type UpsertTemplateCommand struct {
 	core     *Core
 	name     string
 	template string
+	Result   *models.Template
 }
 
 func NewUpsertTemplateCommand(core *Core, template string) *UpsertTemplateCommand {
@@ -227,12 +228,13 @@ func NewUpsertTemplateCommand(core *Core, template string) *UpsertTemplateComman
 	}
 }
 
-func (c UpsertTemplateCommand) Execute(ctx context.Context) error {
+func (c *UpsertTemplateCommand) Execute(ctx context.Context) error {
 	name, err := extractTemplateDefinitionName(c.template)
 	if err != nil {
 		return err
 	}
-	_, err = c.core.db.UpsertTemplate(ctx, name, c.template)
+	template, err := c.core.db.UpsertTemplate(ctx, name, c.template)
+	c.Result = template
 	return err
 }
 
@@ -261,6 +263,7 @@ type EditTemplateByName struct {
 	name    string
 	content string
 	clone   bool
+	Result  *models.Template
 }
 
 func NewEditTemplateByName(
@@ -277,7 +280,7 @@ func NewEditTemplateByName(
 	}
 }
 
-func (c EditTemplateByName) Execute(ctx context.Context) error {
+func (c *EditTemplateByName) Execute(ctx context.Context) error {
 	names, err := getTemplateNames(c.content)
 	if err != nil {
 		return err
@@ -295,7 +298,11 @@ func (c EditTemplateByName) Execute(ctx context.Context) error {
 	return c.handleEdit(ctx, newName)
 }
 
-func (c EditTemplateByName) handleClone(ctx context.Context, newName string, content string) error {
+func (c *EditTemplateByName) handleClone(
+	ctx context.Context,
+	newName string,
+	content string,
+) error {
 	templatesQuery := NewGetTemplatesByNamesQuery(c.core, []string{newName})
 	if err := templatesQuery.Execute(ctx); err != nil {
 		return err
@@ -303,26 +310,31 @@ func (c EditTemplateByName) handleClone(ctx context.Context, newName string, con
 	if len(templatesQuery.Result) != 0 {
 		return fmt.Errorf("template with given name already exists")
 	}
-	return NewUpsertTemplateCommand(c.core, content).Execute(ctx)
+	upsert := NewUpsertTemplateCommand(c.core, content)
+	if err := upsert.Execute(ctx); err != nil {
+		return err
+	}
+	c.Result = upsert.Result
+	return nil
 }
 
-func (c EditTemplateByName) handleEdit(ctx context.Context, newName string) error {
+func (c *EditTemplateByName) handleEdit(ctx context.Context, newName string) error {
 	if newName != c.name {
 		return c.renameAndDelete(ctx)
 	}
-	ok, err := c.core.db.EditTemplateByName(ctx, c.name, c.content)
-	if !ok {
-		return fmt.Errorf("did not update template, please make sure it exists")
-	}
+	tmp, err := c.core.db.EditTemplateByName(ctx, c.name, c.content)
+	c.Result = tmp
 	return err
 }
 
-func (c EditTemplateByName) renameAndDelete(ctx context.Context) error {
-	if err := NewUpsertTemplateCommand(
+func (c *EditTemplateByName) renameAndDelete(ctx context.Context) error {
+	upsert := NewUpsertTemplateCommand(
 		c.core,
 		c.content,
-	).Execute(ctx); err != nil {
+	)
+	if err := upsert.Execute(ctx); err != nil {
 		return err
 	}
+	c.Result = upsert.Result
 	return NewDeleteTemplateByName(c.core, c.name).Execute(ctx)
 }

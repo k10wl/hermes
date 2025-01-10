@@ -63,7 +63,7 @@ type Client interface {
 		ctx context.Context,
 		name string,
 		content string,
-	) (bool, error)
+	) (*models.Template, error)
 
 	CreateActiveSession(*models.ActiveSession) error
 	RemoveActiveSession(*models.ActiveSession) error

@@ -99,8 +99,8 @@ func (s SQLite3) EditTemplateByName(
 	ctx context.Context,
 	name string,
 	content string,
-) (bool, error) {
-	return editTemplateByName(s.DB.ExecContext, ctx, name, content)
+) (*models.Template, error) {
+	return editTemplateByName(s.DB.QueryRowContext, ctx, name, content)
 }
 
 func (s SQLite3) CreateActiveSession(activeSession *models.ActiveSession) error {
