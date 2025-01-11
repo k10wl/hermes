@@ -196,7 +196,7 @@ func TestEditTemplateContent(t *testing.T) {
 			`
 {
   "id": %q,
-  "type": "edit-template",
+  "type": "request-edit-template",
   "payload": {
     "name": "1",
     "content": %q
@@ -245,7 +245,7 @@ func TestEditTemplateRename(t *testing.T) {
 			`
 {
   "id": %q,
-  "type": "edit-template",
+  "type": "request-edit-template",
   "payload": {
     "name": "1",
     "content": %q
@@ -315,7 +315,7 @@ func TestEditTemplateRenameWithClone(t *testing.T) {
 			`
 {
   "id": %q,
-  "type": "edit-template",
+  "type": "request-edit-template",
   "payload": {
     "name": "1",
     "content": %q,

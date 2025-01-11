@@ -51,7 +51,7 @@ func ReadMessage(data []byte) (ClientEmittedMessage, error) {
 		msg = &ClientReadTemplates{}
 	case "request-read-template":
 		msg = &ClientReadTemplate{}
-	case "edit-template":
+	case "request-edit-template":
 		msg = &ClientEditTemplate{}
 	}
 	if msg == nil {
