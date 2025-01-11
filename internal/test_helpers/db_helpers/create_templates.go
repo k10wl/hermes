@@ -29,7 +29,7 @@ func GenerateTemplateSliceN(n int64) []*models.Template {
 			ID:   correctedId,
 			Name: fmt.Sprintf("%d", correctedId),
 			Content: fmt.Sprintf(
-				`--{{template "%d"}}%d--{{end}}`,
+				`--{{define "%d"}}%d--{{end}}`,
 				correctedId,
 				correctedId,
 			),

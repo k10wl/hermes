@@ -47,7 +47,7 @@ func TestViewEmptyTemplatesList(t *testing.T) {
 				out := &strings.Builder{}
 				coreInstance.GetConfig().Stdoout = out
 				return testSubject{
-					expected: `--{{template "1"}}1--{{end}}`,
+					expected: `--{{define "1"}}1--{{end}}`,
 					cmd:      createViewCommand(coreInstance),
 					out:      out,
 				}
@@ -69,7 +69,7 @@ func TestViewEmptyTemplatesList(t *testing.T) {
 					t.Fatalf("failed to set flag for test - %s\n", err.Error())
 				}
 				return testSubject{
-					expected: `--{{template "1"}}1--{{end}}`,
+					expected: `--{{define "1"}}1--{{end}}`,
 					cmd:      cmd,
 					out:      out,
 				}
@@ -94,10 +94,10 @@ func TestViewEmptyTemplatesList(t *testing.T) {
 					expected: `List of templates:
 
 [Name]    10
-[Content] --{{template "10"}}10--{{end}}
+[Content] --{{define "10"}}10--{{end}}
 --------------------
 [Name]    1
-[Content] --{{template "1"}}1--{{end}}
+[Content] --{{define "1"}}1--{{end}}
 --------------------
 `,
 					cmd: cmd,
@@ -121,13 +121,13 @@ func TestViewEmptyTemplatesList(t *testing.T) {
 					expected: `List of templates:
 
 [Name]    3
-[Content] --{{template "3"}}3--{{end}}
+[Content] --{{define "3"}}3--{{end}}
 --------------------
 [Name]    2
-[Content] --{{template "2"}}2--{{end}}
+[Content] --{{define "2"}}2--{{end}}
 --------------------
 [Name]    1
-[Content] --{{template "1"}}1--{{end}}
+[Content] --{{define "1"}}1--{{end}}
 --------------------
 `,
 					cmd: cmd,

@@ -322,7 +322,7 @@ func TestTemplatesQuery(t *testing.T) {
 						{
 							Name:    "22",
 							ID:      22,
-							Content: `--{{template "22"}}22--{{end}}`,
+							Content: `--{{define "22"}}22--{{end}}`,
 						},
 					},
 				}

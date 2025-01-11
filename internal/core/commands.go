@@ -319,22 +319,7 @@ func (c *EditTemplateByName) handleClone(
 }
 
 func (c *EditTemplateByName) handleEdit(ctx context.Context, newName string) error {
-	if newName != c.name {
-		return c.renameAndDelete(ctx)
-	}
-	tmp, err := c.core.db.EditTemplateByName(ctx, c.name, c.content)
+	tmp, err := c.core.db.EditTemplateByName(ctx, c.name, newName, c.content)
 	c.Result = tmp
 	return err
-}
-
-func (c *EditTemplateByName) renameAndDelete(ctx context.Context) error {
-	upsert := NewUpsertTemplateCommand(
-		c.core,
-		c.content,
-	)
-	if err := upsert.Execute(ctx); err != nil {
-		return err
-	}
-	c.Result = upsert.Result
-	return NewDeleteTemplateByName(c.core, c.name).Execute(ctx)
 }

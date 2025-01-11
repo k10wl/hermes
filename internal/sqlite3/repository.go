@@ -393,6 +393,7 @@ func deleteTemplateByName(
 const editTemplateByNameQuery = `
 UPDATE templates
 SET 
+    name = ?,
     content = ?,
     updated_at = ?
 WHERE name = ?
@@ -403,9 +404,10 @@ func editTemplateByName(
 	executor queryRow,
 	ctx context.Context,
 	name string,
+	newName string,
 	content string,
 ) (*models.Template, error) {
-	result := executor(ctx, editTemplateByNameQuery, content, time.Now(), name)
+	result := executor(ctx, editTemplateByNameQuery, newName, content, time.Now(), name)
 	if err := result.Err(); err != nil {
 		return nil, err
 	}

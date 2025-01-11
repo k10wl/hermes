@@ -62,6 +62,7 @@ type Client interface {
 	EditTemplateByName(
 		ctx context.Context,
 		name string,
+		newName string,
 		content string,
 	) (*models.Template, error)
 

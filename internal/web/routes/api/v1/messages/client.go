@@ -51,6 +51,8 @@ func ReadMessage(data []byte) (ClientEmittedMessage, error) {
 		msg = &ClientReadTemplates{}
 	case "request-read-template":
 		msg = &ClientReadTemplate{}
+	case "edit-template":
+		msg = &ClientEditTemplate{}
 	}
 	if msg == nil {
 		return nil, fmt.Errorf("received unknown message type\n")
@@ -72,7 +74,7 @@ type ClientRequestReadChat struct {
 }
 
 func (message *ClientRequestReadChat) Process(
-	coms CommunicationChannel,
+	comms CommunicationChannel,
 	c *core.Core,
 	_ ai_clients.CompletionFn,
 ) error {
@@ -83,7 +85,7 @@ func (message *ClientRequestReadChat) Process(
 	err := cmd.Execute(context.TODO())
 	if err != nil {
 		return BroadcastServerEmittedMessage(
-			coms.Single(),
+			comms.Single(),
 			NewServerError(
 				message.ID,
 				err.Error(),
@@ -91,7 +93,7 @@ func (message *ClientRequestReadChat) Process(
 		)
 	}
 	return BroadcastServerEmittedMessage(
-		coms.Single(),
+		comms.Single(),
 		NewServerReadChat(message.ID, cmd.ChatID, cmd.Result),
 	)
 }
@@ -104,11 +106,11 @@ type ClientPing struct {
 }
 
 func (message *ClientPing) Process(
-	coms CommunicationChannel,
+	comms CommunicationChannel,
 	_ *core.Core,
 	_ ai_clients.CompletionFn,
 ) error {
-	return BroadcastServerEmittedMessage(coms.Single(), NewServerPong(message.ID))
+	return BroadcastServerEmittedMessage(comms.Single(), NewServerPong(message.ID))
 }
 
 func (message *ClientPing) GetID() string { return message.ID }
@@ -131,12 +133,12 @@ func (message *ClientCreateCompletion) GetID() string {
 }
 
 func (message *ClientCreateCompletion) Process(
-	coms CommunicationChannel,
+	comms CommunicationChannel,
 	c *core.Core,
 	completionFn ai_clients.CompletionFn,
 ) error {
 	var fn func(
-		coms CommunicationChannel,
+		comms CommunicationChannel,
 		c *core.Core,
 		completionFn ai_clients.CompletionFn,
 	) error
@@ -145,11 +147,11 @@ func (message *ClientCreateCompletion) Process(
 	} else {
 		fn = message.processExistingChat
 	}
-	return fn(coms, c, completionFn)
+	return fn(comms, c, completionFn)
 }
 
 func (message *ClientCreateCompletion) processNewChat(
-	coms CommunicationChannel,
+	comms CommunicationChannel,
 	c *core.Core,
 	completionFn ai_clients.CompletionFn,
 ) error {
@@ -161,13 +163,13 @@ func (message *ClientCreateCompletion) processNewChat(
 		return err
 	}
 	if err := BroadcastServerEmittedMessage(
-		coms.All(),
+		comms.All(),
 		NewServerChatCreated(message.ID, cmd.Result.Chat, cmd.Result.Message),
 	); err != nil {
 		return err
 	}
 	return message.createCompletion(
-		coms,
+		comms,
 		c,
 		completionFn,
 		cmd.Result.Chat.ID,
@@ -176,12 +178,12 @@ func (message *ClientCreateCompletion) processNewChat(
 }
 
 func (message *ClientCreateCompletion) processExistingChat(
-	coms CommunicationChannel,
+	comms CommunicationChannel,
 	c *core.Core,
 	completionFn ai_clients.CompletionFn,
 ) error {
 	if err := BroadcastServerEmittedMessage(
-		coms.All(),
+		comms.All(),
 		NewServerMessageCreated(
 			message.ID,
 			message.Payload.ChatID,
@@ -195,7 +197,7 @@ func (message *ClientCreateCompletion) processExistingChat(
 		return err
 	}
 	return message.createCompletion(
-		coms,
+		comms,
 		c,
 		completionFn,
 		message.Payload.ChatID,
@@ -204,7 +206,7 @@ func (message *ClientCreateCompletion) processExistingChat(
 }
 
 func (message *ClientCreateCompletion) createCompletion(
-	coms CommunicationChannel,
+	comms CommunicationChannel,
 	c *core.Core,
 	completionFn ai_clients.CompletionFn,
 	chatID int64,
@@ -221,13 +223,58 @@ func (message *ClientCreateCompletion) createCompletion(
 	)
 	cmd.ShouldPersistUserMessage(skipPersistingUserMessage)
 	if err := cmd.Execute(context.TODO()); err != nil {
-		return BroadcastServerEmittedMessage(coms.Single(), NewServerError(
+		return BroadcastServerEmittedMessage(comms.Single(), NewServerError(
 			message.ID,
 			err.Error(),
 		))
 	}
 	return BroadcastServerEmittedMessage(
-		coms.All(),
+		comms.All(),
 		NewServerMessageCreated(message.ID, chatID, cmd.Result),
 	)
+}
+
+type ClientEditTemplatePayload struct {
+	Name    string `json:"name,required"    validate:"required"`
+	Content string `json:"content,required" validate:"required"`
+	Clone   bool   `json:"clone"`
+}
+
+type ClientEditTemplate struct {
+	ID      string                    `json:"id,required"      validate:"required,uuid4"`
+	Type    string                    `json:"type,required"`
+	Payload ClientEditTemplatePayload `json:"payload,required"`
+}
+
+func (message *ClientEditTemplate) Process(
+	comms CommunicationChannel,
+	c *core.Core,
+	completionFn ai_clients.CompletionFn,
+) error {
+	cmd := core.NewEditTemplateByName(
+		c,
+		message.Payload.Name,
+		message.Payload.Content,
+		message.Payload.Clone,
+	)
+	if err := cmd.Execute(context.TODO()); err != nil {
+		return BroadcastServerEmittedMessage(comms.Single(), NewServerError(
+			message.ID,
+			err.Error(),
+		))
+	}
+	if message.Payload.Clone {
+		return BroadcastServerEmittedMessage(
+			comms.All(),
+			NewServerTemplateCreated(message.ID, cmd.Result),
+		)
+	}
+	return BroadcastServerEmittedMessage(
+		comms.All(),
+		NewServerTemplateChanged(message.ID, cmd.Result),
+	)
+}
+
+func (message *ClientEditTemplate) GetID() string {
+	return message.ID
 }

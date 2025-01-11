@@ -91,9 +91,9 @@ func TestTemplatesSeeder(t *testing.T) {
 	}
 
 	expected := []models.Template{
-		{ID: 1, Content: `--{{template "1"}}1--{{end}}`, Name: "1"},
-		{ID: 2, Content: `--{{template "2"}}2--{{end}}`, Name: "2"},
-		{ID: 3, Content: `--{{template "3"}}3--{{end}}`, Name: "3"},
+		{ID: 1, Content: `--{{define "1"}}1--{{end}}`, Name: "1"},
+		{ID: 2, Content: `--{{define "2"}}2--{{end}}`, Name: "2"},
+		{ID: 3, Content: `--{{define "3"}}3--{{end}}`, Name: "3"},
 	}
 	actual := test_helpers.UnpointerSlice(seeded)
 	if !reflect.DeepEqual(expected, actual) {

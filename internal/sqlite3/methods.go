@@ -98,9 +98,10 @@ func (s SQLite3) DeleteTemplateByName(
 func (s SQLite3) EditTemplateByName(
 	ctx context.Context,
 	name string,
+	newName string,
 	content string,
 ) (*models.Template, error) {
-	return editTemplateByName(s.DB.QueryRowContext, ctx, name, content)
+	return editTemplateByName(s.DB.QueryRowContext, ctx, name, newName, content)
 }
 
 func (s SQLite3) CreateActiveSession(activeSession *models.ActiveSession) error {

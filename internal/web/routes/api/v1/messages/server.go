@@ -153,3 +153,53 @@ func Encode(serverMessage ServerEmittedMessage) ([]byte, error) {
 	}
 	return json.Marshal(serverMessage)
 }
+
+type ServerTemplateChangedPayload struct {
+	Template models.Template `json:"template" validate:"required"`
+}
+
+type ServerTemplateChanged struct {
+	ID      string                       `json:"id,required"      validate:"required,uuid4"`
+	Type    string                       `json:"type,required"`
+	Payload ServerTemplateChangedPayload `json:"payload,required"`
+}
+
+func NewServerTemplateChanged(
+	id string,
+	template *models.Template,
+) *ServerTemplateChanged {
+	return &ServerTemplateChanged{
+		ID:   id,
+		Type: "template-changed",
+		Payload: ServerTemplateChangedPayload{
+			Template: *template,
+		},
+	}
+}
+
+func (message ServerTemplateChanged) __serverMessageSignature() {}
+
+type ServerTemplateCreatedPayload struct {
+	Template models.Template `json:"template" validate:"required"`
+}
+
+type ServerTemplateCreated struct {
+	ID      string                       `json:"id,required"      validate:"required,uuid4"`
+	Type    string                       `json:"type,required"`
+	Payload ServerTemplateCreatedPayload `json:"payload,required"`
+}
+
+func NewServerTemplateCreated(
+	id string,
+	template *models.Template,
+) *ServerTemplateCreated {
+	return &ServerTemplateCreated{
+		ID:   id,
+		Type: "template-created",
+		Payload: ServerTemplateCreatedPayload{
+			Template: *template,
+		},
+	}
+}
+
+func (message ServerTemplateCreated) __serverMessageSignature() {}
