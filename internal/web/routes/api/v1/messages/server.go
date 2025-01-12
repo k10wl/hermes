@@ -203,3 +203,28 @@ func NewServerTemplateCreated(
 }
 
 func (message ServerTemplateCreated) __serverMessageSignature() {}
+
+type ServerTemplateDeletedPayload struct {
+	Name string `json:"name" validate:"required"`
+}
+
+type ServerTemplateDeleted struct {
+	ID      string                       `json:"id,required"      validate:"required,uuid4"`
+	Type    string                       `json:"type,required"`
+	Payload ServerTemplateDeletedPayload `json:"payload,required"`
+}
+
+func NewServerTemplateDeleted(
+	id string,
+	name string,
+) *ServerTemplateDeleted {
+	return &ServerTemplateDeleted{
+		ID:   id,
+		Type: "template-deleted",
+		Payload: ServerTemplateDeletedPayload{
+			Name: name,
+		},
+	}
+}
+
+func (message ServerTemplateDeleted) __serverMessageSignature() {}

@@ -76,3 +76,83 @@ func (message *ClientReadTemplate) Process(
 }
 
 func (message *ClientReadTemplate) GetID() string { return message.ID }
+
+type ClientEditTemplatePayload struct {
+	Name    string `json:"name,required"    validate:"required"`
+	Content string `json:"content,required" validate:"required"`
+	Clone   bool   `json:"clone"`
+}
+
+type ClientEditTemplate struct {
+	ID      string                    `json:"id,required"      validate:"required,uuid4"`
+	Type    string                    `json:"type,required"`
+	Payload ClientEditTemplatePayload `json:"payload,required"`
+}
+
+func (message *ClientEditTemplate) Process(
+	comms CommunicationChannel,
+	c *core.Core,
+	completionFn ai_clients.CompletionFn,
+) error {
+	cmd := core.NewEditTemplateByName(
+		c,
+		message.Payload.Name,
+		message.Payload.Content,
+		message.Payload.Clone,
+	)
+	if err := cmd.Execute(context.TODO()); err != nil {
+		return BroadcastServerEmittedMessage(comms.Single(), NewServerError(
+			message.ID,
+			err.Error(),
+		))
+	}
+	if message.Payload.Clone {
+		return BroadcastServerEmittedMessage(
+			comms.All(),
+			NewServerTemplateCreated(message.ID, cmd.Result),
+		)
+	}
+	return BroadcastServerEmittedMessage(
+		comms.All(),
+		NewServerTemplateChanged(message.ID, cmd.Result),
+	)
+}
+
+func (message *ClientEditTemplate) GetID() string {
+	return message.ID
+}
+
+type ClientDeleteTemplatePayload struct {
+	Name string `json:"name,required"    validate:"required"`
+}
+
+type ClientDeleteTemplate struct {
+	ID      string                      `json:"id,required"      validate:"required,uuid4"`
+	Type    string                      `json:"type,required"`
+	Payload ClientDeleteTemplatePayload `json:"payload,required"`
+}
+
+func (message *ClientDeleteTemplate) Process(
+	comms CommunicationChannel,
+	c *core.Core,
+	completionFn ai_clients.CompletionFn,
+) error {
+	cmd := core.NewDeleteTemplateByName(
+		c,
+		message.Payload.Name,
+	)
+	if err := cmd.Execute(context.TODO()); err != nil {
+		return BroadcastServerEmittedMessage(comms.Single(), NewServerError(
+			message.ID,
+			err.Error(),
+		))
+	}
+	return BroadcastServerEmittedMessage(
+		comms.All(),
+		NewServerTemplateDeleted(message.ID, message.Payload.Name),
+	)
+}
+
+func (message *ClientDeleteTemplate) GetID() string {
+	return message.ID
+}

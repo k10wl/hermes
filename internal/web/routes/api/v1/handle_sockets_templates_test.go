@@ -276,13 +276,13 @@ func TestEditTemplateRename(t *testing.T) {
 		)
 	}
 
-	if _, err := db_helpers.FindTemplateByName(db, ctx, "1"); err == nil {
+	if _, err := db_helpers.GetTemplateByName(db, ctx, "1"); err == nil {
 		t.Fatalf(
 			"Template with previous name still exists\n",
 		)
 	}
 
-	dbTemplate, err := db_helpers.FindTemplateByName(db, ctx, "edited")
+	dbTemplate, err := db_helpers.GetTemplateByName(db, ctx, "edited")
 	if err != nil {
 		t.Fatalf("Failed to find new template name current template\n")
 	}
@@ -346,7 +346,7 @@ func TestEditTemplateRenameWithClone(t *testing.T) {
 			templateCreated.Payload.Template.Content,
 		)
 	}
-	tmp, err := db_helpers.FindTemplateByName(db, ctx, "1")
+	tmp, err := db_helpers.GetTemplateByName(db, ctx, "1")
 	if err != nil {
 		t.Fatalf(
 			"Failed to get initial template name, error: %s\n", err,
@@ -361,7 +361,7 @@ func TestEditTemplateRenameWithClone(t *testing.T) {
 		)
 	}
 
-	dbTemplate, err := db_helpers.FindTemplateByName(db, ctx, "edited")
+	dbTemplate, err := db_helpers.GetTemplateByName(db, ctx, "edited")
 	if err != nil {
 		t.Fatalf("Failed to find new template name current template\n")
 	}
@@ -373,5 +373,60 @@ func TestEditTemplateRenameWithClone(t *testing.T) {
 			*dbTemplate,
 			templateCreated.Payload.Template,
 		)
+	}
+}
+
+func TestDeleteTemplate(t *testing.T) {
+	client, db, teardown := setupWebSocketTest(t)
+	defer teardown()
+	ctx := context.Background()
+	seeder := db_helpers.NewSeeder(db, ctx)
+
+	if _, err := seeder.SeedTemplatesN(1); err != nil {
+		t.Fatalf("seeding templates failed - %q\n", err)
+	}
+
+	if err := client.WriteMessage(
+		websocket.TextMessage,
+		[]byte(fmt.Sprintf(
+			`
+{
+  "id": %q,
+  "type": "delete-template",
+  "payload": {
+    "name": "1"
+  }
+}
+`,
+			sharedID,
+		)),
+	); err != nil {
+		t.Fatalf(
+			"Failed to send delete-template message from client, error: %v\n",
+			err,
+		)
+	}
+
+	_, bytes, err := client.ReadMessage()
+	if err != nil {
+		t.Fatalf("Failed to read message - %q\n", err)
+	}
+
+	templateDeleted := new(messages.ServerTemplateDeleted)
+	if err := json.Unmarshal(bytes, templateDeleted); err != nil {
+		t.Fatalf("Failed to read server response - %s - %s\n", bytes, err)
+	}
+
+	dbTemplate, err := db_helpers.GetTemplateByName(
+		db,
+		ctx,
+		"1",
+	)
+	if err != nil {
+		t.Fatalf("Failed to get deleted template - %s\n", err)
+	}
+
+	if dbTemplate.DeletedAt == nil {
+		t.Fatalf("Failed to delete template - %+v\n", dbTemplate)
 	}
 }
