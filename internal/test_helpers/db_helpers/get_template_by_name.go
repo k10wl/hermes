@@ -7,7 +7,7 @@ import (
 	"github.com/k10wl/hermes/internal/models"
 )
 
-func FindTemplateByName(
+func GetTemplateByName(
 	db *sql.DB,
 	ctx context.Context,
 	name string,

@@ -12,7 +12,7 @@ import (
 func TestFindTeplateByName(t *testing.T) {
 	db := prepare(t)
 
-	if _, err := db_helpers.FindTemplateByName(
+	if _, err := db_helpers.GetTemplateByName(
 		db,
 		context.Background(),
 		"first",
@@ -27,7 +27,7 @@ VALUES ('first', '--{{define "first"}}[--{{.}}]--{{end}}');
 		t.Fatalf("Failed to insert test template - %v\n", err)
 	}
 
-	template, err := db_helpers.FindTemplateByName(db, context.Background(), "first")
+	template, err := db_helpers.GetTemplateByName(db, context.Background(), "first")
 	if err != nil {
 		t.Fatalf("Unexpected error in FindTemplateByName- %v\n", err)
 	}
