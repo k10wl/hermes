@@ -1,4 +1,5 @@
 import {
+  AssertBoolean,
   AssertNumber,
   AssertObject,
   AssertOptional,
@@ -101,5 +102,49 @@ export class RequestReadTemplateEvent extends ClientEvent {
   /** @param {unknown} data */
   validatePayload(data) {
     return RequestReadTemplateEvent.#eventValidation.check(data);
+  }
+}
+
+export class RequestEditTemplateEvent extends ClientEvent {
+  static canonicalType = /** @type {const} */ "request-edit-template";
+
+  static #eventValidation = new AssertObject({
+    name: AssertString,
+    content: AssertString,
+    clone: new AssertOptional(AssertBoolean),
+  });
+
+  /** @param {ReturnType<RequestEditTemplateEvent['validatePayload']>} payload  */
+  constructor(payload) {
+    super({
+      type: RequestEditTemplateEvent.canonicalType,
+    });
+    this.payload = this.validatePayload(payload);
+  }
+
+  /** @param {unknown} data */
+  validatePayload(data) {
+    return RequestEditTemplateEvent.#eventValidation.check(data);
+  }
+}
+
+export class DeleteTemplateEvent extends ClientEvent {
+  static canonicalType = /** @type {const} */ "delete-template";
+
+  static #eventValidation = new AssertObject({
+    name: AssertString,
+  });
+
+  /** @param {ReturnType<DeleteTemplateEvent['validatePayload']>} payload  */
+  constructor(payload) {
+    super({
+      type: DeleteTemplateEvent.canonicalType,
+    });
+    this.payload = this.validatePayload(payload);
+  }
+
+  /** @param {unknown} data */
+  validatePayload(data) {
+    return DeleteTemplateEvent.#eventValidation.check(data);
   }
 }

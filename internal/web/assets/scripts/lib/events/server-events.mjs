@@ -28,6 +28,12 @@ const _serverEvents = {
     serverEventsList.ReadTemplatesEvent,
   [serverEventsList.ReadTemplateEvent.canonicalType]:
     serverEventsList.ReadTemplateEvent,
+  [serverEventsList.TemplateChangedEvent.canonicalType]:
+    serverEventsList.TemplateChangedEvent,
+  [serverEventsList.TemplateCreatedEvent.canonicalType]:
+    serverEventsList.TemplateCreatedEvent,
+  [serverEventsList.TemplateDeletedEvent.canonicalType]:
+    serverEventsList.TemplateDeletedEvent,
 };
 
 const _clientEvents = {
@@ -39,6 +45,8 @@ const _clientEvents = {
     clientEventsList.RequestReadTemplatesEvent,
   [clientEventsList.RequestReadTemplateEvent.canonicalType]:
     clientEventsList.RequestReadTemplateEvent,
+  [clientEventsList.DeleteTemplateEvent.canonicalType]:
+    clientEventsList.DeleteTemplateEvent,
 };
 
 const _registeredEvents = {

@@ -1,3 +1,6 @@
+import "./button.mjs";
+import "./key.mjs";
+import "./dialog.mjs";
 import "./form.mjs";
 import "./header.mjs";
 import "./message-form.mjs";

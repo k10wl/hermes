@@ -177,8 +177,8 @@ export function html(...params) {
 
   const fragment = document.createDocumentFragment();
   let dummy = document.createElement("div");
-  fragment.append(dummy);
-  dummy.outerHTML = raw;
+  dummy.innerHTML = raw;
+  fragment.append(...dummy.childNodes); // chrome does not work without dummy
 
   if (hasTmpDataAttributes) {
     listeners.forEach((name) => {

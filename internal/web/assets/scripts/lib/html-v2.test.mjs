@@ -11,6 +11,8 @@ import { AssertInstance, AssertString } from "./assert.mjs";
  * @returns {string}
  */
 function compileModularScripts(name) {
+  // TODO dot replacement will work only on same level modules,
+  // BUT updating level calculation could make this generic for tests
   const path = import.meta.dirname + name.replace(/^\./g, "");
   const importMatcher = /import .*? from "(?<path>.*?)";/gms;
   let text = readFileSync(path, {

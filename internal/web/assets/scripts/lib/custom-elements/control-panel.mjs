@@ -6,6 +6,7 @@ import { Publisher } from "../publisher.mjs";
 import { ShortcutManager } from "../shortcut-manager.mjs";
 import { stringMatching } from "../string-matching.mjs";
 import { withCache } from "../with-cache.mjs";
+import { HermesDialog } from "./dialog.mjs";
 import { TextAreaAutoresize } from "./textarea-autoresize.mjs";
 
 export class Action {
@@ -48,9 +49,9 @@ export class ControlPanel extends HTMLElement {
             .item(previous)
             ?.classList.remove("under-cursor");
         }
-        this.matchesContainer.children
-          .item(current)
-          ?.classList.add("under-cursor");
+        const cur = this.matchesContainer.children.item(current);
+        cur?.classList.add("under-cursor");
+        cur?.scrollIntoView({ block: "nearest" });
       },
     );
   }
@@ -84,41 +85,47 @@ export class ControlPanel extends HTMLElement {
   }
 
   connectedCallback() {
-    this.style.visibility = "hidden";
-    this.#visible.attach({
-      notify: (visible) => {
-        this.#updateMatchList(ActionStore.search(""));
-        this.style.setProperty("visibility", visible ? "visible" : "hidden");
-        this.input.focus();
-        this.input.value = "";
-      },
-    });
+    AssertInstance.once(
+      this.shadow.querySelector("h-dialog"),
+      HermesDialog,
+      "expected contorl panel to render inside of hermes dialog",
+    ).element.addEventListener("close", () => this.#visible.update(false));
+
+    this.#cleanup.push(
+      this.#visible.subscribe({
+        notify: () => {
+          this.#updateMatchList(ActionStore.search(""));
+          this.input.focus();
+          this.input.value = "";
+        },
+      }),
+      this.#visible.subscribe({
+        notify: (visible) => {
+          const dialog = AssertInstance.once(
+            this.shadow.querySelector("h-dialog"),
+            HermesDialog,
+            "expected contorl panel to render inside of hermes dialog",
+          );
+          console.log(dialog, visible);
+          if (visible) {
+            dialog.element.showModal();
+          } else {
+            dialog.element.close();
+          }
+        },
+      }),
+    );
 
     this.#hotkeys();
-    this.#closeOnClick();
     this.input.addEventListener("input", () => {
       this.#updateMatchList(ActionStore.search(this.input.value));
-    });
-  }
-
-  #closeOnClick() {
-    AssertInstance.once(
-      this.shadow.querySelector("#container"),
-      HTMLDivElement,
-    ).addEventListener("click", (e) => e.stopPropagation());
-    AssertInstance.once(
-      this.shadow.querySelector("#background"),
-      HTMLDivElement,
-    ).addEventListener("click", (e) => {
-      this.#visible.update(false);
-      e.stopPropagation();
     });
   }
 
   /** @type {(() => void)[]} */
   #visibleHotkeys = [];
   #hotkeys() {
-    this.#visible.attach({
+    this.#visible.subscribe({
       notify: (visible) => {
         if (visible) {
           this.#visibleHotkeys.push(
@@ -223,27 +230,14 @@ export class ControlPanel extends HTMLElement {
 
   #content = html`
     <style>
-      #background {
-        position: fixed;
-        inset: 0;
-        background: rgb(from var(--bg-0) r g b / 0.75);
-        z-index: 99999;
+      * {
+        color: var(--text-0);
+        box-sizing: border-box;
       }
 
-      #container {
-        position: absolute;
-        left: 50%;
-        top: 10%;
-        translate: -50% 0;
-        width: 60%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        border-radius: 1rem;
-        overflow: hidden;
-        padding: 0 calc(1rem + 1px);
-        background: var(--bg-2);
-        border: 1px solid rgb(from var(--text-0) r g b / 0.25);
+      h-dialog-card {
+        display: block;
+        width: min(80ch, 80vw);
       }
 
       #input {
@@ -261,10 +255,14 @@ export class ControlPanel extends HTMLElement {
         display: grid;
         gap: 0.1rem;
         padding: 1rem;
-        width: 100%;
         border-top: 1px solid rgb(from var(--text-0) r g b / 0.25);
         max-height: 60vh;
         overflow: auto;
+
+        &:is(:empty):before {
+          color: rgb(from var(--text-0) r g b / 0.5);
+          content: "no matching actions";
+        }
 
         & > * {
           scroll-margin: 1rem;
@@ -291,20 +289,22 @@ export class ControlPanel extends HTMLElement {
       }
     </style>
 
-    <div id="background">
-      <div id="container">
-        <textarea
-          id="input"
-          is="hermes-textarea-autoresize"
-          focus-on-input="true"
-          max-rows="1"
-          placeholder="Control Panel"
-          autofocus
-          required
-        ></textarea>
-        <div id="matches"></div>
-      </div>
-    </div>
+    <h-dialog dialog-style="margin-top: 10vh;">
+      <h-dialog-card section-style="max-width: unset">
+        <div id="content">
+          <textarea
+            id="input"
+            is="hermes-textarea-autoresize"
+            focus-on-input="true"
+            max-rows="1"
+            placeholder="Control Panel"
+            autofocus
+            required
+          ></textarea>
+          <div id="matches"></div>
+        </div>
+      </h-dialog-card>
+    </h-dialog>
   `;
 }
 

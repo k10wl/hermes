@@ -13,6 +13,8 @@ export function backoff(initial, calculation) {
   };
 }
 
+console.log('this is some arbitrary data')
+
 /** @param {number} calls  */
 export function exponent(calls) {
   return Math.pow(2, calls - 1);

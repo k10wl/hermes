@@ -11,6 +11,8 @@
   --dark-bg-2: #292929;
   --dark-text-0: #ffffff;
 
+  --color-error: #e53935;
+
   --color-transition-duration: 200ms;
 
   --container: min(calc(100% - 1rem), 100ch);

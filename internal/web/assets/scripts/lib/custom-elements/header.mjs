@@ -189,13 +189,13 @@ customElements.define(
 
       const actionStoreUpdater = new ActionStoreUpdater();
 
-      headerVisiblePublisher.notifySingle(this);
-      headerVisiblePublisher.notifySingle(actionStoreUpdater);
+      actionStoreUpdater.notify(headerVisiblePublisher.value);
+      this.notify(headerVisiblePublisher.value);
 
       this.#cleanup.push(
         LocationControll.attach(linkObserver),
-        headerVisiblePublisher.attach(this),
-        headerVisiblePublisher.attach(actionStoreUpdater),
+        headerVisiblePublisher.subscribe(this),
+        headerVisiblePublisher.subscribe(actionStoreUpdater),
       );
     }
 

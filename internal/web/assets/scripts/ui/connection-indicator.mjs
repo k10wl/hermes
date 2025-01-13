@@ -26,6 +26,6 @@ export function initConnectionIndicator() {
     statusPublisher.update(data.payload.connected),
   );
   const onlineObserver = new OnlineObserver();
-  statusPublisher.attach(onlineObserver);
+  statusPublisher.subscribe(onlineObserver);
   statusPublisher.notify();
 }

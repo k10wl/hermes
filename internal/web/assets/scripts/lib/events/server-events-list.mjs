@@ -265,3 +265,95 @@ export class ReadTemplateEvent extends ServerEvent {
     return ReadTemplateEvent.#eventValidation.check(data);
   }
 }
+
+export class TemplateChangedEvent extends ServerEvent {
+  static #eventValidation = new AssertObject({
+    id: AssertString,
+    type: AssertString,
+    payload: new AssertObject({
+      template: new AssertInstance(Template),
+    }),
+  });
+
+  static canonicalType = /** @type {const} */ ("template-changed");
+
+  /** @param { ReturnType<TemplateChangedEvent.validate> } data */
+  constructor(data) {
+    super(data);
+    this.payload = data.payload;
+  }
+
+  /** @param {unknown} data */
+  static parse(data) {
+    /** @type {TemplateChangedEvent} or at least it should be */
+    const parsed = JSON.parse(AssertString.check(data));
+    parsed.payload.template = new Template(parsed.payload.template);
+    return new TemplateChangedEvent(TemplateChangedEvent.validate(parsed));
+  }
+
+  /** @param {unknown} data */
+  static validate(data) {
+    return TemplateChangedEvent.#eventValidation.check(data);
+  }
+}
+
+export class TemplateCreatedEvent extends ServerEvent {
+  static #eventValidation = new AssertObject({
+    id: AssertString,
+    type: AssertString,
+    payload: new AssertObject({
+      template: new AssertInstance(Template),
+    }),
+  });
+
+  static canonicalType = /** @type {const} */ ("template-created");
+
+  /** @param { ReturnType<TemplateCreatedEvent.validate> } data */
+  constructor(data) {
+    super(data);
+    this.payload = data.payload;
+  }
+
+  /** @param {unknown} data */
+  static parse(data) {
+    /** @type {TemplateCreatedEvent} or at least it should be */
+    const parsed = JSON.parse(AssertString.check(data));
+    parsed.payload.template = new Template(parsed.payload.template);
+    return new TemplateCreatedEvent(TemplateCreatedEvent.validate(parsed));
+  }
+
+  /** @param {unknown} data */
+  static validate(data) {
+    return TemplateCreatedEvent.#eventValidation.check(data);
+  }
+}
+
+export class TemplateDeletedEvent extends ServerEvent {
+  static #eventValidation = new AssertObject({
+    id: AssertString,
+    type: AssertString,
+    payload: new AssertObject({
+      name: AssertString,
+    }),
+  });
+
+  static canonicalType = /** @type {const} */ ("template-deleted");
+
+  /** @param { ReturnType<TemplateDeletedEvent.validate> } data */
+  constructor(data) {
+    super(data);
+    this.payload = data.payload;
+  }
+
+  /** @param {unknown} data */
+  static parse(data) {
+    /** @type {TemplateDeletedEvent} or at least it should be */
+    const parsed = JSON.parse(AssertString.check(data));
+    return new TemplateDeletedEvent(TemplateDeletedEvent.validate(parsed));
+  }
+
+  /** @param {unknown} data */
+  static validate(data) {
+    return TemplateDeletedEvent.#eventValidation.check(data);
+  }
+}

@@ -1,17 +1,21 @@
 /**
  * @template T
- * @typedef Observer
- * @property {(current: T, previous: T | undefined) => void} notify
- * @class
+ * @typedef Subscriber
+ * @type {{notify: (value: T) => void}}
  */
 
-/** @template T */
+/**
+ * @template T
+ */
 export class Publisher {
-  /** @typedef {Observer<T>} ConcreteObserver */
+  /** @typedef {Subscriber<T>} ConcreteSubscriber */
   /** @typedef {() => boolean} detach */
 
-  /** @type ConcreteObserver[] */
-  #observers = [];
+  /** @type {ConcreteSubscriber[]} */
+  subscribers = [];
+
+  /** @type {T} */
+  value;
 
   /** @param {T} initialValue */
   constructor(initialValue) {
@@ -19,53 +23,51 @@ export class Publisher {
   }
 
   /**
-   * @param {ConcreteObserver} observer
+   * @param {ConcreteSubscriber} subscriber
    * @returns {detach}
    */
-  attach(observer) {
-    this.#observers.push(observer);
-    return () => this.detach(observer);
+  subscribe(subscriber) {
+    this.subscribers.push(subscriber);
+    return () => this.unsubscribe(subscriber);
   }
 
   /**
-   * @param {ConcreteObserver} observer
+   * @param {ConcreteSubscriber} subscriber
    * @returns {boolean}
    */
-  detach(observer) {
-    const i = this.#observers.indexOf(observer);
+  unsubscribe(subscriber) {
+    const i = this.subscribers.indexOf(subscriber);
     if (i === -1) {
       return false;
     }
-    this.#observers.splice(i, 1);
+    this.subscribers.splice(i, 1);
     return true;
   }
 
   /** @param {T | ((currentValue: T) => T)} value */
   update(value) {
-    const update = value instanceof Function ? value(this.value) : value;
+    const update =
+      typeof value === "function"
+        ? /** @type {Function} */ (value)(this.value)
+        : value;
     if (update === this.value) {
       return;
     }
-    const previous = this.value;
     this.value = update;
-    this.#notifyWithPrevious(previous);
-  }
-
-  /**
-   * @param {T | undefined} previous
-   */
-  #notifyWithPrevious(previous) {
-    for (let i = 0; i < this.#observers.length; i++) {
-      this.#observers[i]?.notify(this.value, previous);
-    }
+    this.notify();
   }
 
   notify() {
-    this.#notifyWithPrevious(undefined);
-  }
-
-  /** @param {ConcreteObserver} observer */
-  notifySingle(observer) {
-    observer.notify(this.value, undefined);
+    let delta = 0;
+    for (let i = 0; i < this.subscribers.length; i++) {
+      const subscriber = this.subscribers[i];
+      if (!subscriber) {
+        this.subscribers.splice(i - delta, 1);
+        delta += 1;
+        i -= 1;
+        continue;
+      }
+      subscriber.notify(this.value);
+    }
   }
 }

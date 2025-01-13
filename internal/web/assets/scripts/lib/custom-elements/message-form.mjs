@@ -109,7 +109,7 @@ export class MessageForm extends HTMLElement {
           focus-on-input="true"
           max-rows="12"
           name="content"
-          placeholder="${this.getAttribute("placeholder") ?? "message..."}"
+          placeholder="${this.getAttribute("placeholder") ?? "Message..."}"
           autofocus
           required
         ></textarea>

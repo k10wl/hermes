@@ -2,8 +2,11 @@ import { Publisher } from "./publisher.mjs";
 
 export class MovableList {
   #cursor = new Publisher(0);
+  /** @type {number | undefined} */
+  previous = undefined;
 
   #elementsParent;
+  /** @type {number | null} */
 
   /**
    * @param {HTMLElement} elementsParent
@@ -11,13 +14,16 @@ export class MovableList {
    */
   constructor(elementsParent, notify) {
     this.#elementsParent = elementsParent;
-    this.#cursor.attach({ notify: notify });
+    this.#cursor.subscribe({
+      notify: (current) => notify(current, this.previous),
+    });
   }
 
   /**
    * @param {-1 | 1} direction
    */
   move(direction) {
+    this.previous = this.cursor;
     this.#cursor.update((value) => {
       const newValue = value + direction;
       const bounds = this.#elementsParent.children.length;
@@ -33,6 +39,7 @@ export class MovableList {
 
   /** @param {number} update */
   set cursor(update) {
+    this.previous = this.cursor;
     this.#cursor.update(update);
     this.#cursor.notify();
   }

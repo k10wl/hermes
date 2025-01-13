@@ -9,10 +9,10 @@ export class LocationControll {
   static #ready = false;
 
   /**
-   * @param {Parameters<Publisher<string>['attach']>[0]} observer
+   * @param {Parameters<Publisher<string>['subscribe']>[0]} observer
    */
   static attach(observer) {
-    return this.#publisher.attach(observer);
+    return this.#publisher.subscribe(observer);
   }
 
   /** @param {string} target  */

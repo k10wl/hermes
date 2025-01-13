@@ -50,7 +50,6 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
     if (Number.isNaN(maxRows)) {
       return;
     }
-    this.style.setProperty("max-height", `${maxRows}lh`);
   }
 
   #focusOnInput() {
