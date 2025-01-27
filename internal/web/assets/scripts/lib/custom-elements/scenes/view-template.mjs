@@ -14,6 +14,9 @@ import { ShortcutManager } from "../../shortcut-manager.mjs";
 import { Action, ActionStore } from "../control-panel.mjs";
 import { HermesAlertDialog, HermesDialog } from "../dialog.mjs";
 
+/** @type {null | HermesViewTemplateScene} */
+export let template = null;
+
 class TemplateUpdatedDialog extends HTMLElement {
   /** @type {(() => void)[]} */
   #cleanup = [];
@@ -238,342 +241,332 @@ class NameCollisionDialog extends HTMLElement {
 
 customElements.define("h-name-collision-dialog", NameCollisionDialog);
 
-customElements.define(
-  "hermes-view-template-scene",
-  class extends HTMLElement {
-    /** @type {(() => void)[]} */
-    #cleanup = [];
+export class HermesViewTemplateScene extends HTMLElement {
+  /** @type {(() => void)[]} */
+  #cleanup = [];
 
-    /** @type {import("/assets/scripts/models.mjs").Template | null} */
-    #template = null;
-    /** @type {HTMLTextAreaElement | null} */
-    #textarea = null;
-    /** @type {HTMLElement | null} */
-    #saveButton = null;
+  /** @type {import("/assets/scripts/models.mjs").Template | null} */
+  #template = null;
+  /** @type {HTMLTextAreaElement | null} */
+  #textarea = null;
+  /** @type {HTMLElement | null} */
+  #saveButton = null;
 
-    constructor() {
-      super();
-      this.shadow = this.attachShadow({ mode: "closed" });
-      this.shadow.append(this.#html);
-    }
+  constructor() {
+    super();
+    this.shadow = this.attachShadow({ mode: "closed" });
+    this.shadow.append(this.#html);
+  }
 
-    connectedCallback() {
-      this.#sendReadRequest();
-      this.#cleanup.push(
-        ShortcutManager.keydown("<KeyU>", () => {
-          this.alertDialog?.alert({
-            description: `Delete errored`,
-          });
-        }),
-        ActionStore.add(new Action("template: delete template", this.#delete)),
-        ActionStore.add(
-          new Action("template: save edit", () => this.form?.requestSubmit()),
+  connectedCallback() {
+    template = this;
+    this.#sendReadRequest();
+    this.#cleanup.push(
+      ActionStore.add(new Action("template: delete template", this.delete)),
+      ActionStore.add(
+        new Action("template: save edit", () => this.form?.requestSubmit()),
+      ),
+      ServerEvents.on(["template-changed"], (event) => {
+        if (
+          !this.#textarea ||
+          this.#textarea.value === event.payload.template.content
+        ) {
+          return;
+        }
+        this.templateUpdatedDialog?.showModal(event.payload.template);
+      }),
+    );
+  }
+
+  disconnectedCallback() {
+    template = null;
+    this.#cleanup.forEach((cb) => cb());
+  }
+
+  #sendReadRequest = () => {
+    const readEvent = new RequestReadTemplateEvent({
+      id: parseInt(
+        AssertString.check(
+          LocationControll.pathname.match(/\d+$/)?.[0],
+          "pathname should have id",
         ),
-        ServerEvents.on(["template-changed"], (event) => {
-          if (
-            !this.#textarea ||
-            this.#textarea.value === event.payload.template.content
-          ) {
-            return;
-          }
-          this.templateUpdatedDialog?.showModal(event.payload.template);
-        }),
-      );
-    }
-
-    disconnectedCallback() {
-      this.#cleanup.forEach((cb) => cb());
-    }
-
-    #sendReadRequest = () => {
-      const readEvent = new RequestReadTemplateEvent({
-        id: parseInt(
-          AssertString.check(
-            LocationControll.pathname.match(/\d+$/)?.[0],
-            "pathname should have id",
-          ),
-          10,
-        ),
-      });
-      ServerEvents.send(readEvent);
-      const off = ServerEvents.on(
-        ["read-template", "server-error"],
-        (event) => {
-          if (event.id !== readEvent.id) {
-            return;
-          }
-          off();
-          if (event instanceof ServerErrorEvent) {
-            // TODO show user that something exploded
-            LocationControll.navigate("/templates");
-            return;
-          }
-          this.#template = event.payload.template;
-          this.#setDelayedContent(html`
-            <form
-              bind="${(/** @type {unknown} */ element) => {
-                this.form = AssertInstance.once(element, HTMLFormElement);
-              }}"
-              onsubmit="${this.#onSubmit}"
-            >
-              <textarea
-                bind="${(/** @type {unknown} */ element) =>
-                  (this.#textarea = AssertInstance.once(
-                    element,
-                    HTMLTextAreaElement,
-                  ))}"
-                name="content"
-                placeholder='--{{define "name"}} dynamic value => --{{.}} --{{end}}'
-                is="hermes-textarea-autoresize"
-              >
+        10,
+      ),
+    });
+    ServerEvents.send(readEvent);
+    const off = ServerEvents.on(["read-template", "server-error"], (event) => {
+      if (event.id !== readEvent.id) {
+        return;
+      }
+      off();
+      if (event instanceof ServerErrorEvent) {
+        // TODO show user that something exploded
+        LocationControll.navigate("/templates");
+        return;
+      }
+      this.#template = event.payload.template;
+      this.#setDelayedContent(html`
+        <form
+          bind="${(/** @type {unknown} */ element) => {
+            this.form = AssertInstance.once(element, HTMLFormElement);
+          }}"
+          onsubmit="${this.submit}"
+        >
+          <textarea
+            bind="${(/** @type {unknown} */ element) =>
+              (this.#textarea = AssertInstance.once(
+                element,
+                HTMLTextAreaElement,
+              ))}"
+            name="content"
+            placeholder='--{{define "name"}} dynamic value => --{{.}} --{{end}}'
+            is="hermes-textarea-autoresize"
+          >
 ${event.payload.template.content}</textarea
-              >
-              <input
-                type="hidden"
-                name="initial name"
-                value="${event.payload.template.name}"
-              />
-              <h-button
-                onclick="${() =>
-                  AssertInstance.once(
-                    this.form,
-                    HTMLFormElement,
-                    "form must be present to call submit",
-                  ).requestSubmit()}"
-              >
-                <span
-                  bind="${(/** @type {unknown} */ element) =>
-                    (this.#saveButton = AssertInstance.once(
-                      element,
-                      HTMLElement,
-                    ))}"
-                >
-                  Save
-                </span>
-                &nbsp;
-                <h-key>Meta-S</h-key>
-              </h-button>
-            </form>
-          `);
-          this.#processForm();
-          this.#textarea?.focus();
-          this.#textarea?.setSelectionRange(
-            this.#textarea.value.length,
-            this.#textarea.value.length,
-          );
-        },
+          >
+          <input
+            type="hidden"
+            name="initial name"
+            value="${event.payload.template.name}"
+          />
+          <h-button
+            onclick="${() =>
+              AssertInstance.once(
+                this.form,
+                HTMLFormElement,
+                "form must be present to call submit",
+              ).requestSubmit()}"
+          >
+            <span
+              bind="${(/** @type {unknown} */ element) =>
+                (this.#saveButton = AssertInstance.once(element, HTMLElement))}"
+            >
+              Save
+            </span>
+            &nbsp;
+            <h-key>Meta-S</h-key>
+          </h-button>
+        </form>
+      `);
+      this.#processForm();
+      this.#textarea?.focus();
+      this.#textarea?.setSelectionRange(
+        this.#textarea.value.length,
+        this.#textarea.value.length,
       );
-      this.#cleanup.push(off);
-    };
+    });
+    this.#cleanup.push(off);
+  };
 
-    #delete = () => {
-      const deleteEvent = new DeleteTemplateEvent({
-        name: AssertString.check(this.#template?.name),
-      });
-      ServerEvents.on(["server-error", "template-deleted"], (event) => {
-        if (event.id !== deleteEvent.id) {
+  delete = () => {
+    const deleteEvent = new DeleteTemplateEvent({
+      name: AssertString.check(this.#template?.name),
+    });
+    ServerEvents.on(["server-error", "template-deleted"], (event) => {
+      if (event.id !== deleteEvent.id) {
+        return;
+      }
+      if (event instanceof ServerErrorEvent) {
+        // TODO replace with some error messaging
+        this.alertDialog?.alert({
+          description: `Delete errored: ${event.payload}`,
+        });
+        return;
+      }
+      LocationControll.navigate("/templates/");
+    });
+    ServerEvents.send(deleteEvent);
+  };
+
+  /** @param {boolean} clone */
+  #save = (clone) => {
+    const template = AssertInstance.once(this.#template, Template);
+    const content = AssertString.check(this.#textarea?.value);
+    if (template.content === content) {
+      return;
+    }
+    const edit = new RequestEditTemplateEvent({
+      name: template.name,
+      content,
+      clone,
+    });
+    ServerEvents.send(edit);
+    const off = ServerEvents.on(
+      ["template-changed", "template-created", "server-error"],
+      (event) => {
+        if (event.id !== edit.id) {
           return;
         }
         if (event instanceof ServerErrorEvent) {
-          // TODO replace with some error messaging
           this.alertDialog?.alert({
-            description: `Delete errored: ${event.payload}`,
+            description: `Edit failed - ${event.payload}`,
           });
           return;
         }
-        LocationControll.navigate("/templates/");
-      });
-      ServerEvents.send(deleteEvent);
-    };
+        AssertInstance.once(this.#textarea, HTMLTextAreaElement).value =
+          edit.payload.content;
+        this.#template = event.payload.template;
+        this.nameCollisionDialog?.close();
+        this.#savedIndicator();
+        off();
+      },
+    );
+  };
 
-    /** @param {boolean} clone */
-    #save = (clone) => {
-      const template = AssertInstance.once(this.#template, Template);
-      const content = AssertString.check(this.#textarea?.value);
-      if (template.content === content) {
-        return;
+  #savedIndicator() {
+    const saveButton = AssertInstance.once(this.#saveButton, HTMLElement);
+    const text = saveButton.textContent;
+    saveButton.textContent = "Saved";
+    setTimeout(() => {
+      if (this.#saveButton) {
+        this.#saveButton.textContent = text;
       }
-      const edit = new RequestEditTemplateEvent({
-        name: template.name,
-        content,
-        clone,
-      });
-      ServerEvents.send(edit);
-      const off = ServerEvents.on(
-        ["template-changed", "template-created", "server-error"],
-        (event) => {
-          if (event.id !== edit.id) {
-            return;
-          }
-          if (event instanceof ServerErrorEvent) {
-            this.alertDialog?.alert({
-              description: `Edit failed - ${event.payload}`,
-            });
-            return;
-          }
-          AssertInstance.once(this.#textarea, HTMLTextAreaElement).value =
-            edit.payload.content;
-          this.#template = event.payload.template;
-          this.nameCollisionDialog?.close();
-          this.#savedIndicator();
-          off();
-        },
+    }, 2000);
+  }
+
+  /**
+   * @param {DocumentFragment} html
+   */
+  #setDelayedContent = (html) => {
+    AssertInstance.once(
+      this.shadow.querySelector("main"),
+      HTMLElement,
+      "parent element should be present to prevent flickering while loading",
+    ).append(html);
+  };
+
+  submit = () => {
+    const newName = /"(?<name>.*?)"/.exec(
+      AssertString.check(
+        this.#textarea?.value,
+        "expected text input to have string value",
+      ),
+    );
+    const nameChanged =
+      AssertString.check(
+        this.#template?.name,
+        "expected component to hold on initial template name",
+      ) !==
+      AssertString.check(
+        newName?.groups?.name,
+        "expected new name to be retrieved from content",
       );
-    };
-
-    #savedIndicator() {
-      const saveButton = AssertInstance.once(this.#saveButton, HTMLElement);
-      const text = saveButton.textContent;
-      saveButton.textContent = "Saved";
-      setTimeout(() => {
-        if (this.#saveButton) {
-          this.#saveButton.textContent = text;
-        }
-      }, 2000);
-    }
-
-    /**
-     * @param {DocumentFragment} html
-     */
-    #setDelayedContent = (html) => {
+    if (nameChanged) {
       AssertInstance.once(
-        this.shadow.querySelector("main"),
-        HTMLElement,
-        "parent element should be present to prevent flickering while loading",
-      ).append(html);
-    };
+        this.nameCollisionDialog,
+        NameCollisionDialog,
+      ).showModal();
+      return;
+    }
+    this.#save(false);
+  };
 
-    #onSubmit = () => {
-      const newName = /"(?<name>.*?)"/.exec(
-        AssertString.check(
-          this.#textarea?.value,
-          "expected text input to have string value",
-        ),
-      );
-      const nameChanged =
-        AssertString.check(
-          this.#template?.name,
-          "expected component to hold on initial template name",
-        ) !==
-        AssertString.check(
-          newName?.groups?.name,
-          "expected new name to be retrieved from content",
-        );
-      if (nameChanged) {
-        AssertInstance.once(
-          this.nameCollisionDialog,
-          NameCollisionDialog,
-        ).showModal();
-        return;
-      }
-      this.#save(false);
-    };
+  #processForm = () => {
+    const form = AssertInstance.once(
+      this.form,
+      HTMLFormElement,
+      "form must be present before process call",
+    );
 
-    #processForm = () => {
-      const form = AssertInstance.once(
-        this.form,
-        HTMLFormElement,
-        "form must be present before process call",
-      );
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+    });
 
-      form.addEventListener("submit", (event) => {
+    this.#cleanup.push(
+      ShortcutManager.keydown("<M-KeyS>", (event) => {
         event.preventDefault();
-      });
+        form.requestSubmit();
+      }),
+    );
+  };
 
-      this.#cleanup.push(
-        ShortcutManager.keydown("<M-KeyS>", (event) => {
-          event.preventDefault();
-          form.requestSubmit();
-        }),
-      );
-    };
+  #html = html`
+    <style>
+      * {
+        color: var(--text-0);
+      }
 
-    #html = html`
-      <style>
-        * {
-          color: var(--text-0);
-        }
+      main {
+        height: 100%;
+        display: grid;
+        place-items: center;
+        overflow: auto;
+      }
 
-        main {
-          height: 100%;
-          display: grid;
-          place-items: center;
+      form {
+        max-height: 100vh;
+        display: flex;
+        flex-flow: column nowrap;
+        textarea {
+          flex-grow: 1;
           overflow: auto;
         }
-
-        form {
-          max-height: 100vh;
-          display: flex;
-          flex-flow: column nowrap;
-          textarea {
-            flex-grow: 1;
-            overflow: auto;
-          }
-          h-button {
-            align-self: flex-end;
-          }
-        }
-
-        textarea {
-          width: min(100vw, 80ch);
-          padding: 0;
-          border: none;
-          outline: none;
-          background: transparent;
-          color: var(--text-0);
-          resize: none;
-        }
-
         h-button {
+          align-self: flex-end;
         }
-      </style>
+      }
 
-      <main>
-        <!--content is delayed until template data is ready to prevent flickering-->
-      </main>
+      textarea {
+        width: min(100vw, 80ch);
+        padding: 0;
+        border: none;
+        outline: none;
+        background: transparent;
+        color: var(--text-0);
+        resize: none;
+      }
 
-      <h-name-collision-dialog
-        oncancel="${() => this.nameCollisionDialog?.close()}"
-        onclone="${() => this.#save(true)}"
-        onrename="${() => this.#save(false)}"
-        bind="${(/** @type {unknown} */ element) => {
-          this.nameCollisionDialog = AssertInstance.once(
-            element,
-            NameCollisionDialog,
-            "expected bound element to be collision dialog",
-          );
-        }}"
-      ></h-name-collision-dialog>
+      h-button {
+      }
+    </style>
 
-      <h-teplate-updated-dialog
-        oncancel="${() => this.templateUpdatedDialog?.close()}"
-        onconfirm="${() => {
-          AssertInstance.once(
-            this.#textarea,
-            HTMLTextAreaElement,
-            "expected update dialog to have access to textarea",
-          ).value = AssertString.check(
-            this.templateUpdatedDialog?.template?.content,
-            "expected update value to be string",
-          );
-          this.templateUpdatedDialog?.close();
-        }}"
-        bind="${(/** @type {unknown} */ element) =>
-          (this.templateUpdatedDialog = AssertInstance.once(
-            element,
-            TemplateUpdatedDialog,
-            "expected bound element to be template updated dialog",
-          ))}"
-      ></h-teplate-updated-dialog>
+    <main>
+      <!--content is delayed until template data is ready to prevent flickering-->
+    </main>
 
-      <h-alert-dialog
-        bind="${(/** @type {unknown} */ element) =>
-          (this.alertDialog = AssertInstance.once(
-            element,
-            HermesAlertDialog,
-            "expected alert to be custom element",
-          ))}"
-      ></h-alert-dialog>
-    `;
-  },
-);
+    <h-name-collision-dialog
+      oncancel="${() => this.nameCollisionDialog?.close()}"
+      onclone="${() => this.#save(true)}"
+      onrename="${() => this.#save(false)}"
+      bind="${(/** @type {unknown} */ element) => {
+        this.nameCollisionDialog = AssertInstance.once(
+          element,
+          NameCollisionDialog,
+          "expected bound element to be collision dialog",
+        );
+      }}"
+    ></h-name-collision-dialog>
+
+    <h-teplate-updated-dialog
+      oncancel="${() => this.templateUpdatedDialog?.close()}"
+      onconfirm="${() => {
+        AssertInstance.once(
+          this.#textarea,
+          HTMLTextAreaElement,
+          "expected update dialog to have access to textarea",
+        ).value = AssertString.check(
+          this.templateUpdatedDialog?.template?.content,
+          "expected update value to be string",
+        );
+        this.templateUpdatedDialog?.close();
+      }}"
+      bind="${(/** @type {unknown} */ element) =>
+        (this.templateUpdatedDialog = AssertInstance.once(
+          element,
+          TemplateUpdatedDialog,
+          "expected bound element to be template updated dialog",
+        ))}"
+    ></h-teplate-updated-dialog>
+
+    <h-alert-dialog
+      bind="${(/** @type {unknown} */ element) =>
+        (this.alertDialog = AssertInstance.once(
+          element,
+          HermesAlertDialog,
+          "expected alert to be custom element",
+        ))}"
+    ></h-alert-dialog>
+  `;
+}
+
+customElements.define("hermes-view-template-scene", HermesViewTemplateScene);

@@ -100,7 +100,7 @@ customElements.define(
 
       this.#cleanup.push(
         offRead,
-        this.#elements.clear,
+        () => this.#elements.clear(),
         ServerEvents.on("template-created", (event) => {
           this.templatesContainer.prepend(
             this.#createLink(event.payload.template),

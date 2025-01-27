@@ -41,6 +41,22 @@ export class LocationControll {
     LocationControll.#publisher.update(LocationControll.pathname);
   }
 
+  static #templateIdRegexp = /\/templates\/(?<templateId>\d+)/;
+  static get templateId() {
+    try {
+      const templateId = +(
+        LocationControll.#templateIdRegexp.exec(LocationControll.pathname)
+          ?.groups?.templateId ?? "no"
+      );
+      if (Number.isNaN(templateId)) {
+        return null;
+      }
+      return templateId;
+    } catch {
+      return null;
+    }
+  }
+
   static #chatIdRegexp = /\/chats\/(?<chatId>\d+)/;
   static get chatId() {
     try {

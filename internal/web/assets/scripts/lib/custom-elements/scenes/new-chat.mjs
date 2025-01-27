@@ -1,4 +1,4 @@
-import { html } from "../../html.mjs";
+import { html } from "../../html-v2.mjs";
 import { controlPalanelVisibility } from "../control-panel.mjs";
 
 const HERMES_SHORTCUTS_TAG_NAME = "hermes-new-chat-shortcuts";
@@ -19,7 +19,7 @@ customElements.define(
     constructor() {
       super();
       this.shadow = this.attachShadow({ mode: "closed" });
-      this.shadow.innerHTML = html`
+      this.shadow.append(html`
         <style>
           :host {
             --default-color: rgb(from var(--text-0) r g b / 0.33);
@@ -70,20 +70,18 @@ customElements.define(
         </style>
 
         <ul>
-          ${Shortcuts.#list
-            .map(
-              (shortcut) => html`
-                <li>
-                  <span>${shortcut.name}</span>
-                  <div>
-                    <button>${shortcut.key}</button>
-                  </div>
-                </li>
-              `,
-            )
-            .join("")}
+          ${Shortcuts.#list.map(
+            (shortcut) => html`
+              <li>
+                <span>${shortcut.name}</span>
+                <div>
+                  <button>${shortcut.key}</button>
+                </div>
+              </li>
+            `,
+          )}
         </ul>
-      `;
+      `);
     }
 
     connectedCallback() {
@@ -100,7 +98,7 @@ customElements.define(
 export class CreateChatScene extends HTMLElement {
   constructor() {
     super();
-    this.attachShadow({ mode: "closed" }).innerHTML = html`
+    this.attachShadow({ mode: "closed" }).append(html`
       <style>
         main {
           height: 100%;
@@ -120,9 +118,9 @@ export class CreateChatScene extends HTMLElement {
 
       <main>
         <hermes-message-form placeholder="create chat..."></hermes-message-form>
-        <${HERMES_SHORTCUTS_TAG_NAME}></${HERMES_SHORTCUTS_TAG_NAME}>
+        <hermes-new-chat-shortcuts></hermes-new-chat-shortcuts>
       </main>
-    `;
+    `);
   }
 }
 
