@@ -21,28 +21,6 @@ func relayUpsert(c *core.Core, tmp *models.Template) {
 	}
 }
 
-const upsertTemplate = `--{{define "example name"}}
-<Prompt>
-This block defines an example upsert template.
-Prompt XML tag is not required, it helps to ` + "`cat`" + ` this text in VIM
-
-Quick info about template capabilities:
->>> --{{.}} - Prints entire template input. If empty - prints <no value>
-
->>> --{{with .}}
-      --{{.}} - Will print temlate input only if it is not empty
-  --{{end}}
-
->>> --{{if .isEnabled}}
-      --{{.jsonKey}} - prints out specific json key
-      This block runs if the condition is true.
-  --{{end}}
-
->>> Usefull examles from [docs](https://pkg.go.dev/text/template#hdr-Actions)
-</Prompt>
---{{end}}
-`
-
 func createUpsertCommand(c *core.Core) *cobra.Command {
 	upsertCommand := &cobra.Command{
 		Use:   `upsert`,
@@ -61,12 +39,12 @@ $ hermes template upsert --content "--{{define "template"}}(instruction)--{{end}
 			}
 			if content == "" {
 				content, err = utils.OpenInEditor(
-					upsertTemplate,
+					models.DefaultTemplate.Content,
 					config.Stdin,
 					config.Stdoout,
 					config.Stderr,
 				)
-				if content == upsertTemplate {
+				if content == models.DefaultTemplate.Content {
 					return fmt.Errorf("do not save example template, make some changes\n")
 				}
 				if err != nil {

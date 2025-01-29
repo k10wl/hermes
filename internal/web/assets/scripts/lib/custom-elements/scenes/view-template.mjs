@@ -285,13 +285,7 @@ export class HermesViewTemplateScene extends HTMLElement {
 
   #sendReadRequest = () => {
     const readEvent = new RequestReadTemplateEvent({
-      id: parseInt(
-        AssertString.check(
-          LocationControll.pathname.match(/\d+$/)?.[0],
-          "pathname should have id",
-        ),
-        10,
-      ),
+      id: LocationControll.templateId || -1,
     });
     ServerEvents.send(readEvent);
     const off = ServerEvents.on(["read-template", "server-error"], (event) => {
@@ -388,7 +382,7 @@ ${event.payload.template.content}</textarea
     const edit = new RequestEditTemplateEvent({
       name: template.name,
       content,
-      clone,
+      clone: clone || LocationControll.pathname.startsWith("/templates/new"),
     });
     ServerEvents.send(edit);
     const off = ServerEvents.on(
@@ -408,6 +402,9 @@ ${event.payload.template.content}</textarea
         this.#template = event.payload.template;
         this.nameCollisionDialog?.close();
         this.#savedIndicator();
+        if (LocationControll.templateId === null) {
+          LocationControll.navigate("/templates/" + this.#template.id, false);
+        }
         off();
       },
     );
@@ -451,7 +448,7 @@ ${event.payload.template.content}</textarea
         newName?.groups?.name,
         "expected new name to be retrieved from content",
       );
-    if (nameChanged) {
+    if (nameChanged && LocationControll.templateId) {
       AssertInstance.once(
         this.nameCollisionDialog,
         NameCollisionDialog,

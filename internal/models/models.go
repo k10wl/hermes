@@ -63,3 +63,29 @@ func (t *Timestamps) TimestampsToNilForTest__() {
 	t.UpdatedAt = nil
 	t.DeletedAt = nil
 }
+
+var DefaultTemplate = Template{
+	ID:   -1,
+	Name: "example name",
+	Content: `--{{define "example name"}}
+<Prompt>
+This block defines an example upsert template.
+Prompt XML tag is not required, it helps to ` + "`cat`" + ` this text in VIM
+
+Quick info about template capabilities:
+>>> --{{.}} - Prints entire template input. If empty - prints <no value>
+
+>>> --{{with .}}
+      --{{.}} - Will print temlate input only if it is not empty
+  --{{end}}
+
+>>> --{{if .isEnabled}}
+      --{{.jsonKey}} - prints out specific json key
+      This block runs if the condition is true.
+  --{{end}}
+
+>>> Usefull examles from [docs](https://pkg.go.dev/text/template#hdr-Actions)
+</Prompt>
+--{{end}}
+`,
+}

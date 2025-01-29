@@ -106,7 +106,6 @@ export class ControlPanel extends HTMLElement {
             HermesDialog,
             "expected contorl panel to render inside of hermes dialog",
           );
-          console.log(dialog, visible);
           if (visible) {
             dialog.element.showModal();
           } else {
@@ -343,6 +342,9 @@ export class ActionStore {
 
 ActionStore.add(
   new Action("create: new chat", () => LocationControll.navigate("/")),
+  new Action("create: new template", () =>
+    LocationControll.navigate("/templates/new"),
+  ),
   new Action("open: last chat", async () => {
     const res = await fetch(`/api/v1/chats?limit=1`);
     const data = await res.json();

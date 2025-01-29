@@ -15,8 +15,11 @@ export class LocationControll {
     return this.#publisher.subscribe(observer);
   }
 
-  /** @param {string} target  */
-  static navigate(target) {
+  /**
+   * @param {string} target
+   * @param {boolean} [notify = true]
+   */
+  static navigate(target, notify = true) {
     if (
       window.location.href === target ||
       window.location.pathname === target
@@ -24,7 +27,9 @@ export class LocationControll {
       return;
     }
     window.history.pushState({}, "", target);
-    LocationControll.#update();
+    if (notify) {
+      LocationControll.#update();
+    }
   }
 
   static __init() {

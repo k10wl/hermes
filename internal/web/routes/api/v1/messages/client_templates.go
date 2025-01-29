@@ -5,6 +5,7 @@ import (
 
 	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/core"
+	"github.com/k10wl/hermes/internal/models"
 )
 
 type ClientReadTemplatesPayload struct {
@@ -59,6 +60,12 @@ func (message *ClientReadTemplate) Process(
 	c *core.Core,
 	_ ai_clients.CompletionFn,
 ) error {
+	if message.Payload.ID == -1 {
+		return BroadcastServerEmittedMessage(
+			comms.Single(),
+			NewServerReadTemplate(message.ID, &models.DefaultTemplate),
+		)
+	}
 	cmd := core.NewGetTemplateByIDQuery(
 		c,
 		message.Payload.ID,

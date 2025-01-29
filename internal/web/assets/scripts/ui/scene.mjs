@@ -8,6 +8,7 @@ const scenes = {
   "/chats": html`<hermes-chats-list-scene></hermes-chats-list-scene>`,
   "/chats/{id}": html`<hermes-existing-chat-scene></hermes-existing-chat-scene>`,
   "/templates": html`<hermes-templates-list-scene></hermes-templates-list-scene>`,
+  "/templates/new": html`<hermes-view-template-scene></hermes-view-template-scene>`,
   "/templates/{id}": html`<hermes-view-template-scene></hermes-view-template-scene>`,
 };
 
@@ -48,6 +49,12 @@ class Scene extends HTMLElement {
    * @returns {{name: keyof typeof scenes, html: string}} html
    */
   #scenePicker(pathname) {
+    if (pathname.startsWith("/templates/new")) {
+      return {
+        name: "/templates/new",
+        html: scenes["/templates/new"],
+      };
+    }
     if (pathname.startsWith("/templates")) {
       if (/\d+$/.test(pathname)) {
         return {

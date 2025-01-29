@@ -27,7 +27,7 @@ customElements.define(
             overflow: auto;
           }
 
-          #templates {
+          section {
             padding: 2rem;
             max-width: 100%;
             overflow: hidden;
@@ -35,7 +35,7 @@ customElements.define(
             flex-direction: column;
           }
 
-          #templates a {
+          a {
             /* NOTE uuuuh this could be separate reusable class or component */
             text-align: start;
             padding: 0.5rem 1rem;
@@ -60,18 +60,20 @@ customElements.define(
                 element,
                 HTMLElement,
               ))}"
-            id="templates"
-          ></section>
+          >
+            <a
+              bind="${(/** @type {unknown} */ element) =>
+                (this.newTemplate = AssertInstance.once(element, HTMLElement))}"
+              is="hermes-link"
+              href="/templates/new"
+              >// Create new template</a
+            >
+          </section>
         </main>
       `);
     }
 
     connectedCallback() {
-      this.templates = AssertInstance.once(
-        this.shadow.querySelector("#templates"),
-        HTMLElement,
-      );
-
       const readTemplates = new RequestReadTemplatesEvent({
         name: "",
         limit: -1,
@@ -89,7 +91,7 @@ customElements.define(
             alert(`smth went wrong - ${event.payload}`);
             return;
           }
-          AssertInstance.once(this.templates, HTMLElement).append(
+          this.templatesContainer.append(
             ...event.payload.templates.map((template) =>
               this.#createLink(template),
             ),
@@ -102,9 +104,7 @@ customElements.define(
         offRead,
         () => this.#elements.clear(),
         ServerEvents.on("template-created", (event) => {
-          this.templatesContainer.prepend(
-            this.#createLink(event.payload.template),
-          );
+          this.newTemplate.after(this.#createLink(event.payload.template));
         }),
         ServerEvents.on("template-changed", (event) => {
           const el = this.#elements.get(event.payload.template.name);
