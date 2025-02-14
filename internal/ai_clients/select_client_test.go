@@ -19,20 +19,20 @@ func TestSelectProvider(t *testing.T) {
 		{
 			name: "should return gpt handler",
 			input: []string{
-				"gpt-4.5-turbo",
-				"gpt-4o-mini",
-				"gpt-3.5-turbo",
-				"gpt-some-random-name",
+				"openai/gpt-4.5-turbo",
+				"openai/gpt-4o-mini",
+				"openai/gpt-3.5-turbo",
+				"openai/gpt-some-random-name",
 			},
 			expected: &clientOpenAI{},
 		},
 		{
 			name: "should return claude handler",
 			input: []string{
-				"claude-3-5-sonnet-20240620",
-				"claude-3-opus-20240229",
-				"claude-3-haiku-20240307",
-				"claude-some-random-name",
+				"anthropic/claude-3-5-sonnet-20240620",
+				"anthropic/claude-3-opus-20240229",
+				"anthropic/claude-3-haiku-20240307",
+				"anthropic/claude-some-random-name",
 			},
 			expected: &clientClaude{},
 		},
@@ -49,7 +49,8 @@ func TestSelectProvider(t *testing.T) {
 
 	for _, test := range table {
 		for _, input := range test.input {
-			res, err := selectClient(input, &settings.Providers{
+			provider, _, _ := extractProviderAndModel(input)
+			res, err := selectClient(provider, &settings.Providers{
 				OpenAIKey: "SECRET",
 			})
 			if test.shouldError {
@@ -71,7 +72,6 @@ func TestSelectProvider(t *testing.T) {
 					expected,
 					actual,
 				)
-				continue
 			}
 		}
 	}

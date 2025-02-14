@@ -31,10 +31,10 @@ $ hermes chat --content "hello world"
 $ cat crash.log | hermes chat --content "what happened here?"
 $ hermes chat --latest --content "how can I fix that crash I send you before?"
 
-$ git diff --cached | hermes chat --template commit --model claude-haiku
+$ git diff --cached | hermes chat --template commit --model openai/o1
 
 $ hermes chat \
-    --model gpt-4o \
+    --model anthropic/claude-3-5-sonnet-latest \
     --max-tokens 10 \
     --temperature 0.2 \
     --content "is there a security risk in this message?" < risky_message.json`,
@@ -110,7 +110,7 @@ $ hermes chat \
 		false,
 		"continues conversation in latest chat",
 	)
-	chatCommand.Flags().StringP("model", "m", "gpt-4o-mini", "completion model")
+	chatCommand.Flags().StringP("model", "m", "openai/gpt-4o-mini", "completion model")
 	chatCommand.Flags().
 		String(
 			"temperature",

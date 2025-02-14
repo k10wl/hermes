@@ -9,37 +9,39 @@ import (
 )
 
 var (
-	cachedClientOpenAI *clientOpenAI
-	cachedClientClaude *clientClaude
-	clientMutext       sync.Mutex
+	cachedClientOpenAI    *clientOpenAI
+	cachedClientAnthropic *clientClaude
+	clientMutext          sync.Mutex
 )
 
-func selectClient(input string, providers *settings.Providers) (client, error) {
+func selectClient(provider string, providers *settings.Providers) (client, error) {
 	if config, err := settings.GetInstance(); err == nil && config.MockCompletion {
 		return mock{}, nil
-	}
-	str := strings.SplitN(input, "-", 2)
-	if len(str) < 2 {
-		return nil, fmt.Errorf("failed to get provider %q - use gpt or claude", input)
 	}
 	clientMutext.Lock()
 	defer clientMutext.Unlock()
 	var client client
-	switch provider := str[0]; provider {
-	case "gpt":
+	switch provider {
+	case "openai":
 		if cachedClientOpenAI == nil {
 			cachedClientOpenAI = newClientOpenAI(providers.OpenAIKey)
 		}
 		client = cachedClientOpenAI
-		break
-	case "claude":
-		if cachedClientClaude == nil {
-			cachedClientClaude = newClientClaude(providers.AnthropicKey)
+	case "anthropic":
+		if cachedClientAnthropic == nil {
+			cachedClientAnthropic = newClientClaude(providers.AnthropicKey)
 		}
-		client = cachedClientClaude
-		break
+		client = cachedClientAnthropic
 	default:
-		return nil, fmt.Errorf("unsupported provider %q - use gpt or claude", input)
+		return nil, fmt.Errorf("unsupported provider %q - use openai/model or anthropic/model", provider)
 	}
 	return client, nil
+}
+
+func extractProviderAndModel(input string) (string, string, error) {
+	str := strings.SplitN(input, "/", 2)
+	if len(str) < 2 {
+		return "", "", fmt.Errorf("failed to get provider and model from %q - expected format: provider/model", input)
+	}
+	return str[0], str[1], nil
 }

@@ -53,9 +53,15 @@ func Complete(
 	parameters *Parameters,
 	providers *settings.Providers,
 ) (*AIResponse, error) {
-	client, err := selectClient(parameters.Model, providers)
+	provider, model, err := extractProviderAndModel(parameters.Model)
 	if err != nil {
 		return nil, err
 	}
-	return client.complete(messages, parameters, callApi)
+	client, err := selectClient(provider, providers)
+	if err != nil {
+		return nil, err
+	}
+	parametersCopy := *parameters
+	parametersCopy.Model = model
+	return client.complete(messages, &parametersCopy, callApi)
 }
