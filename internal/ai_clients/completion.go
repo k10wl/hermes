@@ -1,7 +1,6 @@
 package ai_clients
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 
@@ -64,7 +63,5 @@ func Complete(
 	}
 	parametersCopy := *parameters
 	parametersCopy.Model = model
-	fmt.Printf("parameters: %v\n", parameters)
-	fmt.Printf("params: %v\n", parametersCopy)
 	return client.complete(messages, &parametersCopy, callApi)
 }
