@@ -7,9 +7,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
+	"github.com/k10wl/hermes/cmd/utils"
 	"github.com/k10wl/hermes/internal/ai_clients"
 	"github.com/k10wl/hermes/internal/core"
 	"github.com/k10wl/hermes/internal/models"
+	"github.com/k10wl/hermes/internal/web/routes/api/v1/messages"
 	"github.com/spf13/cobra"
 )
 
@@ -80,7 +83,11 @@ $ hermes chat \
 			if strings.Trim(content, " \n\t") == "" {
 				return fmt.Errorf("input message was empty")
 			}
-			return complete(c, &aiParameters, content, template, completion)
+			err = complete(c, &aiParameters, content, template, completion)
+			if err != nil {
+				return err
+			}
+			return nil
 		},
 	}
 
@@ -131,6 +138,19 @@ func completeInChat(
 	if err := chatQuery.Execute(config.ShutdownContext); err != nil {
 		return err
 	}
+	id := uuid.NewString()
+	if data, err := messages.Encode(
+		messages.NewServerMessageCreated(
+			id,
+			chatQuery.Result.ID,
+			&models.Message{
+				ChatID:  chatQuery.Result.ID,
+				Content: content,
+				Role:    core.UserRole,
+			}),
+	); err == nil {
+		utils.NotifyActiveSessions(c, id, data)
+	}
 	cmd := core.NewCreateCompletionCommand(
 		c,
 		chatQuery.Result.ID,
@@ -144,6 +164,11 @@ func completeInChat(
 	if err != nil {
 		return err
 	}
+	if data, err := messages.Encode(
+		messages.NewServerMessageCreated(id, cmd.Result.ChatID, cmd.Result),
+	); err == nil {
+		utils.NotifyActiveSessions(c, id, data)
+	}
 	outputMessage(config.Stdoout, cmd.Result)
 	return nil
 }
@@ -155,20 +180,53 @@ func createChatAndComplete(
 	template string,
 	completion ai_clients.CompletionFn,
 ) error {
-	config := c.GetConfig()
-	cmd := core.NewCreateChatAndCompletionCommand(
+	ctx := c.GetConfig().ShutdownContext
+	id := uuid.NewString()
+
+	cmd := core.NewCreateChatWithMessageCommand(
 		c,
-		core.UserRole,
-		content,
+		&models.Message{
+			Role:    core.UserRole,
+			Content: content,
+		},
 		template,
-		aiParameters,
-		ai_clients.Complete,
 	)
-	err := cmd.Execute(c.GetConfig().ShutdownContext)
-	if err != nil {
+	if err := cmd.Execute(ctx); err != nil {
 		return err
 	}
-	outputMessage(config.Stdoout, cmd.Result)
+
+	if data, err := messages.Encode(
+		messages.NewServerChatCreated(
+			id,
+			cmd.Result.Chat,
+			cmd.Result.Message,
+		)); err == nil {
+		utils.NotifyActiveSessions(c, id, data)
+	}
+
+	cmd2 := core.NewCreateCompletionCommand(
+		c,
+		cmd.Result.Chat.ID,
+		cmd.Result.Message.Role,
+		cmd.Result.Message.Content,
+		template,
+		aiParameters,
+		completion,
+	)
+	cmd2.ShouldPersistUserMessage(false)
+	if err := cmd2.Execute(ctx); err != nil {
+		return err
+	}
+
+	if data, err := messages.Encode(
+		messages.NewServerMessageCreated(
+			id,
+			cmd.Result.Chat.ID,
+			cmd2.Result,
+		)); err == nil {
+		utils.NotifyActiveSessions(c, id, data)
+	}
+	outputMessage(c.GetConfig().Stdoout, cmd2.Result)
 	return nil
 }
 

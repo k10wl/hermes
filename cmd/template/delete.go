@@ -4,9 +4,21 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
+	"github.com/k10wl/hermes/cmd/utils"
 	"github.com/k10wl/hermes/internal/core"
+	"github.com/k10wl/hermes/internal/web/routes/api/v1/messages"
 	"github.com/spf13/cobra"
 )
+
+func relayTemplateDeleted(c *core.Core, name string) {
+	uid := uuid.NewString()
+	if data, err := messages.Encode(
+		messages.NewServerTemplateDeleted(uid, name),
+	); err == nil {
+		utils.NotifyActiveSessions(c, uid, data)
+	}
+}
 
 func createDeleteCommand(c *core.Core) *cobra.Command {
 	deleteCommand := &cobra.Command{
@@ -25,6 +37,7 @@ func createDeleteCommand(c *core.Core) *cobra.Command {
 				return err
 			}
 			fmt.Fprintf(config.Stdoout, "Template %q successfully deleted.\n", name)
+			go relayTemplateDeleted(c, name)
 			return nil
 		},
 	}

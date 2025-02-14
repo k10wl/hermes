@@ -12,6 +12,50 @@ type Command interface {
 	Execute(context.Context) error
 }
 
+type CreateChatWithMessageCommandResult struct {
+	Chat    *models.Chat
+	Message *models.Message
+}
+
+type CreateChatWithMessageCommand struct {
+	core     *Core
+	message  *models.Message
+	template string
+	Result   *CreateChatWithMessageCommandResult
+}
+
+func NewCreateChatWithMessageCommand(
+	core *Core,
+	message *models.Message,
+	template string,
+) *CreateChatWithMessageCommand {
+	return &CreateChatWithMessageCommand{
+		core:     core,
+		message:  message,
+		template: template,
+	}
+}
+
+func (c *CreateChatWithMessageCommand) Execute(ctx context.Context) error {
+	msg, err := c.core.prepareMessage(ctx, c.message.Content, c.template)
+	if err != nil {
+		return err
+	}
+	chat, message, err := c.core.db.CreateChatAndMessage(
+		ctx,
+		c.message.Role,
+		msg,
+	)
+	if err != nil {
+		return err
+	}
+	c.Result = &CreateChatWithMessageCommandResult{
+		Chat:    chat,
+		Message: message,
+	}
+	return nil
+}
+
 type CreateChatAndCompletionCommand struct {
 	core       *Core
 	role       string
@@ -22,6 +66,8 @@ type CreateChatAndCompletionCommand struct {
 	Result     *models.Message
 }
 
+// Deprecated: turned out to good to be true
+// please use create chat and create message separately
 func NewCreateChatAndCompletionCommand(
 	core *Core,
 	role string,
@@ -73,14 +119,15 @@ func (c *CreateChatAndCompletionCommand) Execute(ctx context.Context) error {
 }
 
 type CreateCompletionCommand struct {
-	core       *Core
-	message    string
-	template   string
-	role       string
-	chatID     int64
-	parameters *ai_clients.Parameters
-	completion ai_clients.CompletionFn
-	Result     *models.Message
+	core                     *Core
+	message                  string
+	template                 string
+	role                     string
+	chatID                   int64
+	parameters               *ai_clients.Parameters
+	completion               ai_clients.CompletionFn
+	Result                   *models.Message
+	shouldPersistUserMessage bool
 }
 
 func NewCreateCompletionCommand(
@@ -93,14 +140,19 @@ func NewCreateCompletionCommand(
 	completion ai_clients.CompletionFn,
 ) *CreateCompletionCommand {
 	return &CreateCompletionCommand{
-		core:       core,
-		chatID:     chatID,
-		message:    message,
-		template:   template,
-		role:       role,
-		parameters: parameters,
-		completion: completion,
+		core:                     core,
+		chatID:                   chatID,
+		message:                  message,
+		template:                 template,
+		role:                     role,
+		parameters:               parameters,
+		completion:               completion,
+		shouldPersistUserMessage: true,
 	}
+}
+
+func (c *CreateCompletionCommand) ShouldPersistUserMessage(skipPersistingUserMessage bool) {
+	c.shouldPersistUserMessage = skipPersistingUserMessage
 }
 
 func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
@@ -112,14 +164,16 @@ func (c *CreateCompletionCommand) Execute(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.core.db.CreateMessage(
-		ctx,
-		c.chatID,
-		c.role,
-		input,
-	)
-	if err != nil {
-		return err
+	if c.shouldPersistUserMessage {
+		_, err = c.core.db.CreateMessage(
+			ctx,
+			c.chatID,
+			c.role,
+			input,
+		)
+		if err != nil {
+			return err
+		}
 	}
 	history := []*ai_clients.Message{}
 	for _, p := range prev {
@@ -164,6 +218,7 @@ type UpsertTemplateCommand struct {
 	core     *Core
 	name     string
 	template string
+	Result   *models.Template
 }
 
 func NewUpsertTemplateCommand(core *Core, template string) *UpsertTemplateCommand {
@@ -173,12 +228,13 @@ func NewUpsertTemplateCommand(core *Core, template string) *UpsertTemplateComman
 	}
 }
 
-func (c UpsertTemplateCommand) Execute(ctx context.Context) error {
+func (c *UpsertTemplateCommand) Execute(ctx context.Context) error {
 	name, err := extractTemplateDefinitionName(c.template)
 	if err != nil {
 		return err
 	}
-	_, err = c.core.db.UpsertTemplate(ctx, name, c.template)
+	template, err := c.core.db.UpsertTemplate(ctx, name, c.template)
+	c.Result = template
 	return err
 }
 
@@ -207,6 +263,7 @@ type EditTemplateByName struct {
 	name    string
 	content string
 	clone   bool
+	Result  *models.Template
 }
 
 func NewEditTemplateByName(
@@ -223,7 +280,7 @@ func NewEditTemplateByName(
 	}
 }
 
-func (c EditTemplateByName) Execute(ctx context.Context) error {
+func (c *EditTemplateByName) Execute(ctx context.Context) error {
 	names, err := getTemplateNames(c.content)
 	if err != nil {
 		return err
@@ -241,7 +298,11 @@ func (c EditTemplateByName) Execute(ctx context.Context) error {
 	return c.handleEdit(ctx, newName)
 }
 
-func (c EditTemplateByName) handleClone(ctx context.Context, newName string, content string) error {
+func (c *EditTemplateByName) handleClone(
+	ctx context.Context,
+	newName string,
+	content string,
+) error {
 	templatesQuery := NewGetTemplatesByNamesQuery(c.core, []string{newName})
 	if err := templatesQuery.Execute(ctx); err != nil {
 		return err
@@ -249,26 +310,16 @@ func (c EditTemplateByName) handleClone(ctx context.Context, newName string, con
 	if len(templatesQuery.Result) != 0 {
 		return fmt.Errorf("template with given name already exists")
 	}
-	return NewUpsertTemplateCommand(c.core, content).Execute(ctx)
-}
-
-func (c EditTemplateByName) handleEdit(ctx context.Context, newName string) error {
-	if newName != c.name {
-		return c.renameAndDelete(ctx)
-	}
-	ok, err := c.core.db.EditTemplateByName(ctx, c.name, c.content)
-	if !ok {
-		return fmt.Errorf("did not update template, please make sure it exists")
-	}
-	return err
-}
-
-func (c EditTemplateByName) renameAndDelete(ctx context.Context) error {
-	if err := NewUpsertTemplateCommand(
-		c.core,
-		c.content,
-	).Execute(ctx); err != nil {
+	upsert := NewUpsertTemplateCommand(c.core, content)
+	if err := upsert.Execute(ctx); err != nil {
 		return err
 	}
-	return NewDeleteTemplateByName(c.core, c.name).Execute(ctx)
+	c.Result = upsert.Result
+	return nil
+}
+
+func (c *EditTemplateByName) handleEdit(ctx context.Context, newName string) error {
+	tmp, err := c.core.db.EditTemplateByName(ctx, c.name, newName, c.content)
+	c.Result = tmp
+	return err
 }

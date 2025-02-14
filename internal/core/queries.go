@@ -7,16 +7,27 @@ import (
 )
 
 type Query interface {
-	Execute() error
+	Execute(context.Context) error
 }
 
 type GetChatsQuery struct {
-	Core   *Core
-	Result []*models.Chat
+	core          *Core
+	limit         int64
+	startBeforeID int64
+	Result        []*models.Chat
+}
+
+// limit -1 forces to return all results
+func NewGetChatsQuery(core *Core, limit int64, startBeforeID int64) *GetChatsQuery {
+	return &GetChatsQuery{
+		core:          core,
+		limit:         limit,
+		startBeforeID: startBeforeID,
+	}
 }
 
 func (q *GetChatsQuery) Execute(ctx context.Context) error {
-	chats, err := q.Core.db.GetChats(ctx)
+	chats, err := q.core.db.GetChats(ctx, q.limit, q.startBeforeID)
 	if err != nil {
 		return err
 	}
@@ -77,18 +88,49 @@ func (q *GetTemplatesByNamesQuery) Execute(ctx context.Context) error {
 	return err
 }
 
-type GetTemplatesByRegexp struct {
-	Core   *Core
+type GetTemplatesQuery struct {
+	core   *Core
 	Result []*models.Template
-	regexp string
+	after  int64
+	limit  int64
+	name   string
 }
 
-func NewGetTemplatesByRegexp(c *Core, regexp string) *GetTemplatesByRegexp {
-	return &GetTemplatesByRegexp{Core: c, regexp: regexp}
+func NewGetTemplatesQuery(
+	c *Core,
+	startBeforeID int64,
+	limit int64,
+	name string,
+) *GetTemplatesQuery {
+	return &GetTemplatesQuery{
+		core:  c,
+		after: startBeforeID,
+		limit: limit,
+		name:  name,
+	}
 }
 
-func (q *GetTemplatesByRegexp) Execute(ctx context.Context) error {
-	templates, err := q.Core.db.GetTemplatesByRegexp(ctx, q.regexp)
-	q.Result = templates
+func (q *GetTemplatesQuery) Execute(ctx context.Context) error {
+	res, err := q.core.db.GetTemplates(ctx, q.after, q.limit, q.name)
+	q.Result = res
+	return err
+}
+
+type GetTemplateByIDQuery struct {
+	core   *Core
+	id     int64
+	Result *models.Template
+}
+
+func NewGetTemplateByIDQuery(c *Core, id int64) *GetTemplateByIDQuery {
+	return &GetTemplateByIDQuery{
+		core: c,
+		id:   id,
+	}
+}
+
+func (q *GetTemplateByIDQuery) Execute(ctx context.Context) error {
+	res, err := q.core.db.GetTemplateByID(ctx, q.id)
+	q.Result = res
 	return err
 }

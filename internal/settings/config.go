@@ -2,17 +2,19 @@ package settings
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path"
 	"sync"
 )
 
-const Version = "4.2.7"
-const VersionDate = "2024-09-20"
+const Version = "4.8.4"
+const VersionDate = "2025-02-15"
 
-var DefaultDatabaseName = "main.db" // changes in ldflag for dev mode
-var appName = "hermes"              // changes in ldflag for dev mode
+const DefaultDatabaseName = "main.db"
+
+var appName = "hermes" // changes in ldflag for dev mode
 var config *Config
 var once sync.Once
 
@@ -31,6 +33,7 @@ type Settings struct {
 	Stdin           io.Reader
 	Stdoout         io.Writer
 	Stderr          io.Writer
+	MockCompletion  bool
 }
 
 type Providers struct {
@@ -44,6 +47,13 @@ func GetConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, er
 		config, err = loadConfig(stdin, stdout, stderr)
 	})
 	return config, err
+}
+
+func GetInstance() (*Config, error) {
+	if config == nil {
+		return nil, fmt.Errorf("config was not initialized")
+	}
+	return config, nil
 }
 
 func loadConfig(stdin io.Reader, stdout io.Writer, stderr io.Writer) (*Config, error) {
@@ -72,7 +82,7 @@ func prepareDNS(c *Config) error {
 	}
 	hermesConfigDir := path.Join(sharedConfigDir, c.AppName)
 	c.ConfigDir = hermesConfigDir
-	c.DatabaseDSN = path.Join(hermesConfigDir, "main.db")
+	c.DatabaseDSN = path.Join(hermesConfigDir, DefaultDatabaseName)
 	err = ensureExists(hermesConfigDir)
 	return err
 }

@@ -22,11 +22,15 @@ $ hermes template view -n %`,
 			if err != nil {
 				return err
 			}
-			query := core.NewGetTemplatesByRegexp(c, name)
+			query := core.NewGetTemplatesQuery(c, -1, -1, name)
 			if err := query.Execute(cmd.Context()); err != nil {
 				return err
 			}
 			config := c.GetConfig()
+			if len(query.Result) == 0 {
+				fmt.Fprintf(config.Stdoout, "No templates found")
+				return nil
+			}
 			if len(query.Result) == 1 {
 				fmt.Fprintf(config.Stdoout, "%s", query.Result[0].Content)
 				return nil

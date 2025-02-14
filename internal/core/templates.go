@@ -22,18 +22,19 @@ func (c Core) prepareMessage(
 	input string,
 	templateName string,
 ) (string, error) {
+	trimmed := trim(input)
 	templateBuilder := newTemplateBuilder(&c)
 	templateBuilder.mustProcessTemplate(templateName)
-	templateBuilder.process(ctx, input)
+	templateBuilder.process(ctx, trimmed)
 	templateString, err := templateBuilder.string()
 	if err != nil {
-		return input, err
+		return trimmed, err
 	}
 	t := prepareTemplates(templateString)
-	refinedInput := prepareInput(templateName, input)
+	refinedInput := prepareInput(templateName, trimmed)
 	buf := &strings.Builder{}
 	err = executor(t, buf, refinedInput)
-	return buf.String(), err
+	return trim(buf.String()), err
 }
 
 const definitionError = "failed to get template name"
@@ -182,4 +183,8 @@ func executor(t *template.Template, writer io.Writer, str string) error {
 
 func withDelims(content string) string {
 	return fmt.Sprintf("%s%s%s", leftDelim, content, rightDelim)
+}
+
+func trim(input string) string {
+	return strings.TrimSpace(input)
 }

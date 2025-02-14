@@ -2,20 +2,29 @@ package serve
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/k10wl/hermes/internal/core"
+	"github.com/k10wl/hermes/internal/models"
 	"github.com/k10wl/hermes/internal/web"
 	"github.com/spf13/cobra"
 )
 
-var (
-	port     string
-	hostname string
-	open     bool
-	latest   bool
-)
-
 func CreateServeCommand(c *core.Core) *cobra.Command {
+	var (
+		port     string
+		hostname string
+		addr     string
+		open     bool
+		latest   bool
+	)
+
+	config := c.GetConfig()
+	db := c.GetDB()
+	activeSession := models.ActiveSession{}
+
 	serveCommand := &cobra.Command{
 		Use:   "serve",
 		Short: "Serve http client",
@@ -44,28 +53,47 @@ $ hermes serve --open --latest`,
 			hostname = h
 			open = o
 			latest = l
+			addr = web.BuildAddr(h, p)
+			activeSession.Address = `http://` + addr
+			activeSession.DatabaseDNS = config.DatabaseDSN
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if latest && !open {
 				return fmt.Errorf("cannot use --latest without --open\n")
 			}
-			config := c.GetConfig()
 			if open {
 				web.OpenBrowser(
 					web.GetUrl(
-						web.BuildAddr(hostname, port),
+						addr,
 						c,
 						config,
 						latest,
 					),
 				)
 			}
-			err := web.Serve(c, config, hostname, port)
+			err := db.CreateActiveSession(&activeSession)
 			if err != nil {
-				return err
+				fmt.Fprintf(config.Stderr, "failed to store active session record - %s\n", err)
 			}
-			return nil
+			quit := make(chan os.Signal, 1)
+			errChan := make(chan error, 1)
+			signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+			go func() { errChan <- web.Serve(c, config, hostname, port) }()
+			for {
+				select {
+				case err := <-errChan:
+					close(quit)
+					db.RemoveActiveSession(&activeSession)
+					os.Exit(1)
+					return err
+				case <-quit:
+					close(errChan)
+					db.RemoveActiveSession(&activeSession)
+					os.Exit(0)
+					return nil
+				}
+			}
 		},
 	}
 

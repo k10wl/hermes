@@ -23,9 +23,7 @@ func handleChat(c *core.Core, t *template.Template) http.HandlerFunc {
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := home{}
-		getChats := core.GetChatsQuery{
-			Core: c,
-		}
+		getChats := core.NewGetChatsQuery(c, -1, -1)
 		err := getChats.Execute(context.Background())
 		if err != nil {
 			panic(err)
@@ -145,5 +143,12 @@ func handlePutSettings(c *core.Core) http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func handleCheckHeath() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "OK")
 	}
 }

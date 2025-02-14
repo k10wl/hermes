@@ -134,9 +134,7 @@ func (mockClient MockAIClient) ChatCompletion(
 }
 
 func __createCoreAndDB() (*Core, db.Client) {
-	db, err := sqlite3.NewSQLite3(
-		&settings.Config{Settings: settings.Settings{DatabaseDSN: ":memory:"}},
-	)
+	db, err := sqlite3.NewSQLite3(":memory:")
 	if err != nil {
 		panic(err)
 	}

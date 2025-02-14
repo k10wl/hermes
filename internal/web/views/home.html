@@ -8,63 +8,22 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Hermes</title>
     <link rel="stylesheet" href="/assets/stylesheet.css">
-    <script src="/assets/utils.js"></script>
-    <script src="/assets/settings.js"></script>
-    <script src="/assets/theme.js"></script>
+    <link rel="icon" href="/assets/icons/caduceus-staff.svg" type="image/svg">
+    <script src="/assets/scripts/lib/events/server-events.mjs" type="module"></script>
+    <script src="/assets/scripts/reload.mjs" type="module"></script>
+    <script src="/assets/scripts/main.mjs" type="module"></script>
+    <script src="/assets/legacy.js"></script>
     <script>
-        new Theme(Settings.init(JSON.parse({{.WebSettings}}))).load();
+        new _Theme(_Settings.init(JSON.parse({{.WebSettings}}))).load();
     </script>
-    <script src="/assets/dom-content-loaded.js"></script>
 </head>
 
 <body>
-    <main>
-        {{template "chats-list" . }}
-        {{template "chat-content" .}}
-        <div style="hidden; display: none;">
-            <template id="template-message">{{template "message"}}</template>
-        </div>
-    </main>
+    <hermes-header></hermes-header>
+    <hermes-scene></hermes-scene>
+    <hermes-control-panel></hermes-control-panel>
+    <h-context-menu></h-context-menu>
 </body>
 
 </html>
-{{end}}
-
-{{define "chats-list"}}
-<div id="chats-list">
-    <a href="/" class="chat-link">New chat</a>
-    {{range .Chats}}{{template "chat-link" .}}{{end}}
-</div>
-{{end}}
-
-{{define "chat-link"}}
-<a href="/chats/{{.ID}}" id="chat-{{.ID}}" class="chat-link">
-    {{if .Name}}{{.Name}}{{else}}unnamed{{end}}
-</a>
-{{end}}
-
-{{define "chat-content"}}
-<div id="chat-content">
-    {{template "messages-list" .}}
-    {{template "form"}}
-</div>
-{{end}}
-
-{{define "messages-list"}}
-<div id="messages-list-wrapper">
-    <div id="messages-list">{{range .Messages}}{{template "message" .}}{{end}}</div>
-</div>
-{{end}}
-
-{{define "message"}}
-<div class="message {{if .Role}}role-{{.Role}}{{end}}" id="message-{{.ID}}">
-    <pre>{{.Content}}</pre>
-</div>
-{{end}}
-
-{{define "form"}}
-<form id="message-form">
-    <textarea rows="1" id="message-input" name="content" placeholder="Type message..." autofocus></textarea>
-    <button id="message-submit-button" type="submit">send</button>
-</form>
 {{end}}

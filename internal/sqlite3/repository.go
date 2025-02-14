@@ -3,6 +3,7 @@ package sqlite3
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 	"time"
 
@@ -67,7 +68,7 @@ func createChat(
 	ctx context.Context,
 	name string,
 ) (*models.Chat, error) {
-	row := executor(ctx, createChatQuery, name)
+	row := executor(ctx, createChatQuery, ellipsis(name, 80, 3, "."))
 	var chat models.Chat
 	err := row.Scan(
 		&chat.ID,
@@ -79,16 +80,48 @@ func createChat(
 	return &chat, err
 }
 
+func ellipsis(text string, max int, times int, replacement string) string {
+	if len(text) <= max {
+		return text
+	}
+	cutLen := len(replacement) * times
+	if max-cutLen < 1 {
+		panic("cannot trim into nothing")
+	}
+	cut := text[:max-cutLen]
+	return fmt.Sprintf("%s%s", cut, strings.Repeat(replacement, times))
+}
+
+const getChatsQueryWithWhere = `
+SELECT 
+    id, name, created_at, updated_at, deleted_at
+FROM chats
+WHERE id < ?
+ORDER BY id DESC
+LIMIT ?;
+`
+
 const getChatsQuery = `
-SELECT id, name, created_at, updated_at, deleted_at FROM chats
-ORDER BY created_at DESC;
+SELECT 
+    id, name, created_at, updated_at, deleted_at
+FROM chats
+ORDER BY id DESC
+LIMIT ?;
 `
 
 func getChats(
 	executor queryRows,
 	ctx context.Context,
+	limit int64,
+	startBeforeID int64,
 ) ([]*models.Chat, error) {
-	rows, err := executor(ctx, getChatsQuery)
+	var rows *sql.Rows
+	var err error
+	if startBeforeID < 1 {
+		rows, err = executor(ctx, getChatsQuery, limit)
+	} else {
+		rows, err = executor(ctx, getChatsQueryWithWhere, startBeforeID, limit)
+	}
 	chats := []*models.Chat{}
 	if err != nil {
 		return chats, err
@@ -172,7 +205,7 @@ func updateWebSettings(executor queryRow, ctx context.Context, darkMode bool) er
 
 const getLatestChatQuery = `
 SELECT id, name, created_at, updated_at, deleted_at FROM chats
-ORDER BY created_at DESC
+ORDER BY id DESC
 LIMIT 1;
 `
 
@@ -251,17 +284,60 @@ func getTemplatesByNames(
 	return templates, rowErr
 }
 
-const getTemplatesByRegexpQuery = `
-SELECT id, name, content, created_at, updated_at, deleted_at FROM templates
-WHERE name LIKE $1 AND deleted_at IS NULL;
-`
+const getTemplatesQueryBase = `
+SELECT
+    id,
+    name,
+    content,
+    created_at,
+    updated_at,
+    deleted_at
+FROM
+    templates`
 
-func getTemplatesByRegexp(
+var getTemplatesAfterQuery = fmt.Sprintf(`
+%s
+WHERE
+    deleted_at IS NULL AND
+    id < ? AND
+    name LIKE ?
+ORDER BY id DESC
+LIMIT ?;`, getTemplatesQueryBase)
+
+var getTemplatesQuery = fmt.Sprintf(`
+%s
+WHERE
+    deleted_at IS NULL AND
+    name LIKE ?
+ORDER BY id DESC
+LIMIT ?;`, getTemplatesQueryBase)
+
+func scanTemplate(scan func(dest ...any) error, receiver *models.Template) error {
+	return scan(
+		&receiver.ID,
+		&receiver.Name,
+		&receiver.Content,
+		&receiver.CreatedAt,
+		&receiver.UpdatedAt,
+		&receiver.DeletedAt,
+	)
+}
+
+func getTemplates(
 	executor queryRows,
 	ctx context.Context,
-	regexp string,
+	after int64,
+	limit int64,
+	name string,
 ) ([]*models.Template, error) {
-	rows, err := executor(ctx, getTemplatesByRegexpQuery, regexp)
+	refinedName := "%" + name + "%"
+	var rows *sql.Rows
+	var err error
+	if after > 0 {
+		rows, err = executor(ctx, getTemplatesAfterQuery, after, refinedName, limit)
+	} else {
+		rows, err = executor(ctx, getTemplatesQuery, refinedName, limit)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -269,21 +345,31 @@ func getTemplatesByRegexp(
 	var rowErr error
 	for rows.Next() {
 		var templateDoc models.Template
-		if err := rows.Scan(
-			&templateDoc.ID,
-			&templateDoc.Name,
-			&templateDoc.Content,
-			&templateDoc.CreatedAt,
-			&templateDoc.UpdatedAt,
-			&templateDoc.DeletedAt,
-		); err != nil {
+		if err := scanTemplate(rows.Scan, &templateDoc); err != nil {
 			rowErr = err
 			break
 		}
 		templates = append(templates, &templateDoc)
 	}
 	return templates, rowErr
+}
 
+var getTemplateByIDQuery = fmt.Sprintf(`%s
+WHERE
+    id = ?`, getTemplatesQueryBase)
+
+func getTemplateByID(
+	executor queryRow,
+	ctx context.Context,
+	id int64,
+) (*models.Template, error) {
+	row := executor(ctx, getTemplateByIDQuery, id)
+	err := row.Err()
+	if err != nil {
+		return nil, err
+	}
+	var template models.Template
+	return &template, scanTemplate(row.Scan, &template)
 }
 
 const deleteTemplateByNameQuery = `
@@ -307,23 +393,106 @@ func deleteTemplateByName(
 const editTemplateByNameQuery = `
 UPDATE templates
 SET 
+    name = ?,
     content = ?,
     updated_at = ?
-WHERE name = ?;
+WHERE name = ?
+RETURNING id, name, content, created_at, updated_at, deleted_at
 `
 
 func editTemplateByName(
-	executor execute,
+	executor queryRow,
 	ctx context.Context,
 	name string,
+	newName string,
 	content string,
-) (bool, error) {
-	result, err := executor(ctx, editTemplateByNameQuery, content, time.Now(), name)
+) (*models.Template, error) {
+	result := executor(ctx, editTemplateByNameQuery, newName, content, time.Now(), name)
+	if err := result.Err(); err != nil {
+		return nil, err
+	}
+	tmp := new(models.Template)
+	if err := scanTemplate(result.Scan, tmp); err != nil {
+		return nil, err
+	}
+	return tmp, nil
+}
+
+const createActiveSessionQuery = `
+INSERT INTO active_sessions (address, database_dns)
+VALUES ($1, $2);
+`
+
+func createActiveSession(
+	executor execute,
+	ctx context.Context,
+	activeSession *models.ActiveSession,
+) error {
+	res, err := executor(
+		ctx,
+		createActiveSessionQuery,
+		activeSession.Address,
+		activeSession.DatabaseDNS,
+	)
 	if err != nil {
-		return false, err
+		return err
 	}
-	if affected, err := result.RowsAffected(); err != nil || affected == 0 {
-		return false, err
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
 	}
-	return true, nil
+	if affected == 0 {
+		return fmt.Errorf("failed to create active session\n")
+	}
+	return err
+}
+
+const removeActiveSessionQuery = `
+DELETE FROM active_sessions WHERE (database_dns = $1);
+`
+
+func removeActiveSession(
+	executor execute,
+	ctx context.Context,
+	activeSession *models.ActiveSession,
+) error {
+	res, err := executor(
+		ctx,
+		removeActiveSessionQuery,
+		activeSession.DatabaseDNS,
+	)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return fmt.Errorf("failed to remove active session\n")
+	}
+	return err
+}
+
+const getActiveSessionsQuery = `
+SELECT id, address, database_dns FROM active_sessions
+WHERE database_dns = $1;
+`
+
+func getActiveSession(
+	executor queryRow,
+	ctx context.Context,
+	databaseDNS string,
+) (*models.ActiveSession, error) {
+	res := executor(ctx, getActiveSessionsQuery, databaseDNS)
+	err := res.Err()
+	if err != nil {
+		return nil, err
+	}
+	activeSession := models.ActiveSession{}
+	err = res.Scan(&activeSession.ID, &activeSession.Address, &activeSession.DatabaseDNS)
+	if err != nil {
+		return nil, err
+	}
+	return &activeSession, nil
 }
