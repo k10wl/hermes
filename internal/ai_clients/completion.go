@@ -1,6 +1,7 @@
 package ai_clients
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -53,9 +54,17 @@ func Complete(
 	parameters *Parameters,
 	providers *settings.Providers,
 ) (*AIResponse, error) {
-	client, err := selectClient(parameters.Model, providers)
+	provider, model, err := extractProviderAndModel(parameters.Model)
 	if err != nil {
 		return nil, err
 	}
-	return client.complete(messages, parameters, callApi)
+	client, err := selectClient(provider, providers)
+	if err != nil {
+		return nil, err
+	}
+	parametersCopy := *parameters
+	parametersCopy.Model = model
+	fmt.Printf("parameters: %v\n", parameters)
+	fmt.Printf("params: %v\n", parametersCopy)
+	return client.complete(messages, &parametersCopy, callApi)
 }

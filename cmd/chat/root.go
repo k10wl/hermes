@@ -110,7 +110,7 @@ $ hermes chat \
 		false,
 		"continues conversation in latest chat",
 	)
-	chatCommand.Flags().StringP("model", "m", "gpt-4o-mini", "completion model")
+	chatCommand.Flags().StringP("model", "m", "openai/gpt-4o-mini", "completion model")
 	chatCommand.Flags().
 		String(
 			"temperature",

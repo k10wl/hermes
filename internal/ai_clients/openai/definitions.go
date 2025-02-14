@@ -17,7 +17,7 @@ type ChatCompletionRequest struct {
 	Stop              interface{}      `json:"stop,omitempty"`
 	Stream            bool             `json:"stream,omitempty"`
 	StreamOptions     *StreamOptions   `json:"stream_options,omitempty"`
-	Temperature       float64          `json:"temperature"`
+	Temperature       float64          `json:"temperature,omitempty"`
 	TopP              float64          `json:"top_p,omitempty"`
 	Tools             []string         `json:"tools,omitempty"`
 	ToolChoice        string           `json:"tool_choice,omitempty"`
