@@ -11,6 +11,7 @@ import (
 func prepare(t *testing.T) *sql.DB {
 	test_helpers.Skip(t)
 	sqlite3, err := sqlite3.NewSQLite3(":memory:")
+	sqlite3.DB.Exec("DELETE FROM templates")
 	if err != nil {
 		t.Fatalf("failed to setup database - %s\n", err)
 	}

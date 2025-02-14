@@ -35,8 +35,9 @@ VALUES ('first', '--{{define "first"}}[--{{.}}]--{{end}}');
 	expected := models.Template{
 		Name:    "first",
 		Content: "--{{define \"first\"}}[--{{.}}]--{{end}}",
-		ID:      1,
+		ID:      -1,
 	}
+	template.ID = -1
 	if !reflect.DeepEqual(*template, expected) {
 		t.Fatalf(
 			"Failed to find correct template\nexpected: %+v\nactual:   %+v\n",

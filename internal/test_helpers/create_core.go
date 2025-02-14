@@ -12,6 +12,7 @@ import (
 
 func CreateCore() (*core.Core, *sql.DB) {
 	db, err := sqlite3.NewSQLite3(":memory:")
+	db.DB.Exec("DELETE FROM templates")
 	if err != nil {
 		panic(err)
 	}
