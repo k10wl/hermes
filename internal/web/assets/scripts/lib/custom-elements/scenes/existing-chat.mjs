@@ -50,8 +50,8 @@ export class ExistingChatScene extends HTMLElement {
           margin: auto;
           width: 100%;
           max-width: var(--container);
-          position: sticky;
-          bottom: 1rem;
+          position: fixed;
+          bottom: 4rem;
           right: 1rem;
           height: 0;
           display: flex;
@@ -93,6 +93,8 @@ export class ExistingChatScene extends HTMLElement {
           pre {
             margin: 0;
             text-wrap: wrap;
+            word-break: break-all;
+            user-select: text;
           }
         }
 
