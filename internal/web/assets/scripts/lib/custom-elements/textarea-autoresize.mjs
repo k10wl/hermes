@@ -6,6 +6,11 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
   /** @type {(()=>void)[]}*/
   #textAreaAutoresizeCleanup = [];
 
+  /** @type {number} */
+  #selectionStart = this.selectionStart;
+  /** @type {number} */
+  #selectionEnd = this.selectionEnd;
+
   constructor() {
     super();
   }
@@ -56,8 +61,14 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
     if (typeof focusOnInput === "undefined") {
       return;
     }
-    this.addEventListener("paste", this.focusOnPaste);
-    window.addEventListener("paste", this.focusOnPaste);
+    this.addEventListener("focus", () => {
+      window.removeEventListener("paste", this.focusOnPaste);
+    });
+    this.addEventListener("blur", () => {
+      this.#selectionStart = this.selectionStart;
+      this.#selectionEnd = this.selectionEnd;
+      window.addEventListener("paste", this.focusOnPaste);
+    });
     this.#textAreaAutoresizeCleanup.push(
       ShortcutManager.keydown("<*>", this.focusOnKeydown),
       () => {
@@ -96,20 +107,19 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
     this.focus();
   }
 
-  /** @type {ClipboardEvent | null} */
-  #handled = null;
   /** @param {ClipboardEvent} e  */
   focusOnPaste = (e) => {
-    if (this.#handled === e) {
-      return;
-    }
-    this.#handled = e;
-    if (e.currentTarget === this) {
-      return;
-    }
     try {
-      this.value += AssertString.check(e.clipboardData?.getData("text"));
+      e.stopPropagation();
+      e.preventDefault();
+      const text = AssertString.check(e.clipboardData?.getData("text"));
+      this.value =
+        this.value.substring(0, this.#selectionStart) +
+        text +
+        this.value.substring(this.#selectionEnd);
       this.focus();
+      const adjustedEnd = this.#selectionEnd + text.length;
+      this.setSelectionRange(adjustedEnd, adjustedEnd);
     } catch {
       // whatever, just don't explode
     }
