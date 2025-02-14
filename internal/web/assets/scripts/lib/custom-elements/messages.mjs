@@ -15,6 +15,7 @@ export class Messages extends HTMLElement {
     this.appendChild(container);
     const messagesViewObserver = new MessagesViewObserver(container);
     const routeObserver = new RouteObserver(container);
+    routeObserver.notify();
     const messageCreatedObserver = new MessageCreatedObserver(container);
     this.#cleanupOnDisconnect.push(
       LocationControll.attach(routeObserver),
