@@ -13,7 +13,6 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
   connectedCallback() {
     this.autoresize = this.autoresize.bind(this);
     this.focusOnKeydown = this.focusOnKeydown.bind(this);
-    this.focusOnPaste = this.focusOnPaste.bind(this);
     this.#limitHeight();
     this.#focusOnInput();
     this.autoresize();
@@ -57,6 +56,7 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
     if (typeof focusOnInput === "undefined") {
       return;
     }
+    this.addEventListener("paste", this.focusOnPaste);
     window.addEventListener("paste", this.focusOnPaste);
     this.#textAreaAutoresizeCleanup.push(
       ShortcutManager.keydown("<*>", this.focusOnKeydown),
@@ -96,9 +96,15 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
     this.focus();
   }
 
+  /** @type {ClipboardEvent | null} */
+  #handled = null;
   /** @param {ClipboardEvent} e  */
-  focusOnPaste(e) {
-    if (window.document.activeElement === this) {
+  focusOnPaste = (e) => {
+    if (this.#handled === e) {
+      return;
+    }
+    this.#handled = e;
+    if (e.currentTarget === this) {
       return;
     }
     try {
@@ -107,5 +113,5 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
     } catch {
       // whatever, just don't explode
     }
-  }
+  };
 }
