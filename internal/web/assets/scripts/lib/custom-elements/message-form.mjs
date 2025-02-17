@@ -32,7 +32,7 @@ export class MessageForm extends HTMLElement {
         chat_id,
         content: content,
         parameters: {
-          model: "gpt-4o-mini",
+          model: "openai/gpt-4o-mini",
           max_tokens: undefined,
           temperature: undefined,
         },
