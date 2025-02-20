@@ -12,7 +12,7 @@ import { html } from "../../html-v2.mjs";
 import { LocationControll } from "../../location-control.mjs";
 import { ShortcutManager } from "../../shortcut-manager.mjs";
 import { Action, ActionStore } from "../control-panel.mjs";
-import { HermesAlertDialog, HermesDialog } from "../dialog.mjs";
+import { AlertDialog, ConfirmDialog, HermesDialog } from "../dialog.mjs";
 
 /** @type {null | HermesViewTemplateScene} */
 export let template = null;
@@ -316,7 +316,7 @@ export class HermesViewTemplateScene extends HTMLElement {
             placeholder='--{{define "name"}} dynamic value => --{{.}} --{{end}}'
             is="hermes-textarea-autoresize"
           >
-${event.payload.template.content}</textarea
+${event.payload.template.content.trim()}</textarea
           >
           <input
             type="hidden"
@@ -352,7 +352,14 @@ ${event.payload.template.content}</textarea
     this.#cleanup.push(off);
   };
 
-  delete = () => {
+  delete = async () => {
+    const ok = await ConfirmDialog.instance.confirm({
+      title: "Delete template",
+      description: `Are you sure you want to delete template '${this.#template?.name}'?`,
+    });
+    if (!ok) {
+      return;
+    }
     const deleteEvent = new DeleteTemplateEvent({
       name: AssertString.check(this.#template?.name),
     });
@@ -362,7 +369,7 @@ ${event.payload.template.content}</textarea
       }
       if (event instanceof ServerErrorEvent) {
         // TODO replace with some error messaging
-        this.alertDialog?.alert({
+        AlertDialog.instance.alert({
           description: `Delete errored: ${event.payload}`,
         });
         return;
@@ -392,7 +399,7 @@ ${event.payload.template.content}</textarea
           return;
         }
         if (event instanceof ServerErrorEvent) {
-          this.alertDialog?.alert({
+          AlertDialog.instance.alert({
             description: `Edit failed - ${event.payload}`,
           });
           return;
@@ -402,9 +409,7 @@ ${event.payload.template.content}</textarea
         this.#template = event.payload.template;
         this.nameCollisionDialog?.close();
         this.#savedIndicator();
-        if (LocationControll.templateId === null) {
-          LocationControll.navigate("/templates/" + this.#template.id, false);
-        }
+        LocationControll.navigate("/templates/" + this.#template.id, false);
         off();
       },
     );
@@ -484,36 +489,33 @@ ${event.payload.template.content}</textarea
       }
 
       main {
-        height: 100%;
+        height: 100vh;
+        max-height: 100vh;
         display: grid;
         place-items: center;
         overflow: auto;
       }
 
       form {
-        max-height: 100vh;
+        padding: 1rem;
         display: flex;
         flex-flow: column nowrap;
-        textarea {
-          flex-grow: 1;
-          overflow: auto;
-        }
         h-button {
           align-self: flex-end;
         }
       }
 
       textarea {
+        margin: 0 auto;
         width: min(100vw, 80ch);
-        padding: 0;
+        padding: 0.5rem 1rem 0rem;
+        border-radius: 1rem;
         border: none;
         outline: none;
         background: transparent;
         color: var(--text-0);
         resize: none;
-      }
-
-      h-button {
+        background-color: var(--bg-2);
       }
     </style>
 
@@ -554,15 +556,6 @@ ${event.payload.template.content}</textarea
           "expected bound element to be template updated dialog",
         ))}"
     ></h-teplate-updated-dialog>
-
-    <h-alert-dialog
-      bind="${(/** @type {unknown} */ element) =>
-        (this.alertDialog = AssertInstance.once(
-          element,
-          HermesAlertDialog,
-          "expected alert to be custom element",
-        ))}"
-    ></h-alert-dialog>
   `;
 }
 
