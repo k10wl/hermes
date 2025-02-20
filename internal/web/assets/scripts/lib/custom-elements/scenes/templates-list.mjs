@@ -42,13 +42,17 @@ customElements.define(
             margin: 0.1rem 0rem;
             border: 1px solid rgb(from var(--text-0) r g b / 0.25);
             text-decoration: none;
-            color: var(--text-0);
+            color: rgb(from var(--text-0) r g b / 0.5);
             transition: border-color var(--color-transition-duration);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             &:hover {
               border-color: var(--primary);
+            }
+
+            .name {
+              color: var(--text-0);
             }
           }
         </style>
@@ -66,8 +70,9 @@ customElements.define(
                 (this.newTemplate = AssertInstance.once(element, HTMLElement))}"
               is="hermes-link"
               href="/templates/new"
-              >// Create new template</a
             >
+              <span class="name"> // Create new template </span>
+            </a>
           </section>
         </main>
       `);
@@ -111,7 +116,7 @@ customElements.define(
           if (!el) {
             return;
           }
-          el.textContent = this.#linkText(event.payload.template);
+          el.replaceChildren(this.#linkContents(event.payload.template));
         }),
         ServerEvents.on("template-deleted", (event) => {
           this.#elements.get(event.payload.name)?.remove();
@@ -121,10 +126,12 @@ customElements.define(
 
     /**
      * @param {import("/assets/scripts/models.mjs").Template} template
-     * @returns {string}
+     * @returns {DocumentFragment}
      */
-    #linkText(template) {
-      return `${template.name}: ${template.content}`;
+    #linkContents(template) {
+      return html`
+        <span class="name">${template.name}</span>: ${template.content}
+      `;
     }
 
     /**
@@ -137,7 +144,7 @@ customElements.define(
           bind="${(/** @type {unknown} */ element) => {
             const asserted = AssertInstance.once(element, HTMLElement);
             // sometimes templates contain HTML, needs not to be interpreted
-            asserted.textContent = this.#linkText(template);
+            asserted.replaceChildren(this.#linkContents(template));
             this.#elements.set(template.name, asserted);
           }}"
           is="hermes-link"
