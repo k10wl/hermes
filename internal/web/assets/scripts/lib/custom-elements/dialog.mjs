@@ -1,4 +1,4 @@
-import { AssertInstance } from "../assert.mjs";
+import { AssertInstance, AssertObject, AssertString } from "../assert.mjs";
 import { html } from "../html-v2.mjs";
 import { ShortcutManager } from "../shortcut-manager.mjs";
 
@@ -142,12 +142,12 @@ export class AlertDialog extends HTMLElement {
       <style>
         * {
           color: var(--text-0);
-          text-wrap: balance;
         }
         h-button {
           display: block;
           &::part(button) {
             width: 100%;
+            font-size: 1.1rem;
           }
         }
       </style>
@@ -211,11 +211,15 @@ export class AlertDialog extends HTMLElement {
       this.descriptionSlot.textContent = info.description;
     }
     this.dialog.element.showModal();
-    const off = ShortcutManager.keydown(["<Enter>", "<KeyY>"], (event) => {
-      this.dialog.element.close();
-      event.preventDefault();
-      event.stopPropagation();
-    });
+    const off = ShortcutManager.keydown(
+      ["<Enter>", "<KeyY>"],
+      (event) => {
+        this.dialog.element.close();
+        event.preventDefault();
+        event.stopPropagation();
+      },
+      { priority: 99999 },
+    );
     this.dialog.addEventListener(
       "close",
       () => {
@@ -238,3 +242,150 @@ export class AlertDialog extends HTMLElement {
 }
 
 customElements.define("h-alert-dialog", AlertDialog);
+
+export class ConfirmDialog extends HTMLElement {
+  constructor() {
+    super();
+    let dialog;
+    this.attachShadow({ mode: "open" }).append(html`
+      <style>
+        * {
+          color: var(--text-0);
+        }
+        h-button {
+          display: block;
+          &::part(button) {
+            width: 100%;
+          }
+        }
+        #actions {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+          gap: 0.5rem;
+          h-button::part(button) {
+            font-size: 1.1rem;
+          }
+        }
+      </style>
+
+      <h-dialog
+        bind="${(/** @type {unknown} */ element) => (dialog = element)}"
+      >
+        <h-dialog-card>
+          <h-dialog-title>
+            <slot
+              bind="${(/** @type {unknown} */ element) => {
+                this.titleSlot = AssertInstance.once(element, HTMLSlotElement);
+              }}"
+              name="title"
+            ></slot>
+          </h-dialog-title>
+          <h-dialog-block>
+            <slot
+              bind="${(/** @type {unknown} */ element) => {
+                this.descriptionSlot = AssertInstance.once(
+                  element,
+                  HTMLSlotElement,
+                );
+              }}"
+              name="description"
+            ></slot>
+          </h-dialog-block>
+          <h-dialog-block>
+            <div id="actions">
+              <h-button
+                variant="error"
+                onclick="${() => this.dialog.element.close()}"
+              >
+                Cancel <h-key>n</h-key>
+              </h-button>
+              <h-button
+                variant="primary"
+                onclick="${() => this.dialog.element.close()}"
+              >
+                Confirm <h-key>↵/y</h-key>
+              </h-button>
+            </div>
+          </h-dialog-block>
+        </h-dialog-card>
+      </h-dialog>
+    `);
+
+    this.dialog = AssertInstance.once(
+      dialog,
+      HermesDialog,
+      "alert should be a dialog",
+    );
+  }
+
+  #assertion = new AssertObject(
+    {
+      title: AssertString,
+      description: AssertString,
+    },
+    "confirm modal is expected to render with both title and decription",
+  );
+  /**
+   * @param {{title: string, description: string}} info
+   * @returns {Promise<boolean>}
+   */
+  confirm = async (info) => {
+    this.#assertion.check(info);
+    /** @type {PromiseWithResolvers<boolean>} */
+    const { promise, resolve } = Promise.withResolvers();
+    const preupdate = {
+      titleSlot: this.titleSlot.textContent,
+      descriptionSlot: this.descriptionSlot.textContent,
+    };
+    if (info.title) {
+      this.titleSlot.textContent = info.title;
+    }
+    if (info.description) {
+      this.descriptionSlot.textContent = info.description;
+    }
+    this.dialog.element.showModal();
+    const confirmKeys = ShortcutManager.keydown(
+      ["<Enter>", "<KeyY>"],
+      (event) => {
+        this.dialog.element.close();
+        event.preventDefault();
+        event.stopPropagation();
+        resolve(true);
+      },
+      { priority: 99999 },
+    );
+    const cancelKeys = ShortcutManager.keydown(
+      ["<Escape>", "<KeyN>"],
+      (event) => {
+        this.dialog.element.close();
+        event.preventDefault();
+        event.stopPropagation();
+        resolve(false);
+      },
+    );
+    this.dialog.addEventListener(
+      "close",
+      () => {
+        confirmKeys();
+        cancelKeys();
+        resolve(false);
+        this.titleSlot.textContent = preupdate.titleSlot;
+        this.descriptionSlot.textContent = preupdate.descriptionSlot;
+      },
+      { once: true },
+    );
+    return promise;
+  };
+
+  /** @type {ConfirmDialog} */
+  static instance;
+  connectedCallback() {
+    if (ConfirmDialog.instance) {
+      throw new Error("Only one context menu is allowed to exist");
+    }
+    ConfirmDialog.instance = this;
+  }
+}
+
+customElements.define("h-confirm-dialog", ConfirmDialog);

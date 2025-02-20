@@ -1,7 +1,6 @@
 import "./ui/scene.mjs";
 import "./lib/sound-manager.mjs";
 import "./lib/custom-elements/init.mjs";
-import "./lib/html-v2.mjs";
 import "./ui/connection-indicator.mjs";
 
 import { AlertDialog } from "./lib/custom-elements/dialog.mjs";
