@@ -316,7 +316,7 @@ export class HermesViewTemplateScene extends HTMLElement {
             placeholder='--{{define "name"}} dynamic value => --{{.}} --{{end}}'
             is="hermes-textarea-autoresize"
           >
-${event.payload.template.content}</textarea
+${event.payload.template.content.trim()}</textarea
           >
           <input
             type="hidden"
@@ -482,36 +482,33 @@ ${event.payload.template.content}</textarea
       }
 
       main {
-        height: 100%;
+        height: 100vh;
+        max-height: 100vh;
         display: grid;
         place-items: center;
         overflow: auto;
       }
 
       form {
-        max-height: 100vh;
+        padding: 1rem;
         display: flex;
         flex-flow: column nowrap;
-        textarea {
-          flex-grow: 1;
-          overflow: auto;
-        }
         h-button {
           align-self: flex-end;
         }
       }
 
       textarea {
+        margin: 0 auto;
         width: min(100vw, 80ch);
-        padding: 0;
+        padding: 0.5rem 1rem 0rem;
+        border-radius: 1rem;
         border: none;
         outline: none;
         background: transparent;
         color: var(--text-0);
         resize: none;
-      }
-
-      h-button {
+        background-color: var(--bg-2);
       }
     </style>
 
