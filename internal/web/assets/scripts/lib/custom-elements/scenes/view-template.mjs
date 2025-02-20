@@ -12,7 +12,7 @@ import { html } from "../../html-v2.mjs";
 import { LocationControll } from "../../location-control.mjs";
 import { ShortcutManager } from "../../shortcut-manager.mjs";
 import { Action, ActionStore } from "../control-panel.mjs";
-import { AlertDialog, HermesDialog } from "../dialog.mjs";
+import { AlertDialog, ConfirmDialog, HermesDialog } from "../dialog.mjs";
 
 /** @type {null | HermesViewTemplateScene} */
 export let template = null;
@@ -352,7 +352,14 @@ ${event.payload.template.content.trim()}</textarea
     this.#cleanup.push(off);
   };
 
-  delete = () => {
+  delete = async () => {
+    const ok = await ConfirmDialog.instance.confirm({
+      title: "Delete template",
+      description: `Are you sure you want to delete template '${this.#template?.name}'?`,
+    });
+    if (!ok) {
+      return;
+    }
     const deleteEvent = new DeleteTemplateEvent({
       name: AssertString.check(this.#template?.name),
     });
