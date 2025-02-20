@@ -402,9 +402,7 @@ ${event.payload.template.content}</textarea
         this.#template = event.payload.template;
         this.nameCollisionDialog?.close();
         this.#savedIndicator();
-        if (LocationControll.templateId === null) {
-          LocationControll.navigate("/templates/" + this.#template.id, false);
-        }
+        LocationControll.navigate("/templates/" + this.#template.id, false);
         off();
       },
     );
