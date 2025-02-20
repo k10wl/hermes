@@ -44,15 +44,23 @@ customElements.define(
             text-decoration: none;
             color: rgb(from var(--text-0) r g b / 0.5);
             transition: border-color var(--color-transition-duration);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            display: flex;
+
             &:hover {
               border-color: var(--primary);
             }
 
             .name {
+              flex-shrink: 0;
               color: var(--text-0);
+            }
+
+            .content {
+              padding: 0;
+              margin: 0;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
             }
           }
         </style>
@@ -130,7 +138,14 @@ customElements.define(
      */
     #linkContents(template) {
       return html`
-        <span class="name">${template.name}</span>: ${template.content}
+        <span class="name">${template.name}</span>:&nbsp;
+        <p
+          class="content"
+          bind="${(/** @type {unknown} */ element) => {
+            AssertInstance.once(element, HTMLElement).innerText =
+              template.content.replaceAll("\n", " ");
+          }}"
+        ></p>
       `;
     }
 
