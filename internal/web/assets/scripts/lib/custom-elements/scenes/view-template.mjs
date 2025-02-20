@@ -12,7 +12,7 @@ import { html } from "../../html-v2.mjs";
 import { LocationControll } from "../../location-control.mjs";
 import { ShortcutManager } from "../../shortcut-manager.mjs";
 import { Action, ActionStore } from "../control-panel.mjs";
-import { HermesAlertDialog, HermesDialog } from "../dialog.mjs";
+import { AlertDialog, HermesDialog } from "../dialog.mjs";
 
 /** @type {null | HermesViewTemplateScene} */
 export let template = null;
@@ -362,7 +362,7 @@ ${event.payload.template.content}</textarea
       }
       if (event instanceof ServerErrorEvent) {
         // TODO replace with some error messaging
-        this.alertDialog?.alert({
+        AlertDialog.instance.alert({
           description: `Delete errored: ${event.payload}`,
         });
         return;
@@ -392,7 +392,7 @@ ${event.payload.template.content}</textarea
           return;
         }
         if (event instanceof ServerErrorEvent) {
-          this.alertDialog?.alert({
+          AlertDialog.instance.alert({
             description: `Edit failed - ${event.payload}`,
           });
           return;
@@ -552,15 +552,6 @@ ${event.payload.template.content}</textarea
           "expected bound element to be template updated dialog",
         ))}"
     ></h-teplate-updated-dialog>
-
-    <h-alert-dialog
-      bind="${(/** @type {unknown} */ element) =>
-        (this.alertDialog = AssertInstance.once(
-          element,
-          HermesAlertDialog,
-          "expected alert to be custom element",
-        ))}"
-    ></h-alert-dialog>
   `;
 }
 

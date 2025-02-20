@@ -134,7 +134,7 @@ customElements.define("h-dialog-card", HermesDialogCard);
 customElements.define("h-dialog-title", HermesDialogTitle);
 customElements.define("h-dialog-block", HermesDialogBlock);
 
-export class HermesAlertDialog extends HTMLElement {
+export class AlertDialog extends HTMLElement {
   constructor() {
     super();
     let dialog;
@@ -226,5 +226,15 @@ export class HermesAlertDialog extends HTMLElement {
       { once: true },
     );
   }
+
+  /** @type {AlertDialog} */
+  static instance;
+  connectedCallback() {
+    if (AlertDialog.instance) {
+      throw new Error("Only one context menu is allowed to exist");
+    }
+    AlertDialog.instance = this;
+  }
 }
-customElements.define("h-alert-dialog", HermesAlertDialog);
+
+customElements.define("h-alert-dialog", AlertDialog);
