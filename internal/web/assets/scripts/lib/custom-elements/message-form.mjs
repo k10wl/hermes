@@ -28,6 +28,9 @@ export class MessageForm extends HTMLElement {
       let chat_id = LocationControll.pathname.split("/").at(-1);
       chat_id = AssertNumber.check(chat_id ? +chat_id : -1);
       const content = AssertString.check(new FormData(form).get("content"));
+      if (content.trim() === "") {
+        return;
+      }
       const message = new CreateCompletionMessageEvent({
         chat_id,
         content: content,
