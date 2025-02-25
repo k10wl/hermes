@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
@@ -16,7 +15,7 @@ import (
 var migrationFiles embed.FS
 
 func runMigrations(db *sql.DB) error {
-	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
+	driver, err := WithInstance(db, &Config{})
 	if err != nil {
 		return fmt.Errorf("failed to create driver: %w", err)
 	}

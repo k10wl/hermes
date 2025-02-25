@@ -10,10 +10,10 @@ import (
 func TestGetMessagesByChatID(t *testing.T) {
 	db := prepare(t)
 	q := `
-INSERT INTO chats (name) VALUES ("generic");
+INSERT INTO chats (name) VALUES ('generic');
 INSERT INTO messages (chat_id, role_id, content) VALUES 
-    (1, 1, "user question"),
-    (1, 2, "assistant response");
+    (1, 1, 'user question'),
+    (1, 2, 'assistant response');
     `
 	_, err := db.Exec(q)
 	if err != nil {

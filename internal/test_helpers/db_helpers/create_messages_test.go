@@ -29,7 +29,7 @@ func TestCreateMessages(t *testing.T) {
 	}
 
 	if _, err := db.Exec(
-		`INSERT INTO chats (name) VALUES ("test");`,
+		`INSERT INTO chats (name) VALUES ('test');`,
 	); err != nil {
 		t.Fatalf("failed to create chat, error: %s\n", err)
 	}

@@ -16,8 +16,8 @@ func TestGetChatByID(t *testing.T) {
 INSERT INTO
     chats (id, name)
 VALUES 
-    (1, "first"),
-    (2, "second")
+    (1, 'first'),
+    (2, 'second')
 `)
 	if err != nil {
 		t.Errorf("failed to insert into chats - %s\n", err)
