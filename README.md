@@ -25,7 +25,7 @@ You can call completion using desired model in following ways:
 
 ## Instalation
 
-### Using golang (requires go 1.23.1+)
+### Using golang (requires go 1.24.0)
 You can add it to you golang managed library using
 ```bash
 make install
