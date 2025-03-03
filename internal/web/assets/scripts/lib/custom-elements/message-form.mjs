@@ -14,9 +14,6 @@ export class MessageForm extends HTMLElement {
     this.shadow = this.attachShadow({ mode: "open" });
   }
 
-  /** @type {HTMLTextAreaElement | null} */
-  #textarea = null;
-
   connectedCallback() {
     this.#render();
 
@@ -74,40 +71,27 @@ export class MessageForm extends HTMLElement {
 
         form {
           display: flex;
-          gap: 0.5rem;
-          border-radius: var(--radius);
-          padding: 0 calc(var(--radius) / 2) 0 var(--radius);
-          background: var(--bg);
-          color: var(--text);
-        }
-
-        .actions {
-          height: 3rem;
-          display: flex;
-          justify-content: flex-end;
-          align-items: center;
-          align-self: flex-end;
+          justify-content: center;
+          align-items: flex-end;
           gap: 0.5rem;
         }
 
         textarea {
-          background: transparent;
-          color: var(--text);
-          padding: 0;
-          padding-top: var(--radius);
           max-height: 50vh;
           width: 100%;
+          background: var(--bg);
+          color: var(--text);
+          padding: 0.5rem 1rem 0;
           margin: 0;
+          border-radius: 1.25rem;
           resize: none;
           outline: none;
           border: none;
         }
 
         form:has(textarea:invalid) button[type="submit"] {
-          --_col: rgb(from var(--text) r g b / 0.25);
           background: var(--bg);
-          color: var(--_col);
-          border-color: var(--_col);
+          color: rgb(from var(--text) r g b / 0.25);
           cursor: auto;
         }
 
@@ -127,12 +111,7 @@ export class MessageForm extends HTMLElement {
         }
       </style>
 
-      <form
-        onclick="${() => {
-          return this.#textarea?.focus();
-        }}"
-        is="hermes-form"
-      >
+      <form is="hermes-form">
         <textarea
           id="message-content-input"
           is="hermes-textarea-autoresize"
@@ -142,19 +121,8 @@ export class MessageForm extends HTMLElement {
           placeholder="${this.getAttribute("placeholder") ?? "Message..."}"
           autofocus
           required
-          bind="${(/** @type {unknown} */ el) => {
-            this.#textarea = AssertInstance.once(el, HTMLTextAreaElement);
-          }}"
         ></textarea>
-        <div class="actions">
-          <button
-            onclick="${(/** @type {Event} */ e) => e.stopPropagation()}"
-            id="submit-message"
-            type="submit"
-          >
-            ↑
-          </button>
-        </div>
+        <button id="submit-message" type="submit">↑</button>
       </form>
     `);
   }
