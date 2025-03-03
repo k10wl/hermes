@@ -1,15 +1,8 @@
-import { AssertString } from "/assets/scripts/lib/assert.mjs";
-
 import { ShortcutManager } from "../shortcut-manager.mjs";
 
 export class TextAreaAutoresize extends HTMLTextAreaElement {
   /** @type {(()=>void)[]}*/
   #textAreaAutoresizeCleanup = [];
-
-  /** @type {number} */
-  #selectionStart = this.selectionStart;
-  /** @type {number} */
-  #selectionEnd = this.selectionEnd;
 
   constructor() {
     super();
@@ -57,24 +50,11 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
   }
 
   #focusOnInput() {
-    const focusOnInput = this.getAttribute("focus-on-input");
-    if (typeof focusOnInput === "undefined") {
-      return;
+    if (typeof this.getAttribute("focus-on-input") !== "undefined") {
+      this.#textAreaAutoresizeCleanup.push(
+        ShortcutManager.keydown("<*>", this.focusOnKeydown),
+      );
     }
-    this.addEventListener("focus", () => {
-      window.removeEventListener("paste", this.focusOnPaste);
-    });
-    this.addEventListener("blur", () => {
-      this.#selectionStart = this.selectionStart;
-      this.#selectionEnd = this.selectionEnd;
-      window.addEventListener("paste", this.focusOnPaste);
-    });
-    this.#textAreaAutoresizeCleanup.push(
-      ShortcutManager.keydown("<*>", this.focusOnKeydown),
-      () => {
-        window.removeEventListener("paste", this.focusOnPaste);
-      },
-    );
   }
 
   /** @param {KeyboardEvent} e  */
@@ -106,22 +86,4 @@ export class TextAreaAutoresize extends HTMLTextAreaElement {
     }
     this.focus();
   }
-
-  /** @param {ClipboardEvent} e  */
-  focusOnPaste = (e) => {
-    try {
-      e.stopPropagation();
-      e.preventDefault();
-      const text = AssertString.check(e.clipboardData?.getData("text"));
-      this.value =
-        this.value.substring(0, this.#selectionStart) +
-        text +
-        this.value.substring(this.#selectionEnd);
-      this.focus();
-      const adjustedEnd = this.#selectionEnd + text.length;
-      this.setSelectionRange(adjustedEnd, adjustedEnd);
-    } catch {
-      // whatever, just don't explode
-    }
-  };
 }
