@@ -5,7 +5,7 @@ import {
   ChatCreatedEvent,
   ServerErrorEvent,
 } from "../events/server-events-list.mjs";
-import { html } from "../html.mjs";
+import { html } from "../html-v2.mjs";
 import { LocationControll } from "../location-control.mjs";
 
 export class MessageForm extends HTMLElement {
@@ -13,6 +13,9 @@ export class MessageForm extends HTMLElement {
     super();
     this.shadow = this.attachShadow({ mode: "open" });
   }
+
+  /** @type {HTMLTextAreaElement | null} */
+  #textarea = null;
 
   connectedCallback() {
     this.#render();
@@ -61,36 +64,55 @@ export class MessageForm extends HTMLElement {
   }
 
   #render() {
-    this.shadow.innerHTML = html`
+    this.shadow.append(html`
       <style>
+        :host {
+          --bg: var(--bg-2);
+          --text: var(--text-0);
+          --radius: 1rem;
+        }
+
         form {
           display: flex;
-          justify-content: center;
-          align-items: flex-end;
-          gap: 8px;
+          gap: 0.5rem;
+          border-radius: var(--radius);
+          padding: 0 calc(var(--radius) / 2) 0 var(--radius);
+          background: var(--bg);
+          color: var(--text);
+        }
+
+        .actions {
+          height: 3rem;
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          align-self: flex-end;
+          gap: 0.5rem;
         }
 
         textarea {
+          background: transparent;
+          color: var(--text);
+          padding: 0;
+          padding-top: var(--radius);
           max-height: 50vh;
           width: 100%;
-          background: var(--bg-2);
-          color: var(--text-0);
-          padding: 0.5rem 1rem 0;
-          margin: 0px;
-          border-radius: 20px;
+          margin: 0;
           resize: none;
           outline: none;
           border: none;
         }
 
-        textarea:invalid + button {
-          background: var(--bg-2);
-          color: rgb(from var(--text-0) r g b / 0.25);
+        form:has(textarea:invalid) button[type="submit"] {
+          --_col: rgb(from var(--text) r g b / 0.25);
+          background: var(--bg);
+          color: var(--_col);
+          border-color: var(--_col);
           cursor: auto;
         }
 
         button {
-          --_size: 32px;
+          --_size: 2rem;
           transition: all var(--color-transition-duration);
           flex-shrink: 0;
           background: var(--primary);
@@ -105,7 +127,12 @@ export class MessageForm extends HTMLElement {
         }
       </style>
 
-      <form is="hermes-form">
+      <form
+        onclick="${() => {
+          return this.#textarea?.focus();
+        }}"
+        is="hermes-form"
+      >
         <textarea
           id="message-content-input"
           is="hermes-textarea-autoresize"
@@ -115,10 +142,21 @@ export class MessageForm extends HTMLElement {
           placeholder="${this.getAttribute("placeholder") ?? "Message..."}"
           autofocus
           required
+          bind="${(/** @type {unknown} */ el) => {
+            this.#textarea = AssertInstance.once(el, HTMLTextAreaElement);
+          }}"
         ></textarea>
-        <button id="submit-message" type="submit">↑</button>
+        <div class="actions">
+          <button
+            onclick="${(/** @type {Event} */ e) => e.stopPropagation()}"
+            id="submit-message"
+            type="submit"
+          >
+            ↑
+          </button>
+        </div>
       </form>
-    `;
+    `);
   }
 }
 

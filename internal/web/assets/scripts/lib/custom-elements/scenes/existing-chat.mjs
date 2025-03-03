@@ -1,11 +1,11 @@
 import { AssertInstance } from "../../assert.mjs";
-import { html } from "../../html.mjs";
+import { html } from "../../html-v2.mjs";
 
 export class ExistingChatScene extends HTMLElement {
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: "open" });
-    this.shadow.innerHTML = html`
+    this.shadow.append(html`
       <style>
         main {
           height: 100vh;
@@ -133,10 +133,11 @@ export class ExistingChatScene extends HTMLElement {
         </div>
 
         <div class="input-form-wrapper">
-          <hermes-message-form></hermes-message-form>
+          <hermes-message-form placeholder="How can I help you?">
+          </hermes-message-form>
         </div>
       </main>
-    `;
+    `);
   }
 
   connectedCallback() {

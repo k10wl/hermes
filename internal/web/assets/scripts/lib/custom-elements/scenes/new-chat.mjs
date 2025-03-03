@@ -117,7 +117,9 @@ export class CreateChatScene extends HTMLElement {
       </style>
 
       <main>
-        <hermes-message-form placeholder="create chat..."></hermes-message-form>
+        <hermes-message-form
+          placeholder="What do you want to know?"
+        ></hermes-message-form>
         <hermes-new-chat-shortcuts></hermes-new-chat-shortcuts>
       </main>
     `);
