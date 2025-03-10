@@ -27,6 +27,10 @@ export class HermesDialog extends HTMLElement {
           ${this.getAttribute("dialog-style") ?? ""}
         }
 
+        dialog::backdrop {
+          background: rgb(0 0 0 / 0.5);
+        }
+
         @starting-style {
           dialog[open] {
             opacity: 0;
