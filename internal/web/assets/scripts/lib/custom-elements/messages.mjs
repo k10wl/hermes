@@ -59,6 +59,7 @@ customElements.define(
             transition-delay: 0ms;
           }
         </style>
+
         <div id="wrapper">
           <div id="content">
             <slot></slot>
@@ -168,11 +169,28 @@ export class Messages extends HTMLElement {
     routeObserver.notify();
     this.#cleanupOnDisconnect.push(
       LocationControll.attach(routeObserver),
-      ServerEvents.on("message-created", (data) => {
-        if (data.payload.chat_id === LocationControll.chatId) {
-          messagesContainer.append(this.#messageToHtml(data.payload.message));
+
+      ServerEvents.on("message-created", async (data) => {
+        if (data.payload.chat_id !== LocationControll.chatId) {
+          return;
+        }
+        const newMessage = AssertInstance.once(
+          this.#messageToHtml(data.payload.message).firstElementChild,
+          HTMLElement,
+        );
+        messagesContainer.append(newMessage);
+        if (data.payload.message.role !== "assistant") {
+          return;
+        }
+        const { top } = newMessage.getBoundingClientRect();
+        if (top < 0) {
+          newMessage.scrollIntoView({
+            behavior: "instant",
+            block: "start",
+          });
         }
       }),
+
       ServerEvents.on("read-chat", (data) => {
         messagesContainer.replaceChildren(
           ...data.payload.messages.map((message) =>
@@ -192,19 +210,19 @@ export class Messages extends HTMLElement {
   /** @param {Message} message */
   #messageToHtml(message) {
     const { role, content } = Message.validator.check(message);
-    return html`
-      <h-chat-message
-        class="role-${role}"
-        bind="${(/** @type {unknown} */ el) => {
-          const element = AssertInstance.once(el, customElements.get("h-chat-message"));
-          element.messageContent = content;
-        }}"
-        >${content
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")}</h-chat-message
-      >
-    `;
+    return html`<h-chat-message
+      class="role-${role}"
+      bind="${(/** @type {unknown} */ el) => {
+        AssertInstance.once(
+          el,
+          customElements.get("h-chat-message"),
+        ).messageContent = content;
+      }}"
+      >${content
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")}</h-chat-message
+    >`;
   }
 }
 
