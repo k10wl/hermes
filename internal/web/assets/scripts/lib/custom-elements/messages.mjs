@@ -3,6 +3,130 @@ import { RequestReadChatEvent } from "/assets/scripts/lib/events/client-events-l
 import { ServerEvents } from "/assets/scripts/lib/events/server-events.mjs";
 import { html } from "/assets/scripts/lib/html-v2.mjs";
 import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
+import { Message } from "/assets/scripts/models.mjs";
+
+customElements.define(
+  "h-chat-message",
+  class extends HTMLElement {
+    messageContent = "";
+
+    constructor() {
+      super();
+    }
+
+    connectedCallback() {
+      this.attachShadow({ mode: "open" }).append(html`
+        <style>
+          #wrapper {
+            display: grid;
+            padding: 0.5rem 0;
+          }
+          #content {
+            user-select: text;
+          }
+          slot {
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: var(--_text);
+          }
+          :host(.role-user) {
+            #content {
+              --_border-radius: 0.66rem;
+              background: rgb(from var(--_primary) r g b / 0.05);
+              border: 1px solid rgb(from var(--_primary) r g b / 0.25);
+              justify-self: end;
+              width: fit-content;
+              max-width: 80%;
+              border-radius: var(--_border-radius) var(--_border-radius)
+                calc(var(--_border-radius) / 3) var(--_border-radius);
+              padding: 0.33rem;
+              padding-bottom: 0.2rem;
+            }
+            h-message-actions {
+              justify-self: end;
+            }
+          }
+          h-message-actions {
+            --_duration: 100ms;
+            transition: all var(--_duration);
+            transition-delay: var(--_duration);
+            margin-top: 0.2rem;
+            opacity: 0;
+          }
+          #wrapper:hover h-message-actions,
+          #wrapper:focus-within h-message-actions {
+            opacity: 1;
+            transition-delay: 0ms;
+          }
+        </style>
+        <div id="wrapper">
+          <div id="content">
+            <slot></slot>
+          </div>
+          <h-message-actions
+            oncopycontent="${() => {
+              navigator.clipboard.writeText(this.messageContent);
+            }}"
+            part="actions"
+          ></h-message-actions>
+        </div>
+      `);
+    }
+  },
+);
+
+customElements.define(
+  "h-message-actions",
+  class extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: "closed" }).append(html`
+        <style>
+          :host {
+            --_text: var(--text-0);
+            --_primary: var(--primary);
+          }
+
+          button {
+            --_size: 2ch;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: var(--_size);
+            height: var(--_size);
+            padding: cacl(var(--_size) / 2);
+            color: rgb(from var(--_text) r g b / 0.5);
+            background: transparent;
+            font-size: 1rem;
+            border: 1px solid transparent;
+            border-radius: calc(var(--_size) / 4);
+            &:hover {
+              color: var(--_text);
+              border-color: rgb(from var(--_text) r g b / 0.25);
+            }
+          }
+        </style>
+
+        <button onclick="${this.#handleCopy}">⎘</button>
+      `);
+    }
+
+    #handleCopy = (/** @type {Event} */ event) => {
+      this.dispatchEvent(
+        new CustomEvent("copycontent", {
+          bubbles: true,
+          composed: true,
+        }),
+      );
+      const button = AssertInstance.once(event.target, HTMLButtonElement);
+      const prev = button.textContent;
+      button.textContent = "✓";
+      setTimeout(() => {
+        button.textContent = prev;
+      }, 2000);
+    };
+  },
+);
 
 export class Messages extends HTMLElement {
   /** @type {(() => void)[]} */
@@ -21,55 +145,12 @@ export class Messages extends HTMLElement {
           --_primary: var(--primary);
         }
 
-        .message {
-          margin: 0.75rem 0;
+        section {
+          padding: 0.75rem;
         }
 
-        .content {
-          user-select: text;
-          white-space: pre-wrap;
-          word-break: break-word;
-        }
-
-        .role-user {
-          --_border-radius: 0.66rem;
-          color: var(--_text);
-          background: rgb(from var(--_primary) r g b / 0.05);
-          border: 1px solid rgb(from var(--_primary) r g b / 0.25);
-          margin-left: auto;
-          width: fit-content;
-          max-width: 80%;
-          border-radius: var(--_border-radius) var(--_border-radius) 0
-            var(--_border-radius);
-          padding: 0.33rem;
-          padding-bottom: 0.2rem;
-        }
-
-        .actions {
-          display: flex;
-          gap: 0.5rem;
-          margin-top: 0.15rem;
-        }
-
-        .actions button {
-          background: var(--bg-2);
-          border: 1px solid rgb(from var(--text-0) r g b / 0.25);
-          font-size: 1rem;
-          --_size: 2ch;
-          width: var(--_size);
-          height: var(--_size);
-          border-radius: calc(var(--_size) / 4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0.25rem;
-          color: rgb(from var(--text-0) r g b / 0.5);
-          background: transparent;
-          border: 1px solid transparent;
-          &:hover {
-            color: var(--_text);
-            border-color: rgb(from var(--text-0) r g b / 0.25);
-          }
+        h-chat-message.role-assistant:last-child::part(actions) {
+          opacity: 1;
         }
       </style>
 
@@ -93,7 +174,6 @@ export class Messages extends HTMLElement {
         }
       }),
       ServerEvents.on("read-chat", (data) => {
-        console.log("read-chat", data);
         messagesContainer.replaceChildren(
           ...data.payload.messages.map((message) =>
             this.#messageToHtml(message),
@@ -109,41 +189,21 @@ export class Messages extends HTMLElement {
     }
   }
 
-  /** @param {import("/assets/scripts/models.mjs").Message} message */
+  /** @param {Message} message */
   #messageToHtml(message) {
-    const escaped = message.content
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-
-    if (message.role === "user") {
-      return html`
-        <div class="message content role-${message.role}">${escaped}</div>
-      `;
-    }
-
+    const { role, content } = Message.validator.check(message);
     return html`
-      <div class="message">
-        <div class="content">${escaped}</div>
-        <div class="actions">
-          <button
-            onclick="${(/** @type {Event} */ event) => {
-              const button = AssertInstance.once(
-                event.target,
-                HTMLButtonElement,
-              );
-              const prev = button.textContent;
-              button.textContent = "✓";
-              setTimeout(() => {
-                button.textContent = prev;
-              }, 2000);
-              window.navigator.clipboard.writeText(message.content);
-            }}"
-          >
-            ⎘
-          </button>
-        </div>
-      </div>
+      <h-chat-message
+        class="role-${role}"
+        bind="${(/** @type {unknown} */ el) => {
+          const element = AssertInstance.once(el, customElements.get("h-chat-message"));
+          element.messageContent = content;
+        }}"
+        >${content
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")}</h-chat-message
+      >
     `;
   }
 }
