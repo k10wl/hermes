@@ -1,12 +1,3 @@
- ```
- _    _ 
-| |  | |
-| |__| |  ___  _ __  _ __ ___    ___  ___
-|  __  | / _ \|  __||  _ \ _ \  / _ \/ __|
-| |  | ||  __/| |   | | | | | ||  __/\__ \
-|_|  |_| \___||_|   |_| |_| |_| \___||___/
-```
-
 # Host-based Extensible Response Management Execution System (HERMES)
 
 ## Overview
