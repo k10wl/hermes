@@ -1,12 +1,17 @@
-import { html } from "/assets/scripts/lib/libdim.mjs";
-
-import { AssertInstance } from "../../assert.mjs";
+import { AssertInstance } from "/assets/scripts/lib/assert.mjs";
+import { Bind, html } from "/assets/scripts/lib/libdim.mjs";
 
 export class ExistingChatScene extends HTMLElement {
   constructor() {
     super();
-    this.shadow = this.attachShadow({ mode: "open" });
-    this.shadow.append(html`
+  }
+
+  connectedCallback() {
+    const scrollableWrapper = new Bind((el) =>
+      AssertInstance.once(el, HTMLDivElement),
+    );
+
+    this.attachShadow({ mode: "open" }).append(html`
       <style>
         main {
           height: 100vh;
@@ -124,9 +129,32 @@ export class ExistingChatScene extends HTMLElement {
       </style>
 
       <main>
-        <div id="scrollable-message-wrapper">
+        <div
+          id="scrollable-message-wrapper"
+          bind="${scrollableWrapper}"
+          onscroll="${() => {
+            const scrollable = scrollableWrapper.current;
+            if (scrollable.scrollTop >= 0) {
+              scrollable.classList.remove("scrolled");
+            } else {
+              scrollable.classList.add("scrolled");
+            }
+          }}"
+        >
           <div id="to-bottom-wrapper">
-            <button type="button" id="to-bottom">⇊</button>
+            <button
+              type="button"
+              aria-label="Scroll to latest message"
+              id="to-bottom"
+              onclick="${() => {
+                scrollableWrapper.current.scrollTo({
+                  top: 0,
+                  behavior: "smooth",
+                });
+              }}"
+            >
+              ⇊
+            </button>
           </div>
           <div id="messages-width-wrapper">
             <hermes-messages id="messages-list"></hermes-messages>
@@ -139,28 +167,6 @@ export class ExistingChatScene extends HTMLElement {
         </div>
       </main>
     `);
-  }
-
-  connectedCallback() {
-    const scrollable = AssertInstance.once(
-      this.shadow.querySelector("#scrollable-message-wrapper"),
-      HTMLDivElement,
-    );
-
-    scrollable.addEventListener("scroll", () => {
-      if (scrollable.scrollTop === 0) {
-        scrollable.classList.remove("scrolled");
-      } else {
-        scrollable.classList.add("scrolled");
-      }
-    });
-
-    AssertInstance.once(
-      this.shadow.querySelector("#to-bottom"),
-      HTMLButtonElement,
-    ).addEventListener("click", () => {
-      scrollable.scrollTo({ top: 0, behavior: "smooth" });
-    });
   }
 }
 
