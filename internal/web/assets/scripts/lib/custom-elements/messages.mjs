@@ -1,80 +1,78 @@
 import { AssertInstance } from "/assets/scripts/lib/assert.mjs";
 import { RequestReadChatEvent } from "/assets/scripts/lib/events/client-events-list.mjs";
 import { ServerEvents } from "/assets/scripts/lib/events/server-events.mjs";
-import { html } from "/assets/scripts/lib/html-v2.mjs";
+import { Bind, escapeMarkup, html } from "/assets/scripts/lib/libdim.mjs";
 import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
 import { Message } from "/assets/scripts/models.mjs";
 
-customElements.define(
-  "h-chat-message",
-  class extends HTMLElement {
-    messageContent = "";
+class ChatMessage extends HTMLElement {
+  messageContent = "";
 
-    constructor() {
-      super();
-    }
+  constructor() {
+    super();
+  }
 
-    connectedCallback() {
-      this.attachShadow({ mode: "open" }).append(html`
-        <style>
-          #wrapper {
-            display: grid;
-            padding: 0.5rem 0;
-          }
+  connectedCallback() {
+    this.attachShadow({ mode: "open" }).append(html`
+      <style>
+        #wrapper {
+          display: grid;
+          padding: 0.5rem 0;
+        }
+        #content {
+          user-select: text;
+        }
+        slot {
+          white-space: pre-wrap;
+          word-break: break-word;
+          color: var(--_text);
+        }
+        :host(.role-user) {
           #content {
-            user-select: text;
-          }
-          slot {
-            white-space: pre-wrap;
-            word-break: break-word;
-            color: var(--_text);
-          }
-          :host(.role-user) {
-            #content {
-              --_border-radius: 0.66rem;
-              background: rgb(from var(--_primary) r g b / 0.05);
-              border: 1px solid rgb(from var(--_primary) r g b / 0.25);
-              justify-self: end;
-              width: fit-content;
-              max-width: 80%;
-              border-radius: var(--_border-radius) var(--_border-radius)
-                calc(var(--_border-radius) / 3) var(--_border-radius);
-              padding: 0.33rem;
-              padding-bottom: 0.2rem;
-            }
-            h-message-actions {
-              justify-self: end;
-            }
+            --_border-radius: 0.66rem;
+            background: rgb(from var(--_primary) r g b / 0.05);
+            border: 1px solid rgb(from var(--_primary) r g b / 0.25);
+            justify-self: end;
+            width: fit-content;
+            max-width: 80%;
+            border-radius: var(--_border-radius) var(--_border-radius)
+              calc(var(--_border-radius) / 3) var(--_border-radius);
+            padding: 0.33rem;
+            padding-bottom: 0.2rem;
           }
           h-message-actions {
-            --_duration: 100ms;
-            transition: all var(--_duration);
-            transition-delay: var(--_duration);
-            margin-top: 0.2rem;
-            opacity: 0;
+            justify-self: end;
           }
-          #wrapper:hover h-message-actions,
-          #wrapper:focus-within h-message-actions {
-            opacity: 1;
-            transition-delay: 0ms;
-          }
-        </style>
+        }
+        h-message-actions {
+          --_duration: 100ms;
+          transition: all var(--_duration);
+          transition-delay: var(--_duration);
+          margin-top: 0.2rem;
+          opacity: 0;
+        }
+        #wrapper:hover h-message-actions,
+        #wrapper:focus-within h-message-actions {
+          opacity: 1;
+          transition-delay: 0ms;
+        }
+      </style>
 
-        <div id="wrapper">
-          <div id="content">
-            <slot></slot>
-          </div>
-          <h-message-actions
-            oncopycontent="${() => {
-              navigator.clipboard.writeText(this.messageContent);
-            }}"
-            part="actions"
-          ></h-message-actions>
+      <div id="wrapper">
+        <div id="content">
+          <slot></slot>
         </div>
-      `);
-    }
-  },
-);
+        <h-message-actions
+          oncopycontent="${() => {
+            navigator.clipboard.writeText(this.messageContent);
+          }}"
+          part="actions"
+        ></h-message-actions>
+      </div>
+    `);
+  }
+}
+customElements.define("h-chat-message", ChatMessage);
 
 customElements.define(
   "h-message-actions",
@@ -133,8 +131,7 @@ export class Messages extends HTMLElement {
   /** @type {(() => void)[]} */
   #cleanupOnDisconnect = [];
 
-  /** @type {HTMLElement | undefined} */
-  #messages;
+  messages = new Bind((el) => AssertInstance.once(el, HTMLElement));
 
   constructor() {
     super();
@@ -155,16 +152,15 @@ export class Messages extends HTMLElement {
         }
       </style>
 
-      <section
-        bind="${(/** @type {unknown} */ el) => {
-          this.#messages = AssertInstance.once(el, HTMLElement);
-        }}"
-      ></section>
+      <section bind="${this.messages}"></section>
     `);
   }
 
   connectedCallback() {
-    const messagesContainer = AssertInstance.once(this.#messages, HTMLElement);
+    const messagesContainer = AssertInstance.once(
+      this.messages.current,
+      HTMLElement,
+    );
     const routeObserver = new RouteObserver();
     routeObserver.notify();
     this.#cleanupOnDisconnect.push(
@@ -210,19 +206,14 @@ export class Messages extends HTMLElement {
   /** @param {Message} message */
   #messageToHtml(message) {
     const { role, content } = Message.validator.check(message);
-    return html`<h-chat-message
+    const messageEl = new Bind((el) => AssertInstance.once(el, ChatMessage));
+    const fragment = html`<h-chat-message
       class="role-${role}"
-      bind="${(/** @type {unknown} */ el) => {
-        AssertInstance.once(
-          el,
-          customElements.get("h-chat-message"),
-        ).messageContent = content;
-      }}"
-      >${content
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")}</h-chat-message
+      bind="${messageEl}"
+      >${escapeMarkup(content)}</h-chat-message
     >`;
+    messageEl.current.messageContent = content;
+    return fragment;
   }
 }
 

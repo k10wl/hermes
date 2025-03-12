@@ -1,5 +1,6 @@
+import { html } from "/assets/scripts/lib/libdim.mjs";
+
 import { AssertInstance } from "../../assert.mjs";
-import { html } from "../../html-v2.mjs";
 
 export class ExistingChatScene extends HTMLElement {
   constructor() {

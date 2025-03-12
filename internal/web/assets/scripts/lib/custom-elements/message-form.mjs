@@ -1,3 +1,5 @@
+import { html } from "/assets/scripts/lib/libdim.mjs";
+
 import { AssertInstance, AssertNumber, AssertString } from "../assert.mjs";
 import { CreateCompletionMessageEvent } from "../events/client-events-list.mjs";
 import { ServerEvents } from "../events/server-events.mjs";
@@ -5,7 +7,6 @@ import {
   ChatCreatedEvent,
   ServerErrorEvent,
 } from "../events/server-events-list.mjs";
-import { html } from "../html-v2.mjs";
 import { LocationControll } from "../location-control.mjs";
 
 export class MessageForm extends HTMLElement {

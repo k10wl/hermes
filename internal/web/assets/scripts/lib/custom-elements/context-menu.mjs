@@ -1,19 +1,22 @@
+import { Bind, html } from "/assets/scripts/lib/libdim.mjs";
+
 import { AssertInstance } from "../assert.mjs";
-import { html } from "../html-v2.mjs";
 import { ShortcutManager } from "../shortcut-manager.mjs";
 
 export class ContextMenu extends HTMLElement {
   #position = { x: 0, y: 0 };
-  #zIndex = 1000;
 
-  /** @type {HTMLElement | null} */
-  backdrop = null;
+  backdrop = new Bind((el) => AssertInstance.once(el, HTMLElement));
+  element = new Bind((el) => AssertInstance.once(el, HTMLDialogElement));
 
   constructor() {
     super();
     this.style.setProperty("visibility", "hidden");
     this.attachShadow({ mode: "open" }).append(html`
       <style>
+        :host {
+          --_z-index: 1000;
+        }
         * {
           color: var(--text-0);
           user-select: none;
@@ -27,7 +30,7 @@ export class ContextMenu extends HTMLElement {
         }
 
         #main {
-          z-index: ${this.#zIndex};
+          z-index: var(--_z-index);
           position: fixed;
           top: 0;
           left: 0;
@@ -73,7 +76,7 @@ export class ContextMenu extends HTMLElement {
         }
 
         #backdrop {
-          z-index: ${this.#zIndex - 1};
+          z-index: calc(var(--_z-index) - 1);
           position: fixed;
           inset: 0;
         }
@@ -82,8 +85,7 @@ export class ContextMenu extends HTMLElement {
       <div
         id="backdrop"
         onpointerdown="${() => this.close()}"
-        bind="${(/** @type {unknown} */ el) =>
-          (this.backdrop = AssertInstance.once(el, HTMLElement))}"
+        bind="${this.backdrop}"
       ></div>
 
       <dialog
@@ -96,9 +98,7 @@ export class ContextMenu extends HTMLElement {
           event.stopPropagation();
         }}"
         onclose="${() => this.style.setProperty("visibility", "hidden")}"
-        bind="${(/** @type {unknown} */ element) => {
-          this.element = AssertInstance.once(element, HTMLDialogElement);
-        }}"
+        bind="${this.element}"
       ></dialog>
     `);
   }
@@ -116,21 +116,21 @@ export class ContextMenu extends HTMLElement {
   /** @param {ItemGroup} data */
   open(data, position = this.#position) {
     if (this.#currentContentData !== data) {
-      this.element.replaceChildren(this.#buildContent(data));
+      this.element.current.replaceChildren(this.#buildContent(data));
       this.#currentContentData = data;
     }
-    this.element.show();
-    this.element.focus();
+    this.element.current.show();
+    this.element.current.focus();
     this.style.setProperty("visibility", "visible");
-    this.element.style.setProperty("--_x", `${position.x}px`);
-    this.element.style.setProperty("--_y", `${position.y}px`);
+    this.element.current.style.setProperty("--_x", `${position.x}px`);
+    this.element.current.style.setProperty("--_y", `${position.y}px`);
     this.#closeCleanup = ShortcutManager.keydown("<Escape>", () =>
       ContextMenu.instance.close(),
     );
   }
 
   close() {
-    this.element.close();
+    this.element.current.close();
     this.#closeCleanup();
   }
 
@@ -163,13 +163,13 @@ export class ContextMenu extends HTMLElement {
    * @returns {DocumentFragment}
    * */
   #buildNestedContent = (item) => {
-    /** @type {HTMLDialogElement} */
-    let content;
-    /** @type {HTMLElement} */
-    let trigger;
+    const content = new Bind((el) =>
+      AssertInstance.once(el, HTMLDialogElement),
+    );
+    const trigger = new Bind((el) => AssertInstance.once(el, HTMLElement));
 
     const onPointerLeave = () => {
-      const backdrop = this.backdrop;
+      const backdrop = this.backdrop.current;
       ContextMenu.instance.addEventListener(
         "pointermove",
         async function onElement(event) {
@@ -178,29 +178,24 @@ export class ContextMenu extends HTMLElement {
           if (
             !(el instanceof Node) ||
             el === backdrop ||
-            trigger.contains(el)
+            trigger.current.contains(el)
           ) {
             return;
           }
-          content.close();
+          content.current.close();
           ContextMenu.instance.removeEventListener("pointermove", onElement);
         },
       );
     };
 
     const onPointerEnter = async () => {
-      this.#openNestedDialog(trigger, content);
+      this.#openNestedDialog(trigger.current, content.current);
     };
 
     return html`
       <button
         class="group"
-        bind="${(/** @type {unknown} */ e) =>
-          (trigger = AssertInstance.once(
-            e,
-            HTMLElement,
-            "group trigger is expected to be an element to position nested contents",
-          ))}"
+        bind="${trigger}"
         onpointerleave="${onPointerLeave}"
         onclick="${onPointerEnter}"
         onpointerenter="${onPointerEnter}"
@@ -210,12 +205,7 @@ export class ContextMenu extends HTMLElement {
           tabindex="-1"
           onclick="${(/** @type {unknown} */ e) =>
             AssertInstance.once(e, Event).stopPropagation()}"
-          bind="${(/** @type {unknown} */ e) =>
-            (content = AssertInstance.once(
-              e,
-              HTMLDialogElement,
-              "expected nested content to be wrapped in dialog",
-            ))}"
+          bind="${content}"
         >
           ${this.#buildContent(item.children)}
         </dialog>

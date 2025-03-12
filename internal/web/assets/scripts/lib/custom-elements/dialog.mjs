@@ -1,12 +1,16 @@
-import { AssertInstance, AssertObject, AssertString } from "../assert.mjs";
-import { html } from "../html-v2.mjs";
-import { ShortcutManager } from "../shortcut-manager.mjs";
+import {
+  AssertInstance,
+  AssertObject,
+  AssertString,
+} from "/assets/scripts/lib/assert.mjs";
+import { Bind, html } from "/assets/scripts/lib/libdim.mjs";
+import { ShortcutManager } from "/assets/scripts/lib/shortcut-manager.mjs";
 
 export class HermesDialog extends HTMLElement {
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: "open" });
-    let dialog;
+    const dialog = new Bind((el) => AssertInstance.once(el, HTMLDialogElement));
     this.shadow.append(html`
       <style>
         :host {
@@ -39,7 +43,7 @@ export class HermesDialog extends HTMLElement {
       </style>
 
       <dialog
-        bind="${(/** @type {unknown} */ e) => (dialog = e)}"
+        bind="${dialog}"
         onclose="${() => {
           this.dispatchEvent(
             new Event("close", { composed: true, bubbles: true }),
@@ -49,7 +53,7 @@ export class HermesDialog extends HTMLElement {
         <slot></slot>
       </dialog>
     `);
-    this.element = AssertInstance.once(dialog, HTMLDialogElement);
+    this.element = dialog.current;
 
     const showModal = this.element.showModal.bind(this.element);
     this.element.showModal = () => {
@@ -139,9 +143,12 @@ customElements.define("h-dialog-title", HermesDialogTitle);
 customElements.define("h-dialog-block", HermesDialogBlock);
 
 export class AlertDialog extends HTMLElement {
+  titleSlot = new Bind((el) => AssertInstance.once(el, HTMLSlotElement));
+  descriptionSlot = new Bind((el) => AssertInstance.once(el, HTMLSlotElement));
+  element = new Bind((el) => AssertInstance.once(el, HermesDialog));
+
   constructor() {
     super();
-    let dialog;
     this.attachShadow({ mode: "open" }).append(html`
       <style>
         * {
@@ -156,35 +163,22 @@ export class AlertDialog extends HTMLElement {
         }
       </style>
 
-      <h-dialog
-        bind="${(/** @type {unknown} */ element) => (dialog = element)}"
-      >
+      <h-dialog bind="${this.element}">
         <h-dialog-card>
           <h-dialog-title>
-            <slot
-              bind="${(/** @type {unknown} */ element) => {
-                this.titleSlot = AssertInstance.once(element, HTMLSlotElement);
-              }}"
-              name="title"
+            <slot bind="${this.titleSlot}" name="title"
               >Something went wrong</slot
             >
           </h-dialog-title>
           <h-dialog-block>
-            <slot
-              bind="${(/** @type {unknown} */ element) => {
-                this.descriptionSlot = AssertInstance.once(
-                  element,
-                  HTMLSlotElement,
-                );
-              }}"
-              name="description"
+            <slot bind="${this.descriptionSlot}" name="description"
               >Unexpected error occurred, but there are no details</slot
             >
           </h-dialog-block>
           <h-dialog-block id="actions">
             <h-button
               variant="primary"
-              onclick="${() => this.dialog.element.close()}"
+              onclick="${() => this.element.current.element.close()}"
             >
               OK <h-key>enter / y</h-key>
             </h-button>
@@ -192,12 +186,6 @@ export class AlertDialog extends HTMLElement {
         </h-dialog-card>
       </h-dialog>
     `);
-
-    this.dialog = AssertInstance.once(
-      dialog,
-      HermesDialog,
-      "alert should be a dialog",
-    );
   }
 
   /**
@@ -205,31 +193,31 @@ export class AlertDialog extends HTMLElement {
    */
   alert(info) {
     const preupdate = {
-      titleSlot: this.titleSlot.textContent,
-      descriptionSlot: this.descriptionSlot.textContent,
+      titleSlot: this.titleSlot.current.textContent,
+      descriptionSlot: this.descriptionSlot.current.textContent,
     };
     if (info?.title) {
-      this.titleSlot.textContent = info.title;
+      this.titleSlot.current.textContent = info.title;
     }
     if (info?.description) {
-      this.descriptionSlot.textContent = info.description;
+      this.descriptionSlot.current.textContent = info.description;
     }
-    this.dialog.element.showModal();
+    this.element.current.element.showModal();
     const off = ShortcutManager.keydown(
       ["<Enter>", "<KeyY>"],
       (event) => {
-        this.dialog.element.close();
+        this.element.current.element.close();
         event.preventDefault();
         event.stopPropagation();
       },
       { priority: 99999 },
     );
-    this.dialog.addEventListener(
+    this.element.current.addEventListener(
       "close",
       () => {
         off();
-        this.titleSlot.textContent = preupdate.titleSlot;
-        this.descriptionSlot.textContent = preupdate.descriptionSlot;
+        this.titleSlot.current.textContent = preupdate.titleSlot;
+        this.descriptionSlot.current.textContent = preupdate.descriptionSlot;
       },
       { once: true },
     );
@@ -248,9 +236,12 @@ export class AlertDialog extends HTMLElement {
 customElements.define("h-alert-dialog", AlertDialog);
 
 export class ConfirmDialog extends HTMLElement {
+  dialog = new Bind((el) => AssertInstance.once(el, HermesDialog));
+  titleSlot = new Bind((el) => AssertInstance.once(el, HTMLSlotElement));
+  descriptionSlot = new Bind((el) => AssertInstance.once(el, HTMLSlotElement));
+
   constructor() {
     super();
-    let dialog;
     this.attachShadow({ mode: "open" }).append(html`
       <style>
         * {
@@ -273,40 +264,25 @@ export class ConfirmDialog extends HTMLElement {
         }
       </style>
 
-      <h-dialog
-        bind="${(/** @type {unknown} */ element) => (dialog = element)}"
-      >
+      <h-dialog bind="${this.dialog}">
         <h-dialog-card>
           <h-dialog-title>
-            <slot
-              bind="${(/** @type {unknown} */ element) => {
-                this.titleSlot = AssertInstance.once(element, HTMLSlotElement);
-              }}"
-              name="title"
-            ></slot>
+            <slot bind="${this.titleSlot}" name="title"></slot>
           </h-dialog-title>
           <h-dialog-block>
-            <slot
-              bind="${(/** @type {unknown} */ element) => {
-                this.descriptionSlot = AssertInstance.once(
-                  element,
-                  HTMLSlotElement,
-                );
-              }}"
-              name="description"
-            ></slot>
+            <slot bind="${this.descriptionSlot}" name="description"></slot>
           </h-dialog-block>
           <h-dialog-block>
             <div id="actions">
               <h-button
                 variant="error"
-                onclick="${() => this.dialog.element.close()}"
+                onclick="${() => this.dialog.current.element.close()}"
               >
                 Cancel <h-key>n</h-key>
               </h-button>
               <h-button
                 variant="primary"
-                onclick="${() => this.dialog.element.close()}"
+                onclick="${() => this.dialog.current.element.close()}"
               >
                 Confirm <h-key>↵/y</h-key>
               </h-button>
@@ -315,12 +291,6 @@ export class ConfirmDialog extends HTMLElement {
         </h-dialog-card>
       </h-dialog>
     `);
-
-    this.dialog = AssertInstance.once(
-      dialog,
-      HermesDialog,
-      "alert should be a dialog",
-    );
   }
 
   #assertion = new AssertObject(
@@ -339,20 +309,20 @@ export class ConfirmDialog extends HTMLElement {
     /** @type {PromiseWithResolvers<boolean>} */
     const { promise, resolve } = Promise.withResolvers();
     const preupdate = {
-      titleSlot: this.titleSlot.textContent,
-      descriptionSlot: this.descriptionSlot.textContent,
+      titleSlot: this.titleSlot.current.textContent,
+      descriptionSlot: this.descriptionSlot.current.textContent,
     };
     if (info.title) {
-      this.titleSlot.textContent = info.title;
+      this.titleSlot.current.textContent = info.title;
     }
     if (info.description) {
-      this.descriptionSlot.textContent = info.description;
+      this.descriptionSlot.current.textContent = info.description;
     }
-    this.dialog.element.showModal();
+    this.dialog.current.element.showModal();
     const confirmKeys = ShortcutManager.keydown(
       ["<Enter>", "<KeyY>"],
       (event) => {
-        this.dialog.element.close();
+        this.dialog.current.element.close();
         event.preventDefault();
         event.stopPropagation();
         resolve(true);
@@ -362,20 +332,20 @@ export class ConfirmDialog extends HTMLElement {
     const cancelKeys = ShortcutManager.keydown(
       ["<Escape>", "<KeyN>"],
       (event) => {
-        this.dialog.element.close();
+        this.dialog.current.element.close();
         event.preventDefault();
         event.stopPropagation();
         resolve(false);
       },
     );
-    this.dialog.addEventListener(
+    this.dialog.current.addEventListener(
       "close",
       () => {
         confirmKeys();
         cancelKeys();
         resolve(false);
-        this.titleSlot.textContent = preupdate.titleSlot;
-        this.descriptionSlot.textContent = preupdate.descriptionSlot;
+        this.titleSlot.current.textContent = preupdate.titleSlot;
+        this.descriptionSlot.current.textContent = preupdate.descriptionSlot;
       },
       { once: true },
     );

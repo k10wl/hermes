@@ -1,5 +1,6 @@
+import { html } from "/assets/scripts/lib/libdim.mjs";
+
 import { AssertInstance } from "../assert.mjs";
-import { html } from "../html-v2.mjs";
 import { LocationControll } from "../location-control.mjs";
 import { ContextMenu } from "./context-menu.mjs";
 import { controlPalanelVisibility } from "./control-panel.mjs";

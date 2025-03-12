@@ -1,3 +1,4 @@
+import { Bind, html } from "/assets/scripts/lib/libdim.mjs";
 import { Template } from "/assets/scripts/models.mjs";
 
 import { AssertInstance, AssertString } from "../../assert.mjs";
@@ -8,7 +9,6 @@ import {
 } from "../../events/client-events-list.mjs";
 import { ServerEvents } from "../../events/server-events.mjs";
 import { ServerErrorEvent } from "../../events/server-events-list.mjs";
-import { html } from "../../html-v2.mjs";
 import { LocationControll } from "../../location-control.mjs";
 import { ShortcutManager } from "../../shortcut-manager.mjs";
 import { Action, ActionStore } from "../control-panel.mjs";
@@ -23,6 +23,8 @@ class TemplateUpdatedDialog extends HTMLElement {
 
   /** @type {Template | null} */
   template = null;
+
+  dialog = new Bind((el) => AssertInstance.once(el, HermesDialog));
 
   constructor() {
     super();
@@ -43,11 +45,7 @@ class TemplateUpdatedDialog extends HTMLElement {
         }
       </style>
 
-      <h-dialog
-        bind="${(/** @type {unknown} */ element) => {
-          this.dialog = AssertInstance.once(element, HermesDialog);
-        }}"
-      >
+      <h-dialog bind="${this.dialog}">
         <h-dialog-card>
           <h-dialog-title>Template outdated</h-dialog-title>
           <h-dialog-block>
@@ -60,8 +58,14 @@ class TemplateUpdatedDialog extends HTMLElement {
 
           <h-dialog-block>
             <div id="actions">
-              <h-button>Cancel <h-key>n</h-key></h-button>
-              <h-button variant="primary">OK <h-key>y</h-key></h-button>
+              <h-button onclick="${() => this.#dispatch("cancel")}"
+                >Cancel <h-key>n</h-key></h-button
+              >
+              <h-button
+                onclick="${() => this.#dispatch("confirm")}"
+                variant="primary"
+                >OK <h-key>y</h-key></h-button
+              >
             </div>
           </h-dialog-block>
         </h-dialog-card>
@@ -72,37 +76,37 @@ class TemplateUpdatedDialog extends HTMLElement {
   connectedCallback() {}
 
   /** @param {"cancel" | "confirm"} eventName */
-  #dispath = (eventName) => {
+  #dispatch = (eventName) => {
     this.dispatchEvent(new Event(eventName));
   };
 
   /** @param {Template} template  */
   showModal(template) {
     this.template = template;
-    if (this.dialog.element.open) {
+    if (this.dialog.current.element.open) {
       return;
     }
     this.#cleanup.push(
       ShortcutManager.keydown("<KeyY>", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        this.#dispath("confirm");
+        this.#dispatch("confirm");
       }),
       ShortcutManager.keydown("<KeyN>", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        this.#dispath("cancel");
+        this.#dispatch("cancel");
       }),
     );
-    this.dialog.element.showModal();
+    this.dialog.current.element.showModal();
   }
 
   close() {
-    if (!this.dialog.element.open) {
+    if (!this.dialog.current.element.open) {
       return;
     }
     this.#cleanup.forEach((cb) => cb());
-    this.dialog.element.close();
+    this.dialog.current.element.close();
   }
 
   disconnectedCallback() {
@@ -115,18 +119,7 @@ class NameCollisionDialog extends HTMLElement {
   /** @type {(() => void)[]} */
   #cleanup = [];
 
-  /** @type {() => void} */
-  onCancel = () => {
-    throw new Error("onCancel not implemented");
-  };
-  /** @type {() => void} */
-  onRename = () => {
-    throw new Error("onRename not implemented");
-  };
-  /** @type {() => void} */
-  onNew = () => {
-    throw new Error("onNew not implemented");
-  };
+  dialog = new Bind((el) => AssertInstance.once(el, HermesDialog));
 
   constructor() {
     super();
@@ -151,17 +144,20 @@ class NameCollisionDialog extends HTMLElement {
         this.#dispatch("rename");
       }),
     );
-    AssertInstance.once(this.dialog?.element, HTMLDialogElement).showModal();
+    AssertInstance.once(
+      this.dialog.current.element,
+      HTMLDialogElement,
+    ).showModal();
   }
 
   close() {
-    AssertInstance.once(this.dialog?.element, HTMLDialogElement).close();
+    AssertInstance.once(this.dialog.current.element, HTMLDialogElement).close();
     this.#cleanup.forEach((cb) => cb());
   }
 
   /** @param {"cancel" | "clone" | "rename"} name */
   #dispatch = (name) => {
-    this.dispatchEvent(new Event(name));
+    this.dispatchEvent(new CustomEvent(name));
   };
 
   connectedCallback() {
@@ -198,9 +194,7 @@ class NameCollisionDialog extends HTMLElement {
 
       <h-dialog
         onclose="${() => this.#dispatch("cancel")}"
-        bind="${(/** @type {unknown} */ element) => {
-          this.dialog = AssertInstance.once(element, HermesDialog);
-        }}"
+        bind="${this.dialog}"
       >
         <h-dialog-card>
           <h-dialog-title>Template name changed</h-dialog-title>
@@ -247,10 +241,16 @@ export class HermesViewTemplateScene extends HTMLElement {
 
   /** @type {import("/assets/scripts/models.mjs").Template | null} */
   #template = null;
-  /** @type {HTMLTextAreaElement | null} */
-  #textarea = null;
-  /** @type {HTMLElement | null} */
-  #saveButton = null;
+
+  #saveButtonText = new Bind((el) => AssertInstance.once(el, HTMLSpanElement));
+  nameCollisionDialog = new Bind((el) =>
+    AssertInstance.once(el, NameCollisionDialog),
+  );
+  templateUpdatedDialog = new Bind((el) =>
+    AssertInstance.once(el, TemplateUpdatedDialog),
+  );
+  form = new Bind((el) => AssertInstance.once(el, HTMLFormElement));
+  #textarea = new Bind((el) => AssertInstance.once(el, HTMLTextAreaElement));
 
   constructor() {
     super();
@@ -259,27 +259,27 @@ export class HermesViewTemplateScene extends HTMLElement {
   }
 
   connectedCallback() {
-    template = this;
     this.#sendReadRequest();
     this.#cleanup.push(
       ActionStore.add(new Action("template: delete template", this.delete)),
       ActionStore.add(
-        new Action("template: save edit", () => this.form?.requestSubmit()),
+        new Action("template: save edit", () =>
+          this.form.current.requestSubmit(),
+        ),
       ),
       ServerEvents.on(["template-changed"], (event) => {
         if (
           !this.#textarea ||
-          this.#textarea.value === event.payload.template.content
+          this.#textarea.current.value === event.payload.template.content
         ) {
           return;
         }
-        this.templateUpdatedDialog?.showModal(event.payload.template);
+        this.templateUpdatedDialog.current.showModal(event.payload.template);
       }),
     );
   }
 
   disconnectedCallback() {
-    template = null;
     this.#cleanup.forEach((cb) => cb());
   }
 
@@ -289,6 +289,7 @@ export class HermesViewTemplateScene extends HTMLElement {
     });
     ServerEvents.send(readEvent);
     const off = ServerEvents.on(["read-template", "server-error"], (event) => {
+      console.log("> ", event);
       if (event.id !== readEvent.id) {
         return;
       }
@@ -300,18 +301,9 @@ export class HermesViewTemplateScene extends HTMLElement {
       }
       this.#template = event.payload.template;
       this.#setDelayedContent(html`
-        <form
-          bind="${(/** @type {unknown} */ element) => {
-            this.form = AssertInstance.once(element, HTMLFormElement);
-          }}"
-          onsubmit="${this.submit}"
-        >
+        <form bind="${this.form}" onsubmit="${this.submit}">
           <textarea
-            bind="${(/** @type {unknown} */ element) =>
-              (this.#textarea = AssertInstance.once(
-                element,
-                HTMLTextAreaElement,
-              ))}"
+            bind="${this.#textarea}"
             name="content"
             placeholder='--{{define "name"}} dynamic value => --{{.}} --{{end}}'
             is="hermes-textarea-autoresize"
@@ -331,22 +323,17 @@ ${event.payload.template.content.trim()}</textarea
                 "form must be present to call submit",
               ).requestSubmit()}"
           >
-            <span
-              bind="${(/** @type {unknown} */ element) =>
-                (this.#saveButton = AssertInstance.once(element, HTMLElement))}"
-            >
-              Save
-            </span>
+            <span bind="${this.#saveButtonText}"> Save </span>
             &nbsp;
             <h-key>Meta-S</h-key>
           </h-button>
         </form>
       `);
       this.#processForm();
-      this.#textarea?.focus();
-      this.#textarea?.setSelectionRange(
-        this.#textarea.value.length,
-        this.#textarea.value.length,
+      this.#textarea.current.focus();
+      this.#textarea.current.setSelectionRange(
+        this.#textarea.current.value.length,
+        this.#textarea.current.value.length,
       );
     });
     this.#cleanup.push(off);
@@ -382,7 +369,7 @@ ${event.payload.template.content.trim()}</textarea
   /** @param {boolean} clone */
   #save = (clone) => {
     const template = AssertInstance.once(this.#template, Template);
-    const content = AssertString.check(this.#textarea?.value);
+    const content = AssertString.check(this.#textarea.current.value);
     if (template.content === content) {
       return;
     }
@@ -404,10 +391,9 @@ ${event.payload.template.content.trim()}</textarea
           });
           return;
         }
-        AssertInstance.once(this.#textarea, HTMLTextAreaElement).value =
-          edit.payload.content;
+        this.#textarea.current.value = edit.payload.content;
         this.#template = event.payload.template;
-        this.nameCollisionDialog?.close();
+        this.nameCollisionDialog.current.close();
         this.#savedIndicator();
         LocationControll.navigate("/templates/" + this.#template.id, false);
         off();
@@ -416,12 +402,11 @@ ${event.payload.template.content.trim()}</textarea
   };
 
   #savedIndicator() {
-    const saveButton = AssertInstance.once(this.#saveButton, HTMLElement);
-    const text = saveButton.textContent;
-    saveButton.textContent = "Saved";
+    const text = this.#saveButtonText.current.textContent;
+    this.#saveButtonText.current.textContent = "Saved";
     setTimeout(() => {
-      if (this.#saveButton) {
-        this.#saveButton.textContent = text;
+      if (this.#saveButtonText) {
+        this.#saveButtonText.current.textContent = text;
       }
     }, 2000);
   }
@@ -440,7 +425,7 @@ ${event.payload.template.content.trim()}</textarea
   submit = () => {
     const newName = /"(?<name>.*?)"/.exec(
       AssertString.check(
-        this.#textarea?.value,
+        this.#textarea.current.value,
         "expected text input to have string value",
       ),
     );
@@ -455,7 +440,7 @@ ${event.payload.template.content.trim()}</textarea
       );
     if (nameChanged && LocationControll.templateId) {
       AssertInstance.once(
-        this.nameCollisionDialog,
+        this.nameCollisionDialog.current,
         NameCollisionDialog,
       ).showModal();
       return;
@@ -465,7 +450,7 @@ ${event.payload.template.content.trim()}</textarea
 
   #processForm = () => {
     const form = AssertInstance.once(
-      this.form,
+      this.form.current,
       HTMLFormElement,
       "form must be present before process call",
     );
@@ -524,37 +509,22 @@ ${event.payload.template.content.trim()}</textarea
     </main>
 
     <h-name-collision-dialog
-      oncancel="${() => this.nameCollisionDialog?.close()}"
+      oncancel="${() => this.nameCollisionDialog.current.close()}"
       onclone="${() => this.#save(true)}"
       onrename="${() => this.#save(false)}"
-      bind="${(/** @type {unknown} */ element) => {
-        this.nameCollisionDialog = AssertInstance.once(
-          element,
-          NameCollisionDialog,
-          "expected bound element to be collision dialog",
-        );
-      }}"
+      bind="${this.nameCollisionDialog}"
     ></h-name-collision-dialog>
 
     <h-teplate-updated-dialog
-      oncancel="${() => this.templateUpdatedDialog?.close()}"
+      oncancel="${() => this.templateUpdatedDialog.current.close()}"
       onconfirm="${() => {
-        AssertInstance.once(
-          this.#textarea,
-          HTMLTextAreaElement,
-          "expected update dialog to have access to textarea",
-        ).value = AssertString.check(
-          this.templateUpdatedDialog?.template?.content,
+        this.#textarea.current.value = AssertString.check(
+          this.templateUpdatedDialog.current.template?.content,
           "expected update value to be string",
         );
-        this.templateUpdatedDialog?.close();
+        this.templateUpdatedDialog.current.close();
       }}"
-      bind="${(/** @type {unknown} */ element) =>
-        (this.templateUpdatedDialog = AssertInstance.once(
-          element,
-          TemplateUpdatedDialog,
-          "expected bound element to be template updated dialog",
-        ))}"
+      bind="${this.templateUpdatedDialog}"
     ></h-teplate-updated-dialog>
   `;
 }

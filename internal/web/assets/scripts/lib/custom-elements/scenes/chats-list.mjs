@@ -1,9 +1,9 @@
-import { html } from "../../html.mjs";
+import { html } from "/assets/scripts/lib/libdim.mjs";
 
 export class ChatsListScene extends HTMLElement {
   constructor() {
     super();
-    this.attachShadow({ mode: "closed" }).innerHTML = html`
+    this.attachShadow({ mode: "closed" }).replaceChildren(html`
       <style>
         main {
           height: 100%;
@@ -37,7 +37,7 @@ export class ChatsListScene extends HTMLElement {
       <main>
         <hermes-chats></hermes-chats>
       </main>
-    `;
+    `);
   }
 }
 

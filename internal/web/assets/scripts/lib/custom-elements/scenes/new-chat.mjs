@@ -1,4 +1,5 @@
-import { html } from "../../html-v2.mjs";
+import { html } from "/assets/scripts/lib/libdim.mjs";
+
 import { controlPalanelVisibility } from "../control-panel.mjs";
 
 const HERMES_SHORTCUTS_TAG_NAME = "hermes-new-chat-shortcuts";

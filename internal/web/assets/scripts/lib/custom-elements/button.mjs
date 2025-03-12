@@ -1,4 +1,4 @@
-import { html } from "../html-v2.mjs";
+import { html } from "/assets/scripts/lib/libdim.mjs";
 
 export class HermesButton extends HTMLElement {
   constructor() {

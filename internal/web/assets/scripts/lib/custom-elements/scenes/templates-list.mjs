@@ -1,8 +1,9 @@
+import { Bind, escapeMarkup, html } from "/assets/scripts/lib/libdim.mjs";
+
 import { AssertInstance } from "../../assert.mjs";
 import { RequestReadTemplatesEvent } from "../../events/client-events-list.mjs";
 import { ServerEvents } from "../../events/server-events.mjs";
 import { ServerErrorEvent } from "../../events/server-events-list.mjs";
-import { html } from "../../html-v2.mjs";
 
 customElements.define(
   "hermes-templates-list-scene",
@@ -12,6 +13,9 @@ customElements.define(
 
     /** @type {Map<string, HTMLElement>} */
     #elements = new Map();
+
+    templatesContainer = new Bind((el) => AssertInstance.once(el, HTMLElement));
+    newTemplate = new Bind((el) => AssertInstance.once(el, HTMLElement));
 
     constructor() {
       super();
@@ -66,16 +70,9 @@ customElements.define(
         </style>
 
         <main>
-          <section
-            bind="${(/** @type {unknown} */ element) =>
-              (this.templatesContainer = AssertInstance.once(
-                element,
-                HTMLElement,
-              ))}"
-          >
+          <section bind="${this.templatesContainer}">
             <a
-              bind="${(/** @type {unknown} */ element) =>
-                (this.newTemplate = AssertInstance.once(element, HTMLElement))}"
+              bind="${this.newTemplate}"
               is="hermes-link"
               href="/templates/new"
             >
@@ -104,7 +101,7 @@ customElements.define(
             alert(`smth went wrong - ${event.payload}`);
             return;
           }
-          this.templatesContainer.append(
+          this.templatesContainer.current.append(
             ...event.payload.templates.map((template) =>
               this.#createLink(template),
             ),
@@ -117,7 +114,9 @@ customElements.define(
         offRead,
         () => this.#elements.clear(),
         ServerEvents.on("template-created", (event) => {
-          this.newTemplate.after(this.#createLink(event.payload.template));
+          this.newTemplate.current.after(
+            this.#createLink(event.payload.template),
+          );
         }),
         ServerEvents.on("template-changed", (event) => {
           const el = this.#elements.get(event.payload.template.name);
@@ -139,13 +138,9 @@ customElements.define(
     #linkContents(template) {
       return html`
         <span class="name">${template.name}</span>:&nbsp;
-        <p
-          class="content"
-          bind="${(/** @type {unknown} */ element) => {
-            AssertInstance.once(element, HTMLElement).innerText =
-              template.content.replaceAll("\n", " ");
-          }}"
-        ></p>
+        <p class="content">
+          ${escapeMarkup(template.content.replaceAll("\n", " "))}
+        </p>
       `;
     }
 
@@ -154,19 +149,14 @@ customElements.define(
      * @returns {DocumentFragment}
      */
     #createLink(template) {
-      return html`
-        <a
-          bind="${(/** @type {unknown} */ element) => {
-            const asserted = AssertInstance.once(element, HTMLElement);
-            // sometimes templates contain HTML, needs not to be interpreted
-            asserted.replaceChildren(this.#linkContents(template));
-            this.#elements.set(template.name, asserted);
-          }}"
-          is="hermes-link"
-          href="/templates/${template.id}"
-        >
+      const link = new Bind((el) => AssertInstance.once(el, HTMLAnchorElement));
+      const fragment = html`
+        <a bind="${link}" is="hermes-link" href="/templates/${template.id}">
+          ${this.#linkContents(template)}
         </a>
       `;
+      this.#elements.set(template.name, link.current);
+      return fragment;
     }
 
     disconnectedCallback() {
