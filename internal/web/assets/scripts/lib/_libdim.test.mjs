@@ -4,7 +4,7 @@ import * as assert from "assert";
 import { readFileSync } from "fs";
 import { JSDOM } from "jsdom";
 
-import { Bind, escapeMarkup } from "./libdim.mjs";
+import { Bind } from "./libdim.mjs";
 
 /**
  * @param {string} name
@@ -246,21 +246,5 @@ describe("Bind", () => {
         binding.current = value;
       }, "should throw if binding does not match assertion");
     });
-  });
-});
-
-describe("escapeMarkup", () => {
-  test("should escape markup", () => {
-    assert.equal(
-      escapeMarkup("<div>test&</div>"),
-      "&lt;div&gt;test&amp;&lt;/div&gt;",
-    );
-  });
-
-  test("should not escape markup", () => {
-    assert.equal(
-      escapeMarkup("&lt;div&gt;test&lt;/div&gt;"),
-      "&amp;lt;div&amp;gt;test&amp;lt;/div&amp;gt;",
-    );
   });
 });

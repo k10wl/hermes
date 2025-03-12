@@ -1,7 +1,8 @@
 import { AssertInstance } from "/assets/scripts/lib/assert.mjs";
+import { escapeMarkup } from "/assets/scripts/lib/escape-markup.mjs";
 import { RequestReadChatEvent } from "/assets/scripts/lib/events/client-events-list.mjs";
 import { ServerEvents } from "/assets/scripts/lib/events/server-events.mjs";
-import { Bind, escapeMarkup, html } from "/assets/scripts/lib/libdim.mjs";
+import { Bind, html } from "/assets/scripts/lib/libdim.mjs";
 import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
 import { Message } from "/assets/scripts/models.mjs";
 

@@ -1,4 +1,5 @@
-import { Bind, escapeMarkup, html } from "/assets/scripts/lib/libdim.mjs";
+import { escapeMarkup } from "/assets/scripts/lib/escape-markup.mjs";
+import { Bind, html } from "/assets/scripts/lib/libdim.mjs";
 
 import { AssertInstance } from "../../assert.mjs";
 import { RequestReadTemplatesEvent } from "../../events/client-events-list.mjs";

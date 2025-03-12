@@ -1,4 +1,5 @@
 import { AssertInstance } from "/assets/scripts/lib/assert.mjs";
+import { debounce } from "/assets/scripts/lib/debounce.mjs";
 import { Bind, html } from "/assets/scripts/lib/libdim.mjs";
 
 export class ExistingChatScene extends HTMLElement {
@@ -6,11 +7,11 @@ export class ExistingChatScene extends HTMLElement {
     super();
   }
 
-  connectedCallback() {
-    const scrollableWrapper = new Bind((el) =>
-      AssertInstance.once(el, HTMLDivElement),
-    );
+  #scrollableWrapper = new Bind((el) =>
+    AssertInstance.once(el, HTMLDivElement),
+  );
 
+  connectedCallback() {
     this.attachShadow({ mode: "open" }).append(html`
       <style>
         main {
@@ -87,42 +88,14 @@ export class ExistingChatScene extends HTMLElement {
           width: 100%;
         }
 
-        .message {
-          border: 1px solid var(--bg-2);
-          padding: 4px 8px;
-          margin: 12px;
-          width: fit-content;
-          max-width: 80%;
-          border-radius: 10px;
-          background: var(--bg-1);
-
-          pre {
-            margin: 0;
-            text-wrap: wrap;
-            word-break: break-all;
-            user-select: text;
-          }
-        }
-
-        .role-assistant {
-          color: var(--text-0);
-          border-bottom-left-radius: 0;
-          border-color: rgb(from var(--primary) r g b / 0.33);
-        }
-
-        .role-user {
-          border-bottom-right-radius: 0;
-          margin-left: auto;
-          color: var(--light-bg-0);
-        }
-
         .input-form-wrapper {
           display: flex;
           justify-content: center;
         }
 
         hermes-message-form {
-          padding: 4px 16px 16px;
+          --_pad: 1rem;
+          padding: calc(var(--_pad) / 4) var(--_pad) var(--_pad);
           max-width: var(--container);
           width: 100%;
         }
@@ -131,27 +104,15 @@ export class ExistingChatScene extends HTMLElement {
       <main>
         <div
           id="scrollable-message-wrapper"
-          bind="${scrollableWrapper}"
-          onscroll="${() => {
-            const scrollable = scrollableWrapper.current;
-            if (scrollable.scrollTop >= 0) {
-              scrollable.classList.remove("scrolled");
-            } else {
-              scrollable.classList.add("scrolled");
-            }
-          }}"
+          bind="${this.#scrollableWrapper}"
+          onscroll="${this.#onScroll}"
         >
           <div id="to-bottom-wrapper">
             <button
               type="button"
               aria-label="Scroll to latest message"
               id="to-bottom"
-              onclick="${() => {
-                scrollableWrapper.current.scrollTo({
-                  top: 0,
-                  behavior: "smooth",
-                });
-              }}"
+              onclick="${this.#handleScrollToBottom}"
             >
               ⇊
             </button>
@@ -168,6 +129,23 @@ export class ExistingChatScene extends HTMLElement {
       </main>
     `);
   }
+
+  #onScroll = debounce(() => {
+    const scrollable = this.#scrollableWrapper.current;
+    // 0 is top because flex-direction: column-reverse flips scroll calculation
+    if (scrollable.scrollTop >= 0) {
+      scrollable.classList.remove("scrolled");
+    } else {
+      scrollable.classList.add("scrolled");
+    }
+  }, 1000 / 60);
+
+  #handleScrollToBottom = () => {
+    this.#scrollableWrapper.current.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 }
 
 customElements.define("hermes-existing-chat-scene", ExistingChatScene);
