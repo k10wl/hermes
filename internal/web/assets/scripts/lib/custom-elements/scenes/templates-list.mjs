@@ -1,8 +1,10 @@
+import { escapeMarkup } from "/assets/scripts/lib/escape-markup.mjs";
+import { Bind, html } from "/assets/scripts/lib/libdim.mjs";
+
 import { AssertInstance } from "../../assert.mjs";
 import { RequestReadTemplatesEvent } from "../../events/client-events-list.mjs";
 import { ServerEvents } from "../../events/server-events.mjs";
 import { ServerErrorEvent } from "../../events/server-events-list.mjs";
-import { html } from "../../html-v2.mjs";
 
 customElements.define(
   "hermes-templates-list-scene",
@@ -12,6 +14,9 @@ customElements.define(
 
     /** @type {Map<string, HTMLElement>} */
     #elements = new Map();
+
+    templatesContainer = new Bind((el) => AssertInstance.once(el, HTMLElement));
+    newTemplate = new Bind((el) => AssertInstance.once(el, HTMLElement));
 
     constructor() {
       super();
@@ -28,26 +33,20 @@ customElements.define(
           }
 
           section {
-            padding: 2rem;
-            max-width: 100%;
+            max-width: var(--container-max-width);
+            margin: var(--container-margin);
             overflow: hidden;
             display: flex;
             flex-direction: column;
           }
 
           a {
-            /* NOTE uuuuh this could be separate reusable class or component */
-            text-align: start;
-            padding: 0.5rem 1rem;
-            margin: 0.1rem 0rem;
-            border: 1px solid rgb(from var(--text-0) r g b / 0.25);
             text-decoration: none;
-            color: rgb(from var(--text-0) r g b / 0.5);
-            transition: border-color var(--color-transition-duration);
-            display: flex;
+            margin: 0.1rem 0;
 
-            &:hover {
-              border-color: var(--primary);
+            h-card::part(card) {
+              width: 100%;
+              display: flex;
             }
 
             .name {
@@ -61,25 +60,21 @@ customElements.define(
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
+              color: rgb(from var(--text-0) r g b / 0.5);
             }
           }
         </style>
 
         <main>
-          <section
-            bind="${(/** @type {unknown} */ element) =>
-              (this.templatesContainer = AssertInstance.once(
-                element,
-                HTMLElement,
-              ))}"
-          >
+          <section bind="${this.templatesContainer}">
             <a
-              bind="${(/** @type {unknown} */ element) =>
-                (this.newTemplate = AssertInstance.once(element, HTMLElement))}"
+              bind="${this.newTemplate}"
               is="hermes-link"
               href="/templates/new"
             >
-              <span class="name"> // Create new template </span>
+              <h-card data-interactive>
+                <span class="name"> // Create new template </span>
+              </h-card>
             </a>
           </section>
         </main>
@@ -104,7 +99,7 @@ customElements.define(
             alert(`smth went wrong - ${event.payload}`);
             return;
           }
-          this.templatesContainer.append(
+          this.templatesContainer.current.append(
             ...event.payload.templates.map((template) =>
               this.#createLink(template),
             ),
@@ -117,7 +112,9 @@ customElements.define(
         offRead,
         () => this.#elements.clear(),
         ServerEvents.on("template-created", (event) => {
-          this.newTemplate.after(this.#createLink(event.payload.template));
+          this.newTemplate.current.after(
+            this.#createLink(event.payload.template),
+          );
         }),
         ServerEvents.on("template-changed", (event) => {
           const el = this.#elements.get(event.payload.template.name);
@@ -139,13 +136,9 @@ customElements.define(
     #linkContents(template) {
       return html`
         <span class="name">${template.name}</span>:&nbsp;
-        <p
-          class="content"
-          bind="${(/** @type {unknown} */ element) => {
-            AssertInstance.once(element, HTMLElement).innerText =
-              template.content.replaceAll("\n", " ");
-          }}"
-        ></p>
+        <p class="content">
+          ${escapeMarkup(template.content.replaceAll("\n", " "))}
+        </p>
       `;
     }
 
@@ -154,19 +147,14 @@ customElements.define(
      * @returns {DocumentFragment}
      */
     #createLink(template) {
-      return html`
-        <a
-          bind="${(/** @type {unknown} */ element) => {
-            const asserted = AssertInstance.once(element, HTMLElement);
-            // sometimes templates contain HTML, needs not to be interpreted
-            asserted.replaceChildren(this.#linkContents(template));
-            this.#elements.set(template.name, asserted);
-          }}"
-          is="hermes-link"
-          href="/templates/${template.id}"
-        >
+      const link = new Bind((el) => AssertInstance.once(el, HTMLAnchorElement));
+      const fragment = html`
+        <a bind="${link}" is="hermes-link" href="/templates/${template.id}">
+          <h-card data-interactive>${this.#linkContents(template)}</h-card>
         </a>
       `;
+      this.#elements.set(template.name, link.current);
+      return fragment;
     }
 
     disconnectedCallback() {

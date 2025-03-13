@@ -1,5 +1,6 @@
+import { html } from "/assets/scripts/lib/libdim.mjs";
+
 import { AssertInstance } from "../assert.mjs";
-import { html } from "../html.mjs";
 import { LocationControll } from "../location-control.mjs";
 import { MovableList } from "../movable-list.mjs";
 import { Publisher } from "../publisher.mjs";
@@ -35,7 +36,7 @@ export class ControlPanel extends HTMLElement {
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: "open" });
-    this.shadow.innerHTML = this.#content;
+    this.shadow.replaceChildren(this.#content);
     this.input = assertInput.check(this.shadow.querySelector("#input"));
     this.matchesContainer = AssertInstance.once(
       this.shadow.querySelector("#matches"),
@@ -58,16 +59,14 @@ export class ControlPanel extends HTMLElement {
 
   /** @param {Action[]} actions  */
   #updateMatchList(actions) {
-    this.matchesContainer.innerHTML = "";
     const elements = actions.map((el) => {
       const anchor = document.createElement("a");
       anchor.onclick = async () => {
         await el.action();
         this.#visible.update(false);
       };
-      anchor.innerHTML = el.name
-        .split("")
-        .map((char, i) => {
+      anchor.replaceChildren(
+        ...el.name.split("").map((char, i) => {
           const { ok, matches } = stringMatchingWithCache(
             el.name,
             this.input.value,
@@ -76,11 +75,11 @@ export class ControlPanel extends HTMLElement {
             return char;
           }
           return html`<span class="highlight">${char}</span>`;
-        })
-        .join("");
+        }),
+      );
       return anchor;
     });
-    this.matchesContainer.append(...elements);
+    this.matchesContainer.replaceChildren(...elements);
     this.#movableList.cursor = 0;
   }
 

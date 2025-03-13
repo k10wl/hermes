@@ -1,4 +1,5 @@
-import { html } from "../../html-v2.mjs";
+import { html } from "/assets/scripts/lib/libdim.mjs";
+
 import { controlPalanelVisibility } from "../control-panel.mjs";
 
 const HERMES_SHORTCUTS_TAG_NAME = "hermes-new-chat-shortcuts";
@@ -100,24 +101,30 @@ export class CreateChatScene extends HTMLElement {
     super();
     this.attachShadow({ mode: "closed" }).append(html`
       <style>
+        * {
+          box-sizing: border-box;
+        }
+
         main {
           height: 100%;
+          max-width: var(--container-max-width);
+          margin: var(--container-margin);
           display: flex;
           justify-content: center;
           align-items: center;
           flex-direction: column;
-          padding: 1rem;
           gap: 1rem;
         }
 
         hermes-message-form {
           width: 100%;
-          max-width: var(--container);
         }
       </style>
 
       <main>
-        <hermes-message-form placeholder="create chat..."></hermes-message-form>
+        <hermes-message-form
+          placeholder="What do you want to know?"
+        ></hermes-message-form>
         <hermes-new-chat-shortcuts></hermes-new-chat-shortcuts>
       </main>
     `);

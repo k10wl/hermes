@@ -1,3 +1,5 @@
+import { html } from "/assets/scripts/lib/libdim.mjs";
+
 import { AssertInstance, AssertNumber, AssertString } from "../assert.mjs";
 import { CreateCompletionMessageEvent } from "../events/client-events-list.mjs";
 import { ServerEvents } from "../events/server-events.mjs";
@@ -5,7 +7,6 @@ import {
   ChatCreatedEvent,
   ServerErrorEvent,
 } from "../events/server-events-list.mjs";
-import { html } from "../html.mjs";
 import { LocationControll } from "../location-control.mjs";
 
 export class MessageForm extends HTMLElement {
@@ -61,36 +62,42 @@ export class MessageForm extends HTMLElement {
   }
 
   #render() {
-    this.shadow.innerHTML = html`
+    this.shadow.append(html`
       <style>
+        :host {
+          --bg: var(--bg-2);
+          --text: var(--text-0);
+          --radius: 1rem;
+        }
+
         form {
           display: flex;
           justify-content: center;
           align-items: flex-end;
-          gap: 8px;
+          gap: 0.5rem;
         }
 
         textarea {
           max-height: 50vh;
           width: 100%;
-          background: var(--bg-2);
-          color: var(--text-0);
+          background: var(--bg);
+          color: var(--text);
           padding: 0.5rem 1rem 0;
-          margin: 0px;
-          border-radius: 20px;
+          margin: 0;
+          border-radius: 1.25rem;
           resize: none;
           outline: none;
           border: none;
         }
 
-        textarea:invalid + button {
-          background: var(--bg-2);
-          color: rgb(from var(--text-0) r g b / 0.25);
+        form:has(textarea:invalid) button[type="submit"] {
+          background: var(--bg);
+          color: rgb(from var(--text) r g b / 0.25);
           cursor: auto;
         }
 
         button {
-          --_size: 32px;
+          --_size: 2rem;
           transition: all var(--color-transition-duration);
           flex-shrink: 0;
           background: var(--primary);
@@ -118,7 +125,7 @@ export class MessageForm extends HTMLElement {
         ></textarea>
         <button id="submit-message" type="submit">↑</button>
       </form>
-    `;
+    `);
   }
 }
 

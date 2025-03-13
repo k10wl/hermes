@@ -15,7 +15,9 @@
 
   --color-transition-duration: 200ms;
 
-  --container: min(calc(100% - 1rem), 100ch);
+  --verical-margin: 1rem;
+  --container-max-width: min(calc(100% - var(--verical-margin) * 2), 100ch);
+  --container-margin: var(--verical-margin) auto;
 
   --header-height: 1.5rem;
 }

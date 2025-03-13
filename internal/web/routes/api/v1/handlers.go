@@ -54,20 +54,6 @@ func handleCheckHeath() http.HandlerFunc {
 	}
 }
 
-func handleWebhook(hub *Hub) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		msg, err := messages.Encode(messages.NewServerReload())
-		if err != nil {
-			fmt.Printf("err: %v\n", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		hub.broadcast <- msg
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "OK")
-	}
-}
-
 func handleRelay(relay chan []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data, err := io.ReadAll(r.Body)
