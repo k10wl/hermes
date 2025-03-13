@@ -1,7 +1,9 @@
 import { config } from "/assets/scripts/config.mjs";
 import { AssertInstance, AssertString } from "/assets/scripts/lib/assert.mjs";
 import { currentUrl } from "/assets/scripts/lib/current-url.mjs";
+import { escapeMarkup } from "/assets/scripts/lib/escape-markup.mjs";
 import { ServerEvents } from "/assets/scripts/lib/events/server-events.mjs";
+import { Bind, html } from "/assets/scripts/lib/libdim.mjs";
 import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
 import { Chat } from "/assets/scripts/models.mjs";
 
@@ -14,33 +16,48 @@ export class Chats extends HTMLElement {
 
   constructor() {
     super();
-    this.innerHTML = `
-<h-paginated-list>
-    <!--<a is="hermes-link" href="/" class="chat-link">New chat</a>-->
-</h-paginated-list>`;
-    this.findNextChat = this.navigateInDir.bind(this);
   }
 
   connectedCallback() {
-    const query = this.getElementsByTagName("h-paginated-list");
-    const list = /** @type {PaginatedList<Chat>} */ (
-      AssertInstance.once(query[0], PaginatedList)
+    const list = new Bind(
+      (el) =>
+        /** @type {PaginatedList<Chat>} */ (
+          AssertInstance.once(el, PaginatedList)
+        ),
     );
+    this.attachShadow({ mode: "open" }).append(html`
+      <style>
+        * {
+          box-sizing: border-box;
+        }
+        a {
+          display: block;
+          margin: 0.1rem 0;
+          text-decoration: none;
+        }
+        a:first-child {
+          margin-bottom: 0;
+        }
+      </style>
+
+      <h-paginated-list bind="${list}"></h-paginated-list>
+    `);
+    this.findNextChat = this.navigateInDir.bind(this);
 
     const iterator = new ChatsIterator();
     const rendrer = new ChatsRenderer();
 
     this.#cleanup.push(
       ServerEvents.on("chat-created", (data) => {
-        list.prepandNodes(rendrer.createElement(data.payload.chat));
+        list.current.prepandNodes(rendrer.createElement(data.payload.chat));
       }),
       ShortcutManager.keydown("<M-ArrowUp>", this.navigateInDir("prev")),
       ShortcutManager.keydown("<M-ArrowDown>", this.navigateInDir("next")),
     );
 
-    list.setIterator(iterator);
-    list.setRenderer(rendrer);
-    list.init();
+    list.current.setIterator(iterator);
+    list.current.setRenderer(rendrer);
+    list.current.init();
   }
 
   // XXX maybe into separate file?
@@ -113,15 +130,18 @@ export class Chats extends HTMLElement {
 }
 
 class ChatsRenderer {
-  /** @param {Chat} chat  */
+  /**
+   * @param {Chat} chat
+   * @returns {DocumentFragment}
+   */
   createElement(chat) {
-    const a = document.createElement("a", { is: "hermes-link" });
-    const href = "/chats/" + chat.id;
-    a.href = href;
-    a.id = "chat-" + chat.id;
-    a.classList.add("chat-link");
-    a.innerText = chat.name.replaceAll(/(\n|\s)+/gi, " ");
-    return a;
+    const name =
+      escapeMarkup(chat.name.replaceAll(/(\n|\s)+/gi, " ")) || "**empty**";
+    return html`
+      <a href="/chats/${chat.id}" id="chat-${chat.id}">
+        <h-card data-interactive>${name}</h-card>
+      </a>
+    `;
   }
 }
 

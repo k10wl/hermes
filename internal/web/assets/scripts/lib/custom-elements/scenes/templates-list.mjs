@@ -41,18 +41,12 @@ customElements.define(
           }
 
           a {
-            /* NOTE uuuuh this could be separate reusable class or component */
-            text-align: start;
-            padding: 0.5rem 1rem;
-            margin: 0.1rem 0rem;
-            border: 1px solid rgb(from var(--text-0) r g b / 0.25);
             text-decoration: none;
-            color: rgb(from var(--text-0) r g b / 0.5);
-            transition: border-color var(--color-transition-duration);
-            display: flex;
+            margin: 0.1rem 0;
 
-            &:hover {
-              border-color: var(--primary);
+            h-card::part(card) {
+              width: 100%;
+              display: flex;
             }
 
             .name {
@@ -66,6 +60,7 @@ customElements.define(
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
+              color: rgb(from var(--text-0) r g b / 0.5);
             }
           }
         </style>
@@ -77,7 +72,9 @@ customElements.define(
               is="hermes-link"
               href="/templates/new"
             >
-              <span class="name"> // Create new template </span>
+              <h-card data-interactive>
+                <span class="name"> // Create new template </span>
+              </h-card>
             </a>
           </section>
         </main>
@@ -153,7 +150,7 @@ customElements.define(
       const link = new Bind((el) => AssertInstance.once(el, HTMLAnchorElement));
       const fragment = html`
         <a bind="${link}" is="hermes-link" href="/templates/${template.id}">
-          ${this.#linkContents(template)}
+          <h-card data-interactive>${this.#linkContents(template)}</h-card>
         </a>
       `;
       this.#elements.set(template.name, link.current);

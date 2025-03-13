@@ -1,4 +1,5 @@
 import "./button.mjs";
+import "./card.mjs";
 import "./chats.mjs";
 import "./context-menu.mjs";
 import "./dialog.mjs";

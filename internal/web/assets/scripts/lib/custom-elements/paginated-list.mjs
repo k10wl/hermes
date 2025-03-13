@@ -8,7 +8,7 @@
 /**
  * @template T
  * @typedef Renderer
- * @property {(data: T) => HTMLElement} createElement
+ * @property {(data: T) => DocumentFragment} createElement
  */
 
 /**
@@ -80,7 +80,7 @@ export class PaginatedList extends HTMLElement {
       throw new Error("iterator or renderer not set before loading next");
     }
     const page = await this.#iterator.next();
-    /** @type {HTMLElement[]} */
+    /** @type {DocumentFragment[]} */
     const el = [];
     for (const data of page) {
       el.push(this.#renderer.createElement(data));

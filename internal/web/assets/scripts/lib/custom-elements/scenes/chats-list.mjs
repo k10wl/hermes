@@ -17,21 +17,6 @@ export class ChatsListScene extends HTMLElement {
           margin: var(--container-margin);
           width: 100%;
         }
-
-        a {
-          margin: 0.25rem 0;
-          color: var(--text-0);
-          display: block;
-          padding: 0.5rem 1rem;
-          border-radius: 0.5rem;
-          border: 1px solid rgb(from var(--text-0) r g b / 0.25);
-          text-decoration: none;
-          transition: border-color var(--color-transition-duration);
-        }
-
-        a:hover {
-          border-color: var(--primary);
-        }
       </style>
 
       <main>
