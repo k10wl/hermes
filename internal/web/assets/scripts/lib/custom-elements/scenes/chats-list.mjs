@@ -9,12 +9,12 @@ export class ChatsListScene extends HTMLElement {
           height: 100%;
           display: grid;
           place-items: center;
-          padding: 16px;
           overflow: auto;
         }
 
-        hermes-chats {
-          max-width: var(--container);
+        h-chats {
+          max-width: var(--container-max-width);
+          margin: var(--container-margin);
           width: 100%;
         }
 
@@ -35,7 +35,7 @@ export class ChatsListScene extends HTMLElement {
       </style>
 
       <main>
-        <hermes-chats></hermes-chats>
+        <h-chats></h-chats>
       </main>
     `);
   }

@@ -115,3 +115,5 @@ export class PaginatedList extends HTMLElement {
     this.#startContainer.prepend(...nodes);
   }
 }
+
+customElements.define("h-paginated-list", PaginatedList);

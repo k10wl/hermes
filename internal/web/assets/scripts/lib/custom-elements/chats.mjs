@@ -15,14 +15,14 @@ export class Chats extends HTMLElement {
   constructor() {
     super();
     this.innerHTML = `
-<hermes-paginated-list>
+<h-paginated-list>
     <!--<a is="hermes-link" href="/" class="chat-link">New chat</a>-->
-</hermes-paginated-list>`;
+</h-paginated-list>`;
     this.findNextChat = this.navigateInDir.bind(this);
   }
 
   connectedCallback() {
-    const query = this.getElementsByTagName("hermes-paginated-list");
+    const query = this.getElementsByTagName("h-paginated-list");
     const list = /** @type {PaginatedList<Chat>} */ (
       AssertInstance.once(query[0], PaginatedList)
     );
@@ -158,3 +158,5 @@ class ChatsIterator {
     return chats;
   }
 }
+
+customElements.define("h-chats", Chats);

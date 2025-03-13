@@ -73,19 +73,18 @@ class TemplateUpdatedDialog extends HTMLElement {
     `);
   }
 
-  connectedCallback() {}
-
   /** @param {"cancel" | "confirm"} eventName */
   #dispatch = (eventName) => {
     this.dispatchEvent(new Event(eventName));
   };
 
-  /** @param {Template} template  */
+  /** @param {Template} template */
   showModal(template) {
-    this.template = template;
     if (this.dialog.current.element.open) {
       return;
     }
+    Template.validator.check(template);
+    this.template = template;
     this.#cleanup.push(
       ShortcutManager.keydown("<KeyY>", (event) => {
         event.preventDefault();
@@ -110,6 +109,7 @@ class TemplateUpdatedDialog extends HTMLElement {
   }
 
   disconnectedCallback() {
+    template = null;
     this.#cleanup.forEach((cb) => cb());
   }
 }
@@ -259,6 +259,7 @@ export class HermesViewTemplateScene extends HTMLElement {
   }
 
   connectedCallback() {
+    template = this;
     this.#sendReadRequest();
     this.#cleanup.push(
       ActionStore.add(new Action("template: delete template", this.delete)),
@@ -280,6 +281,7 @@ export class HermesViewTemplateScene extends HTMLElement {
   }
 
   disconnectedCallback() {
+    template = null;
     this.#cleanup.forEach((cb) => cb());
   }
 
@@ -289,14 +291,16 @@ export class HermesViewTemplateScene extends HTMLElement {
     });
     ServerEvents.send(readEvent);
     const off = ServerEvents.on(["read-template", "server-error"], (event) => {
-      console.log("> ", event);
       if (event.id !== readEvent.id) {
         return;
       }
       off();
       if (event instanceof ServerErrorEvent) {
-        // TODO show user that something exploded
         LocationControll.navigate("/templates");
+        AlertDialog.instance.alert({
+          title: "Failed to read template",
+          description: `Failed to read template: ${event.payload}`,
+        });
         return;
       }
       this.#template = event.payload.template;
@@ -315,14 +319,7 @@ ${event.payload.template.content.trim()}</textarea
             name="initial name"
             value="${event.payload.template.name}"
           />
-          <h-button
-            onclick="${() =>
-              AssertInstance.once(
-                this.form,
-                HTMLFormElement,
-                "form must be present to call submit",
-              ).requestSubmit()}"
-          >
+          <h-button onclick="${() => this.form.current.requestSubmit()}">
             <span bind="${this.#saveButtonText}"> Save </span>
             &nbsp;
             <h-key>Meta-S</h-key>
@@ -355,8 +352,8 @@ ${event.payload.template.content.trim()}</textarea
         return;
       }
       if (event instanceof ServerErrorEvent) {
-        // TODO replace with some error messaging
         AlertDialog.instance.alert({
+          title: "Failed to delete template",
           description: `Delete errored: ${event.payload}`,
         });
         return;
@@ -405,9 +402,7 @@ ${event.payload.template.content.trim()}</textarea
     const text = this.#saveButtonText.current.textContent;
     this.#saveButtonText.current.textContent = "Saved";
     setTimeout(() => {
-      if (this.#saveButtonText) {
-        this.#saveButtonText.current.textContent = text;
-      }
+      this.#saveButtonText.current.textContent = text;
     }, 2000);
   }
 
@@ -470,6 +465,7 @@ ${event.payload.template.content.trim()}</textarea
   #html = html`
     <style>
       * {
+        box-sizing: border-box;
         color: var(--text-0);
       }
 
@@ -482,8 +478,10 @@ ${event.payload.template.content.trim()}</textarea
       }
 
       form {
-        padding: 1rem;
+        max-width: var(--container-max-width);
+        margin: var(--container-margin);
         display: flex;
+        width: 100%;
         flex-flow: column nowrap;
         h-button {
           align-self: flex-end;
@@ -492,7 +490,7 @@ ${event.payload.template.content.trim()}</textarea
 
       textarea {
         margin: 0 auto;
-        width: min(100vw, 80ch);
+        width: 100%;
         padding: 0.5rem 1rem 0rem;
         border-radius: 1rem;
         border: none;

@@ -33,8 +33,8 @@ customElements.define(
           }
 
           section {
-            padding: 2rem;
-            max-width: 100%;
+            max-width: var(--container-max-width);
+            margin: var(--container-margin);
             overflow: hidden;
             display: flex;
             flex-direction: column;

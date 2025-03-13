@@ -41,7 +41,6 @@ export class ExistingChatScene extends HTMLElement {
         }
 
         #messages-width-wrapper {
-          max-width: var(--container);
           display: flex;
           justify-content: center;
           align-self: center;
@@ -56,7 +55,6 @@ export class ExistingChatScene extends HTMLElement {
           visibility: hidden;
           margin: auto;
           width: 100%;
-          max-width: var(--container);
           position: fixed;
           bottom: 4rem;
           right: 1rem;
@@ -86,6 +84,8 @@ export class ExistingChatScene extends HTMLElement {
 
         #messages-list {
           width: 100%;
+          max-width: var(--container-max-width);
+          margin: var(--container-margin);
         }
 
         .input-form-wrapper {
@@ -96,7 +96,7 @@ export class ExistingChatScene extends HTMLElement {
         hermes-message-form {
           --_pad: 1rem;
           padding: calc(var(--_pad) / 4) var(--_pad) var(--_pad);
-          max-width: var(--container);
+          max-width: var(--container-max-width);
           width: 100%;
         }
       </style>

@@ -216,8 +216,15 @@ export class AlertDialog extends HTMLElement {
       "close",
       () => {
         off();
-        this.titleSlot.current.textContent = preupdate.titleSlot;
-        this.descriptionSlot.current.textContent = preupdate.descriptionSlot;
+        this.element.current.element.addEventListener(
+          "animationend",
+          () => {
+            this.titleSlot.current.textContent = preupdate.titleSlot;
+            this.descriptionSlot.current.textContent =
+              preupdate.descriptionSlot;
+          },
+          { once: true },
+        );
       },
       { once: true },
     );
@@ -344,8 +351,15 @@ export class ConfirmDialog extends HTMLElement {
         confirmKeys();
         cancelKeys();
         resolve(false);
-        this.titleSlot.current.textContent = preupdate.titleSlot;
-        this.descriptionSlot.current.textContent = preupdate.descriptionSlot;
+        this.dialog.current.element.addEventListener(
+          "animationend",
+          () => {
+            this.titleSlot.current.textContent = preupdate.titleSlot;
+            this.descriptionSlot.current.textContent =
+              preupdate.descriptionSlot;
+          },
+          { once: true },
+        );
       },
       { once: true },
     );

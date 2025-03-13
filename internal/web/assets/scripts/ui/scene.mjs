@@ -40,54 +40,54 @@ class Scene extends HTMLElement {
    * @param {string} pathname
    */
   notify(pathname) {
-    const { name, html } = this.#scenePicker(pathname);
+    const { name, fragment } = this.#scenePicker(pathname);
     if (this.#activeSceneName === name) {
       return;
     }
     this.#activeSceneName = name;
     this.shadow.replaceChildren();
-    this.shadow.append(html);
+    this.shadow.append(fragment);
   }
 
   /**
    * @param {string} pathname
-   * @returns {{name: keyof typeof scenes, html: DocumentFragment}} html
+   * @returns {{name: keyof typeof scenes, fragment: DocumentFragment}}
    */
   #scenePicker(pathname) {
     if (pathname.startsWith("/templates/new")) {
       return {
         name: "/templates/new",
-        html: scenes["/templates/new"](),
+        fragment: scenes["/templates/new"](),
       };
     }
     if (pathname.startsWith("/templates")) {
       if (/\d+$/.test(pathname)) {
         return {
           name: "/templates/{id}",
-          html: scenes["/templates/{id}"](),
+          fragment: scenes["/templates/{id}"](),
         };
       }
       return {
         name: "/templates",
-        html: scenes["/templates"](),
+        fragment: scenes["/templates"](),
       };
     }
     const isChats = pathname.startsWith("/chats");
     if (isChats && LocationControll.chatId) {
       return {
         name: "/chats/{id}",
-        html: scenes["/chats/{id}"](),
+        fragment: scenes["/chats/{id}"](),
       };
     }
     if (isChats) {
       return {
         name: "/chats",
-        html: scenes["/chats"](),
+        fragment: scenes["/chats"](),
       };
     }
     return {
       name: "/",
-      html: scenes["/"](),
+      fragment: scenes["/"](),
     };
   }
 }
