@@ -6,39 +6,24 @@
  * // Create a button
  * const name = "my-button";
  * const button = new Bind();
- * fucntion onClick() {
- *   alert("clicked!");
- * }
- * html`<button bind="${button}" onclick=${onClick}>${name}</button>`;
+ * html`<button bind="${button}" onclick="${() => alert("clicked!")}">${name}</button>`;
  * console.log("> this is my button", button.target);
  */
 
-const eventAttributePrefix = "data-dim-event";
-const nestedTypeAttribute = "data-dim-nested-type";
-const indexAttribute = "data-dim-nested-index";
+// attribute holds index of event listener
+const EVENT_ATTRIBUTE_PREFIX = "data-dim-processing-event";
+// attribute holds index of nested element
+const NESTED_INDEX_ATTRIBUTE = "data-dim-processing-nested-index";
+// attribute holds index of binding class
+const BIND_ATTRIBUTE = "bind";
 
 /**
- * @param {string} type
+ * At preparation step, creates a placeholder for nested element
+ * Placeholder will be replaced with actual element during fragment creation
  * @param {number} index
  */
-function createNestedElementHolder(type, index) {
-  return `<div ${nestedTypeAttribute}="${type}" ${indexAttribute}="${index}"></div>`;
-}
-
-/**
- * @param {Element} element
- * @returns {string}
- * @throws {Error} if element has no holding data attribute
- */
-function getTypeAttribute(element) {
-  const holding = element.getAttribute(nestedTypeAttribute);
-  if (typeof holding !== "string") {
-    console.error(element);
-    throw new Error(
-      `expected element to have holding attribute: ${JSON.stringify(holding, null, 2)}`,
-    );
-  }
-  return holding;
+function createNestedElementHolder(index) {
+  return `<slot ${NESTED_INDEX_ATTRIBUTE}="${index}"></slot>`;
 }
 
 /**
@@ -89,7 +74,7 @@ class WithOffset {
  *
  * @example
  * // Adding event listeners
- * const fragment = html`<button onclick="${() => alert('clicked!')}">Click me</button>`;
+ * const fragment = html`<button onclick="${() => alert("clicked!")}">Click me</button>`;
  *
  * @example
  * // Binding elements to variables
@@ -102,7 +87,7 @@ class WithOffset {
  * `;
  * input.current.value = "Hello, world!";
  */
-export function html(...params) {
+function html(...params) {
   const str = Array.from(params[0].raw);
 
   /** @type {Set<string>} */
@@ -126,7 +111,7 @@ export function html(...params) {
       if (name && prev && str[index]?.startsWith('"')) {
         str[index - 1] = prev.replace(
           /on\w+="$/,
-          `${eventAttributePrefix}-${name}="${i}"`,
+          `${EVENT_ATTRIBUTE_PREFIX}-${name}="${i}"`,
         );
         hasEventsListeners = true;
         listeners.add(name);
@@ -137,7 +122,10 @@ export function html(...params) {
 
     if (param instanceof Bind) {
       const index = withOffset.adjust(i);
-      if (str[index - 1]?.endsWith('bind="') && str[index]?.startsWith('"')) {
+      if (
+        str[index - 1]?.endsWith(`${BIND_ATTRIBUTE}="`) &&
+        str[index]?.startsWith('"')
+      ) {
         str[index - 1] += `${i}`;
         hasBindings = true;
         return;
@@ -145,21 +133,15 @@ export function html(...params) {
     }
 
     if (param instanceof DocumentFragment) {
-      str.splice(
-        withOffset.increment(i),
-        0,
-        createNestedElementHolder("fragment", i),
-      );
+      str.splice(withOffset.increment(i), 0, createNestedElementHolder(i));
       hasNestedFragments = true;
       return;
     }
 
+    // could be buggy with 'interesting' types, but it's not worth the effort
+    // expect that consumer will use 'todoArr.map((el) => html`<div>${el}</div>`)'
     if (Array.isArray(param)) {
-      str.splice(
-        withOffset.increment(i),
-        0,
-        createNestedElementHolder("array", i),
-      );
+      str.splice(withOffset.increment(i), 0, createNestedElementHolder(i));
       hasNestedFragments = true;
       return;
     }
@@ -177,14 +159,14 @@ export function html(...params) {
   let selectors = "";
   if (hasEventsListeners) {
     listeners.forEach((name) => {
-      selectors += `[${eventAttributePrefix}-${name}],`;
+      selectors += `[${EVENT_ATTRIBUTE_PREFIX}-${name}],`;
     });
   }
   if (hasNestedFragments) {
-    selectors += `[${nestedTypeAttribute}],`;
+    selectors += `[${NESTED_INDEX_ATTRIBUTE}],`;
   }
   if (hasBindings) {
-    selectors += "[bind],";
+    selectors += `[${BIND_ATTRIBUTE}],`;
   }
 
   if (selectors) {
@@ -192,11 +174,11 @@ export function html(...params) {
     fragment.querySelectorAll(selectors).forEach((element) => {
       if (hasEventsListeners) {
         const eventListenerNames = Array.from(listeners).filter((name) =>
-          element.matches(`[${eventAttributePrefix}-${name}]`),
+          element.matches(`[${EVENT_ATTRIBUTE_PREFIX}-${name}]`),
         );
 
         for (const name of eventListenerNames) {
-          const attribute = `${eventAttributePrefix}-${name}`;
+          const attribute = `${EVENT_ATTRIBUTE_PREFIX}-${name}`;
           element.addEventListener(
             name,
             params[getAttributeIndex(element, attribute)],
@@ -205,53 +187,31 @@ export function html(...params) {
         }
       }
 
-      if (hasNestedFragments && element.matches(`[${nestedTypeAttribute}]`)) {
-        const typeAttribute = getTypeAttribute(element);
-
-        switch (typeAttribute) {
-          case "fragment": {
-            if (!(element.parentElement instanceof HTMLElement)) {
-              throw new Error(
-                "fragments must have parent element to be rendered in",
-              );
-            }
-            const fragment = params[getAttributeIndex(element, indexAttribute)];
-            if (!(fragment instanceof DocumentFragment)) {
-              throw new Error("expected fragment replacement");
-            }
-            element.parentElement.append(fragment);
-            element.remove();
-            break;
-          }
-
-          case "array": {
-            const arrayFragment = new DocumentFragment();
-            const arr = params[getAttributeIndex(element, indexAttribute)];
-            arr.forEach((/** @type {unknown} */ el) => {
-              if (el instanceof DocumentFragment) {
-                arrayFragment.append(el);
-              } else {
-                arrayFragment.append(`${el}`);
-              }
-            });
-            element.replaceWith(arrayFragment);
-            break;
-          }
-
-          default:
-            throw new Error(
-              `encountered unhandled holding value - '${typeAttribute}'`,
-            );
+      if (
+        hasNestedFragments &&
+        element.matches(`[${NESTED_INDEX_ATTRIBUTE}]`) &&
+        element instanceof HTMLSlotElement
+      ) {
+        /** @type {DocumentFragment | unknown[]} */
+        const fragment =
+          params[getAttributeIndex(element, NESTED_INDEX_ATTRIBUTE)];
+        if (Array.isArray(fragment)) {
+          element.replaceWith(
+            ...fragment.map((el) => (el instanceof Node ? el : `${el}`)),
+          );
+          return;
         }
+        element.replaceWith(fragment);
       }
 
-      if (hasBindings && element.hasAttribute("bind")) {
-        const binding = params[getAttributeIndex(element, "bind")];
+      if (hasBindings && element.hasAttribute(`${BIND_ATTRIBUTE}`)) {
+        const binding = params[getAttributeIndex(element, `${BIND_ATTRIBUTE}`)];
         if (!(binding instanceof Bind)) {
+          console.error(binding);
           throw new Error("binding is expected to be a function");
         }
         binding.current = element;
-        element.removeAttribute("bind");
+        element.removeAttribute(`${BIND_ATTRIBUTE}`);
       }
     });
   }
@@ -271,7 +231,7 @@ export function html(...params) {
  *
  * @template [T=unknown]
  */
-export class Bind {
+class Bind {
   /** @typedef {(value: unknown) => T} Assertion */
 
   /** @type {T | null} */
@@ -301,3 +261,5 @@ export class Bind {
     this.#current = _current;
   }
 }
+
+export { Bind, html };

@@ -195,6 +195,257 @@ describe("html", () => {
       "should render nested templates correctly",
     );
   });
+
+  test("should remain rendering order in complex cases", () => {
+    const jsdom = _prepareJSDOM();
+
+    const el = jsdom.window.document.createElement("div");
+
+    const fragment1 = jsdom.window.html`<div>1</div>`;
+    const fragment3 = jsdom.window.html`<div>3</div>`;
+    const fragment5 = jsdom.window.html`<div>5</div>`;
+
+    const main = jsdom.window
+      .html`<div>${fragment1}<div>2</div>${fragment3}<div>4</div>${fragment5}</div>`;
+
+    el.append(main);
+
+    assert.equal(
+      el.innerHTML,
+      `<div><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div></div>`,
+      "should render nested templates correctly",
+    );
+  });
+
+  test("should handle deeply nested structures", () => {
+    const jsdom = _prepareJSDOM();
+
+    const el = jsdom.window.document.createElement("div");
+
+    const fragment1 = jsdom.window.html`<div><span>1</span></div>`;
+    const fragment2 = jsdom.window
+      .html`<div><span>2</span><span>2.1</span></div>`;
+    const fragment3 = jsdom.window
+      .html`<div><span>3</span><div><span>3.1</span></div></div>`;
+
+    const main = jsdom.window
+      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+
+    el.append(main);
+
+    assert.equal(
+      el.innerHTML,
+      `<div><div><span>1</span></div><div><span>2</span><span>2.1</span></div><div><span>3</span><div><span>3.1</span></div></div></div>`,
+      "should render deeply nested templates correctly",
+    );
+  });
+
+  test("should handle mixed content types", () => {
+    const jsdom = _prepareJSDOM();
+
+    const el = jsdom.window.document.createElement("div");
+
+    const fragment1 = jsdom.window.html`<div>Text</div>`;
+    const fragment2 = jsdom.window.html`<div><span>Element</span></div>`;
+    const fragment3 = jsdom.window.html`<div>${42}</div>`;
+
+    const main = jsdom.window
+      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+
+    el.append(main);
+
+    assert.equal(
+      el.innerHTML,
+      `<div><div>Text</div><div><span>Element</span></div><div>42</div></div>`,
+      "should render mixed content types correctly",
+    );
+  });
+
+  test("should handle fragments without parent elements", () => {
+    const jsdom = _prepareJSDOM();
+
+    const el = jsdom.window.document.createElement("div");
+
+    const fragment1 = jsdom.window.html`<span>Fragment 1</span>`;
+    const fragment2 = jsdom.window.html`<span>Fragment 2</span>`;
+    const fragment3 = jsdom.window.html`<span>Fragment 3</span>`;
+
+    el.append(fragment1, fragment2, fragment3);
+
+    assert.equal(
+      el.innerHTML,
+      `<span>Fragment 1</span><span>Fragment 2</span><span>Fragment 3</span>`,
+      "should render fragments without parent elements correctly",
+    );
+  });
+
+  test("should handle inline elements", () => {
+    const jsdom = _prepareJSDOM();
+
+    const el = jsdom.window.document.createElement("div");
+
+    const fragment1 = jsdom.window.html`<span>Inline 1</span>`;
+    const fragment2 = jsdom.window.html`<span>Inline 2</span>`;
+    const fragment3 = jsdom.window.html`<span>Inline 3</span>`;
+
+    el.append(jsdom.window.html`${fragment1}${fragment2}${fragment3}`);
+
+    assert.equal(
+      el.innerHTML,
+      `<span>Inline 1</span><span>Inline 2</span><span>Inline 3</span>`,
+      "should render inline elements correctly",
+    );
+  });
+
+  test("should handle complex nested and inline structures", () => {
+    const jsdom = _prepareJSDOM();
+
+    const el = jsdom.window.document.createElement("div");
+
+    const fragment1 = jsdom.window.html`<div><span>Nested 1</span></div>`;
+    const fragment2 = jsdom.window.html`<span>Inline 2</span>`;
+    const fragment3 = jsdom.window
+      .html`<div><span>Nested 3</span><span>Inline 3.1</span></div>`;
+
+    const main = jsdom.window
+      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+
+    el.append(main);
+
+    assert.equal(
+      el.innerHTML,
+      `<div><div><span>Nested 1</span></div><span>Inline 2</span><div><span>Nested 3</span><span>Inline 3.1</span></div></div>`,
+      "should render complex nested and inline structures correctly",
+    );
+  });
+
+  test("should handle elements with attributes", () => {
+    const jsdom = _prepareJSDOM();
+
+    const el = jsdom.window.document.createElement("div");
+
+    const fragment1 = jsdom.window.html`<div class="class1">1</div>`;
+    const fragment2 = jsdom.window.html`<div id="id2">2</div>`;
+    const fragment3 = jsdom.window.html`<div data-test="test3">3</div>`;
+
+    const main = jsdom.window
+      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+
+    el.append(main);
+
+    assert.equal(
+      el.innerHTML,
+      `<div><div class="class1">1</div><div id="id2">2</div><div data-test="test3">3</div></div>`,
+      "should render elements with attributes correctly",
+    );
+  });
+
+  test("should handle empty elements", () => {
+    const jsdom = _prepareJSDOM();
+
+    const el = jsdom.window.document.createElement("div");
+
+    const fragment1 = jsdom.window.html`<div></div>`;
+    const fragment2 = jsdom.window.html`<span></span>`;
+    const fragment3 = jsdom.window.html`<p></p>`;
+
+    const main = jsdom.window
+      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+
+    el.append(main);
+
+    assert.equal(
+      el.innerHTML,
+      `<div><div></div><span></span><p></p></div>`,
+      "should render empty elements correctly",
+    );
+  });
+
+  test("should handle elements with text and children", () => {
+    const jsdom = _prepareJSDOM();
+
+    const el = jsdom.window.document.createElement("div");
+
+    const fragment1 = jsdom.window.html`<div>Text<div>Child</div></div>`;
+    const fragment2 = jsdom.window.html`<span>Text<span>Child</span></span>`;
+    const fragment3 = jsdom.window.html`<div>Text<div>Child</div></div>`;
+
+    const main = jsdom.window
+      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+
+    el.append(main);
+
+    assert.equal(
+      el.innerHTML,
+      `<div><div>Text<div>Child</div></div><span>Text<span>Child</span></span><div>Text<div>Child</div></div></div>`,
+      "should render elements with text and children correctly",
+    );
+  });
+
+  test("should handle elements with mixed content and attributes", () => {
+    const jsdom = _prepareJSDOM();
+
+    const el = jsdom.window.document.createElement("div");
+
+    const fragment1 = jsdom.window
+      .html`<div class="class1">Text<div>Child</div></div>`;
+    const fragment2 = jsdom.window
+      .html`<span id="id2">Text<span>Child</span></span>`;
+    const fragment3 = jsdom.window
+      .html`<div data-test="test3">Text<div>Child</div></div>`;
+
+    const main = jsdom.window
+      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+
+    el.append(main);
+
+    assert.equal(
+      el.innerHTML,
+      `<div><div class="class1">Text<div>Child</div></div><span id="id2">Text<span>Child</span></span><div data-test="test3">Text<div>Child</div></div></div>`,
+      "should render elements with mixed content and attributes correctly",
+    );
+  });
+
+  test("should handle complex inline and block elements", () => {
+    const jsdom = _prepareJSDOM();
+
+    const el = jsdom.window.document.createElement("div");
+
+    const fragment1 = jsdom.window.html`<span>Inline 1</span>`;
+    const fragment2 = jsdom.window.html`<div>Block 2</div>`;
+    const fragment3 = jsdom.window.html`<span>Inline 3</span>`;
+
+    const main = jsdom.window
+      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+
+    el.append(main);
+
+    assert.equal(
+      el.innerHTML,
+      `<div><span>Inline 1</span><div>Block 2</div><span>Inline 3</span></div>`,
+      "should render complex inline and block elements correctly",
+    );
+  });
+
+  test("should handle rendering fragment within another fragment", () => {
+    const jsdom = _prepareJSDOM();
+
+    const el = jsdom.window.document.createElement("div");
+
+    const fragment3 = jsdom.window.html`<div>3</div>`;
+    const fragment5 = jsdom.window.html`${fragment3}`;
+
+    const main = jsdom.window
+      .html`<div><div>1</div><div>2</div>${fragment5}<div>4</div><div>5</div></div>`;
+
+    el.append(main);
+
+    assert.equal(
+      el.innerHTML,
+      `<div><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div></div>`,
+      "should render fragment within another fragment correctly",
+    );
+  });
 });
 
 describe("Bind", () => {
