@@ -66,28 +66,16 @@ class WithOffset {
 }
 
 /**
- * Transform template string into document structure on intuitive rules
- * This function is useful for creating dynamic HTML content with embedded expressions.
- *
  * @param {Parameters<typeof String.raw>} params
- * @returns {DocumentFragment} DOM representation of provided string
- *
- * @example
- * // Adding event listeners
- * const fragment = html`<button onclick="${() => alert("clicked!")}">Click me</button>`;
- *
- * @example
- * // Binding elements to variables
- * const input = new Bind();
- * const fragment = html`
- *   <form>
- *     <input bind="${input}" type="text">
- *     <button onclick="${() => console.log(input.value)}">Submit</button>
- *   </form>
- * `;
- * input.current.value = "Hello, world!";
+ * @returns {{
+ *   raw: string,
+ *   listeners: Set<string>,
+ *   hasBindings: boolean,
+ *   hasEventsListeners: boolean,
+ *   hasNestedFragments: boolean,
+ * }}
  */
-function html(...params) {
+function prepareData(params) {
   const str = Array.from(params[0].raw);
 
   /** @type {Set<string>} */
@@ -150,6 +138,34 @@ function html(...params) {
   });
 
   let raw = str.join("");
+  return {
+    raw,
+    listeners,
+    hasBindings,
+    hasEventsListeners,
+    hasNestedFragments,
+  };
+}
+
+/**
+ * @param {{
+ *   raw: string,
+ *   listeners: Set<string>,
+ *   hasBindings: boolean,
+ *   hasEventsListeners: boolean,
+ *   hasNestedFragments: boolean,
+ * }} data
+ * @param {Parameters<typeof String.raw>} params
+ * @returns {DocumentFragment}
+ */
+function createFragment(data, params) {
+  const {
+    raw,
+    listeners,
+    hasBindings,
+    hasEventsListeners,
+    hasNestedFragments,
+  } = data;
 
   const fragment = document.createDocumentFragment();
   let dummy = document.createElement("div");
@@ -215,8 +231,34 @@ function html(...params) {
       }
     });
   }
-
   return fragment;
+}
+
+/**
+ * Transform template string into document structure on intuitive rules
+ * This function is useful for creating dynamic HTML content with embedded expressions.
+ *
+ * @param {Parameters<typeof String.raw>} params
+ * @returns {DocumentFragment} DOM representation of provided string
+ *
+ * @example
+ * // Adding event listeners
+ * const fragment = html`<button onclick="${() => alert("clicked!")}">Click me</button>`;
+ *
+ * @example
+ * // Binding elements to variables
+ * const input = new Bind();
+ * const fragment = html`
+ *   <form>
+ *     <input bind="${input}" type="text">
+ *     <button onclick="${() => console.log(input.value)}">Submit</button>
+ *   </form>
+ * `;
+ * input.current.value = "Hello, world!";
+ */
+function html(...params) {
+  const data = prepareData(params);
+  return createFragment(data, params);
 }
 
 /**
