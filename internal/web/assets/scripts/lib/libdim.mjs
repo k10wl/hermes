@@ -13,17 +13,26 @@
 // attribute holds index of event listener
 const EVENT_ATTRIBUTE_PREFIX = "data-dim-processing-event";
 // attribute holds index of nested element
-const NESTED_INDEX_ATTRIBUTE = "data-dim-processing-nested-index";
+const PARAMETER_INDEX_ATTRIBUTE = "data-dim-processing-parameter-index";
+const PARAMETER_TYPE_ATTRIBUTE = "data-dim-processing-parameter-type";
 // attribute holds index of binding class
 const BIND_ATTRIBUTE = "bind";
+
+const NESTED_TYPE = {
+  FRAGMENT: "fragment",
+  SIGNAL_NODE: "signal-node",
+  SIGNAL_ATTRIBUTE: "signal-attribute",
+};
+const SIGNAL_ATTRIBUTE_DELIMITER = "::";
 
 /**
  * At preparation step, creates a placeholder for nested element
  * Placeholder will be replaced with actual element during fragment creation
  * @param {number} index
+ * @param {string} type
  */
-function createNestedElementHolder(index) {
-  return `<slot ${NESTED_INDEX_ATTRIBUTE}="${index}"></slot>`;
+function createNestedElementHolder(type, index) {
+  return `<slot ${PARAMETER_INDEX_ATTRIBUTE}="${index}" ${PARAMETER_TYPE_ATTRIBUTE}="${type}"></slot>`;
 }
 
 /**
@@ -35,6 +44,7 @@ function createNestedElementHolder(index) {
 function getAttributeIndex(element, attribute) {
   const index = +(element.getAttribute(attribute) ?? NaN);
   if (Number.isNaN(index)) {
+    console.trace();
     console.error(element);
     throw new Error(
       `expected "${attribute}" to be a number: ${JSON.stringify(index, null, 2)}`,
@@ -72,7 +82,7 @@ class WithOffset {
  *   listeners: Set<string>,
  *   hasBindings: boolean,
  *   hasEventsListeners: boolean,
- *   hasNestedFragments: boolean,
+ *   hasProcessingParameters: boolean,
  * }}
  */
 function prepareData(params) {
@@ -85,7 +95,7 @@ function prepareData(params) {
 
   let hasBindings = false;
   let hasEventsListeners = false;
-  let hasNestedFragments = false;
+  let hasProcessingParameters = false;
 
   params.forEach((param, i) => {
     if (i === 0) {
@@ -120,17 +130,47 @@ function prepareData(params) {
       }
     }
 
+    if (param instanceof Signal) {
+      const prev = str[i - 1];
+      if (prev) {
+        const attributeRegex = /(?<name>\w+(-\w+)?)="$/;
+        const exec = attributeRegex.exec(prev);
+        if (exec?.groups?.name) {
+          str[i - 1] +=
+            `${i}" ${PARAMETER_TYPE_ATTRIBUTE}="${NESTED_TYPE.SIGNAL_ATTRIBUTE}${SIGNAL_ATTRIBUTE_DELIMITER}${exec.groups.name}`;
+          hasProcessingParameters = true;
+          return;
+        }
+      }
+
+      str.splice(
+        withOffset.increment(i),
+        0,
+        createNestedElementHolder(NESTED_TYPE.SIGNAL_NODE, i),
+      );
+      hasProcessingParameters = true;
+      return;
+    }
+
     if (param instanceof DocumentFragment) {
-      str.splice(withOffset.increment(i), 0, createNestedElementHolder(i));
-      hasNestedFragments = true;
+      str.splice(
+        withOffset.increment(i),
+        0,
+        createNestedElementHolder(NESTED_TYPE.FRAGMENT, i),
+      );
+      hasProcessingParameters = true;
       return;
     }
 
     // could be buggy with 'interesting' types, but it's not worth the effort
     // expect that consumer will use 'todoArr.map((el) => html`<div>${el}</div>`)'
     if (Array.isArray(param)) {
-      str.splice(withOffset.increment(i), 0, createNestedElementHolder(i));
-      hasNestedFragments = true;
+      str.splice(
+        withOffset.increment(i),
+        0,
+        createNestedElementHolder(NESTED_TYPE.FRAGMENT, i),
+      );
+      hasProcessingParameters = true;
       return;
     }
 
@@ -143,8 +183,53 @@ function prepareData(params) {
     listeners,
     hasBindings,
     hasEventsListeners,
-    hasNestedFragments,
+    hasProcessingParameters,
   };
+}
+
+/**
+ * @param {Object} args
+ * @param {Signal<unknown>} args.signal
+ * @param {WeakRef<Element>} args.element
+ * @param {string} args.attribute
+ */
+function subscribeSignalAttribute(args) {
+  const { signal, element, attribute } = args;
+  signal.subscribe(function attributeChange(value) {
+    const elRef = element.deref();
+    if (!elRef) {
+      return;
+    }
+    elRef.setAttribute(attribute, `${value}`);
+  });
+}
+
+/**
+ * @param {Object} args
+ * @param {Signal<unknown>} args.signal
+ * @param {WeakRef<Text>} args.mark
+ * @param {WeakRef<Text>} args.bound
+ */
+function subscribeSignalNode(args) {
+  const { mark, bound, signal } = args;
+  signal.subscribe(function nodeChange(value) {
+    const markRef = mark.deref();
+    const boundRef = bound.deref();
+    if (!markRef || !boundRef) {
+      signal.unsubscribe(nodeChange);
+      return;
+    }
+    while (markRef.nextSibling !== boundRef && markRef.nextSibling) {
+      markRef.nextSibling.remove();
+    }
+    if (!markRef.nextSibling) {
+      markRef.after(boundRef);
+    }
+    if (Array.isArray(value)) {
+      markRef.after(...value.map((el) => (el instanceof Node ? el : `${el}`)));
+    }
+    markRef.after(value instanceof Node ? value : `${value}`);
+  });
 }
 
 /**
@@ -153,7 +238,7 @@ function prepareData(params) {
  *   listeners: Set<string>,
  *   hasBindings: boolean,
  *   hasEventsListeners: boolean,
- *   hasNestedFragments: boolean,
+ *   hasProcessingParameters: boolean,
  * }} data
  * @param {Parameters<typeof String.raw>} params
  * @returns {DocumentFragment}
@@ -164,7 +249,7 @@ function createFragment(data, params) {
     listeners,
     hasBindings,
     hasEventsListeners,
-    hasNestedFragments,
+    hasProcessingParameters,
   } = data;
 
   const fragment = document.createDocumentFragment();
@@ -178,8 +263,8 @@ function createFragment(data, params) {
       selectors += `[${EVENT_ATTRIBUTE_PREFIX}-${name}],`;
     });
   }
-  if (hasNestedFragments) {
-    selectors += `[${NESTED_INDEX_ATTRIBUTE}],`;
+  if (hasProcessingParameters) {
+    selectors += `[${PARAMETER_TYPE_ATTRIBUTE}],`;
   }
   if (hasBindings) {
     selectors += `[${BIND_ATTRIBUTE}],`;
@@ -204,30 +289,85 @@ function createFragment(data, params) {
       }
 
       if (
-        hasNestedFragments &&
-        element.matches(`[${NESTED_INDEX_ATTRIBUTE}]`) &&
-        element instanceof HTMLSlotElement
+        hasProcessingParameters &&
+        element.matches(
+          `[${PARAMETER_TYPE_ATTRIBUTE}^="${NESTED_TYPE.SIGNAL_ATTRIBUTE}"]`,
+        )
       ) {
-        /** @type {DocumentFragment | unknown[]} */
-        const fragment =
-          params[getAttributeIndex(element, NESTED_INDEX_ATTRIBUTE)];
-        if (Array.isArray(fragment)) {
-          element.replaceWith(
-            ...fragment.map((el) => (el instanceof Node ? el : `${el}`)),
-          );
-          return;
+        const attr = element.getAttribute(PARAMETER_TYPE_ATTRIBUTE);
+        if (!attr) {
+          throw new Error(`unexpected attribute: ${PARAMETER_TYPE_ATTRIBUTE}`);
         }
-        element.replaceWith(fragment);
+        const [, targetName] = attr.split(SIGNAL_ATTRIBUTE_DELIMITER);
+        if (!targetName) {
+          throw new Error(
+            `target name missuse, expected: ${PARAMETER_TYPE_ATTRIBUTE}${SIGNAL_ATTRIBUTE_DELIMITER}attribute-name`,
+          );
+        }
+        const binding = params[getAttributeIndex(element, targetName)];
+        if (!(binding instanceof Signal)) {
+          throw new Error(`expected signal node, got ${binding}`);
+        }
+        element.removeAttribute(PARAMETER_TYPE_ATTRIBUTE);
+        subscribeSignalAttribute({
+          signal: binding,
+          element: new WeakRef(element),
+          attribute: targetName,
+        });
+        return;
       }
 
-      if (hasBindings && element.hasAttribute(`${BIND_ATTRIBUTE}`)) {
-        const binding = params[getAttributeIndex(element, `${BIND_ATTRIBUTE}`)];
+      if (
+        hasProcessingParameters &&
+        element.matches(`[${PARAMETER_TYPE_ATTRIBUTE}]`) &&
+        element instanceof HTMLSlotElement
+      ) {
+        const type = element.getAttribute(PARAMETER_TYPE_ATTRIBUTE);
+        const nested =
+          params[getAttributeIndex(element, PARAMETER_INDEX_ATTRIBUTE)];
+
+        switch (type) {
+          case NESTED_TYPE.FRAGMENT: {
+            /** @type {DocumentFragment | unknown[]} */
+            if (Array.isArray(nested)) {
+              element.replaceWith(
+                ...nested.map((element) =>
+                  element instanceof Node ? element : `${element}`,
+                ),
+              );
+              return;
+            }
+            element.replaceWith(nested);
+            return;
+          }
+          case NESTED_TYPE.SIGNAL_NODE: {
+            if (!(nested instanceof Signal)) {
+              throw new Error(`expected signal node, got ${nested}`);
+            }
+            const mark = document.createTextNode("");
+            const bound = document.createTextNode("");
+            subscribeSignalNode({
+              signal: nested,
+              mark: new WeakRef(mark),
+              bound: new WeakRef(bound),
+            });
+            element.replaceWith(mark, nested.value, bound);
+            return;
+          }
+          default:
+            throw new Error(`unexpected nested type: ${type}`);
+        }
+      }
+
+      if (hasBindings && element.hasAttribute(BIND_ATTRIBUTE)) {
+        const binding = params[getAttributeIndex(element, BIND_ATTRIBUTE)];
         if (!(binding instanceof Bind)) {
+          console.trace();
           console.error(binding);
           throw new Error("binding is expected to be a function");
         }
         binding.current = element;
-        element.removeAttribute(`${BIND_ATTRIBUTE}`);
+        element.removeAttribute(BIND_ATTRIBUTE);
       }
     });
   }
@@ -256,7 +396,7 @@ function createFragment(data, params) {
  * `;
  * input.current.value = "Hello, world!";
  */
-function html(...params) {
+export function html(...params) {
   const data = prepareData(params);
   return createFragment(data, params);
 }
@@ -273,7 +413,7 @@ function html(...params) {
  *
  * @template [T=unknown]
  */
-class Bind {
+export class Bind {
   /** @typedef {(value: unknown) => T} Assertion */
 
   /** @type {T | null} */
@@ -304,4 +444,67 @@ class Bind {
   }
 }
 
-export { Bind, html };
+/**
+ * Notifies subscribers when value changes
+ * To work as signal DOM Node instance must be used as a parameter of `html`
+ * Works best with primitives
+ *
+ * @example
+ * const signal = new Signal(10);
+ * html`
+ *   <button onclick="${() => signal.value += 1}">
+ *     increment
+ *   </button>
+ *   <button onclick="${() => signal.value -= 1}">
+ *     decrement
+ *   </button>
+ *   <p data-signal-value="${signal}">${signal}</p>
+ * `;
+ *
+ * @template {unknown} T
+ */
+export class Signal {
+  #value;
+  /** @type {(((value: T) => void) | null)[]} */
+  #subscribers = [];
+
+  /** @param {T} value */
+  constructor(value) {
+    this.#value = value;
+  }
+
+  set value(value) {
+    this.#value = value;
+    this.#publish();
+  }
+
+  get value() {
+    return this.#value;
+  }
+
+  /** @param {(value: T) => void} trigger */
+  subscribe(trigger) {
+    this.#subscribers.push(trigger);
+  }
+
+  /** @param {(value: T) => void} trigger */
+  unsubscribe(trigger) {
+    const index = this.#subscribers.indexOf(trigger);
+    if (index === -1) {
+      return;
+    }
+    this.#subscribers[index] = null;
+  }
+
+  #publish() {
+    for (let i = 0; i < this.#subscribers.length; i++) {
+      const subscriber = this.#subscribers[i];
+      if (subscriber) {
+        subscriber(this.#value);
+        continue;
+      }
+      this.#subscribers.splice(i, 1);
+      i--;
+    }
+  }
+}
