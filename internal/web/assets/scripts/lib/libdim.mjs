@@ -3,11 +3,32 @@
  * Utilizes template literals to bind event handlers and DOM elements
  *
  * @example
- * // Create a button
- * const name = "my-button";
+ * // Expose DOM element to javascript without querying it
  * const button = new Bind();
- * html`<button bind="${button}" onclick="${() => alert("clicked!")}">${name}</button>`;
- * console.log("> this is my button", button.target);
+ *
+ * // Create a signal for reactive updates
+ * const signal = new Signal(false);
+ *
+ * // Create DocumentFragment with declarative functionality
+ * const fragment = html`
+ * <button
+ *   bind="${button}"
+ *   onclick="${() => (signal.value = !signal.value)}"
+ * >
+ *   open
+ * </button>
+ * <div aria=open="${signal}">dropdown</div>
+ * `;
+ *
+ * // Append fragment to the document
+ * document.body.append(fragment);
+ *
+ * // Access DOM element
+ * console.log(button.current); // <button bind="...">
+ * signal.subscribe(function optionalValueUpdateSubscription(value) {
+ *   console.log(value);
+ *   signal.unsubscribe(optionalValueUpdateSubscription);
+ * });
  */
 
 // attribute holds index of event listener
@@ -19,7 +40,7 @@ const PARAMETER_TYPE_ATTRIBUTE = "data-dim-processing-parameter-type";
 const BIND_ATTRIBUTE = "bind";
 
 const NESTED_TYPE = {
-  FRAGMENT: "fragment",
+  NODE: "node",
   SIGNAL_NODE: "signal-node",
   SIGNAL_ATTRIBUTE: "signal-attribute",
 };
@@ -152,11 +173,11 @@ function prepareData(params) {
       return;
     }
 
-    if (param instanceof DocumentFragment) {
+    if (param instanceof Node) {
       str.splice(
         withOffset.increment(i),
         0,
-        createNestedElementHolder(NESTED_TYPE.FRAGMENT, i),
+        createNestedElementHolder(NESTED_TYPE.NODE, i),
       );
       hasProcessingParameters = true;
       return;
@@ -168,7 +189,7 @@ function prepareData(params) {
       str.splice(
         withOffset.increment(i),
         0,
-        createNestedElementHolder(NESTED_TYPE.FRAGMENT, i),
+        createNestedElementHolder(NESTED_TYPE.NODE, i),
       );
       hasProcessingParameters = true;
       return;
@@ -314,6 +335,7 @@ function createFragment(data, params) {
           element: new WeakRef(element),
           attribute: targetName,
         });
+        element.setAttribute(targetName, binding.value);
         return;
       }
 
@@ -327,14 +349,10 @@ function createFragment(data, params) {
           params[getAttributeIndex(element, PARAMETER_INDEX_ATTRIBUTE)];
 
         switch (type) {
-          case NESTED_TYPE.FRAGMENT: {
-            /** @type {DocumentFragment | unknown[]} */
+          case NESTED_TYPE.NODE: {
+            /** @type {Node[]} */
             if (Array.isArray(nested)) {
-              element.replaceWith(
-                ...nested.map((element) =>
-                  element instanceof Node ? element : `${element}`,
-                ),
-              );
+              element.replaceWith(...nested.map((element) => element));
               return;
             }
             element.replaceWith(nested);
@@ -374,27 +392,41 @@ function createFragment(data, params) {
   return fragment;
 }
 
+/** @typedef {(
+ *   string |
+ *   number |
+ *   bigint |
+ *   boolean |
+ *   undefined |
+ *   symbol |
+ *   null
+ * )} Primitives */
+
 /**
- * Transform template string into document structure on intuitive rules
- * This function is useful for creating dynamic HTML content with embedded expressions.
- *
- * @param {Parameters<typeof String.raw>} params
- * @returns {DocumentFragment} DOM representation of provided string
+ * Interprets template string into DocumentFragment
  *
  * @example
- * // Adding event listeners
- * const fragment = html`<button onclick="${() => alert("clicked!")}">Click me</button>`;
- *
- * @example
- * // Binding elements to variables
- * const input = new Bind();
+ * const counter = new Signal(0); // publisher with .subscribe and .unsubscribe
+ * const canvas = new Bind(); // DOM binding with optional assertion parameter
  * const fragment = html`
- *   <form>
- *     <input bind="${input}" type="text">
- *     <button onclick="${() => console.log(input.value)}">Submit</button>
- *   </form>
- * `;
- * input.current.value = "Hello, world!";
+ *   <h1>Counter: ${counter}</h1> <!-- reactive updates -->
+ *   <canvas bind="${canvas}" width="100" height="100"></canvas>
+ *   <button onclick="${() => counter.value += 1}">Increment</button>
+ * `; // easy listeners attachment, reactive signal updates, DOM bindings
+ * console.log(canvas.current); // exposed DOM element
+ *
+ * @param {[
+ *   { raw: readonly string[] | ArrayLike<string> },
+ *   ...substitutions: (
+ *   ((event: Event) => void) |
+ *   Bind |
+ *   Signal |
+ *   Node |
+ *   Primitives |
+ *   (Primitives | Node)[]
+ * )[]
+ * ]} params
+ * @returns {DocumentFragment}
  */
 export function html(...params) {
   const data = prepareData(params);
@@ -461,7 +493,7 @@ export class Bind {
  *   <p data-signal-value="${signal}">${signal}</p>
  * `;
  *
- * @template {unknown} T
+ * @template [T=unknown]
  */
 export class Signal {
   #value;
