@@ -79,19 +79,15 @@ customElements.define(
               <li>
                 <span>${shortcut.name}</span>
                 <div>
-                  <button>${shortcut.key}</button>
+                  <button onclick="${() => shortcut.onclick()}">
+                    ${shortcut.key}
+                  </button>
                 </div>
               </li>
             `,
           )}
         </ul>
       `);
-      const buttons = this.shadow.querySelectorAll("button");
-      buttons.forEach((button, index) =>
-        button.addEventListener("click", () =>
-          Shortcuts.#list[index]?.onclick(),
-        ),
-      );
     }
   },
 );
