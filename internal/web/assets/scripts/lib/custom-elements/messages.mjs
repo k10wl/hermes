@@ -282,7 +282,7 @@ class ChatMessage extends HTMLElement {
           margin-top: 0.2rem;
           opacity: 0;
           #copy::part(button) {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             --_size: 2ch;
