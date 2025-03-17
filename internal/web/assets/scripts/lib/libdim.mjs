@@ -49,7 +49,7 @@ const SIGNAL_ATTRIBUTE_DELIMITER = "::";
 /**
  * At preparation step, creates a placeholder for nested element
  * Placeholder will be replaced with actual element during fragment creation
- * @param {number} index
+ * @param {number | string} index
  * @param {string} type
  */
 function createNestedElementHolder(type, index) {
@@ -97,14 +97,20 @@ class WithOffset {
 }
 
 /**
- * @param {Parameters<typeof String.raw>} params
- * @returns {{
+ *
+ * @typedef {{
  *   raw: string,
  *   listeners: Set<string>,
+ *   signalsCount: number,
  *   hasBindings: boolean,
  *   hasEventsListeners: boolean,
  *   hasProcessingParameters: boolean,
- * }}
+ * }} ProcessingData
+ */
+
+/**
+ * @param {Parameters<typeof String.raw>} params
+ * @returns {ProcessingData}
  */
 function prepareData(params) {
   const str = Array.from(params[0].raw);
@@ -114,6 +120,7 @@ function prepareData(params) {
 
   const withOffset = new WithOffset();
 
+  let signalsCount = 0;
   let hasBindings = false;
   let hasEventsListeners = false;
   let hasProcessingParameters = false;
@@ -160,6 +167,7 @@ function prepareData(params) {
           str[i - 1] +=
             `${i}" ${PARAMETER_TYPE_ATTRIBUTE}="${NESTED_TYPE.SIGNAL_ATTRIBUTE}${SIGNAL_ATTRIBUTE_DELIMITER}${exec.groups.name}`;
           hasProcessingParameters = true;
+          signalsCount++;
           return;
         }
       }
@@ -170,6 +178,7 @@ function prepareData(params) {
         createNestedElementHolder(NESTED_TYPE.SIGNAL_NODE, i),
       );
       hasProcessingParameters = true;
+      signalsCount++;
       return;
     }
 
@@ -202,6 +211,7 @@ function prepareData(params) {
   return {
     raw,
     listeners,
+    signalsCount,
     hasBindings,
     hasEventsListeners,
     hasProcessingParameters,
@@ -253,14 +263,13 @@ function subscribeSignalNode(args) {
   });
 }
 
+const nestedSignalNodeRegex = new RegExp(
+  `(?<marker>${createNestedElementHolder(NESTED_TYPE.SIGNAL_NODE, "(?<index>\\d+)")})`,
+  "gm",
+);
+
 /**
- * @param {{
- *   raw: string,
- *   listeners: Set<string>,
- *   hasBindings: boolean,
- *   hasEventsListeners: boolean,
- *   hasProcessingParameters: boolean,
- * }} data
+ * @param {ProcessingData} data
  * @param {Parameters<typeof String.raw>} params
  * @returns {DocumentFragment}
  */
@@ -290,6 +299,8 @@ function createFragment(data, params) {
   if (hasBindings) {
     selectors += `[${BIND_ATTRIBUTE}],`;
   }
+
+  let unprocessedSignals = data.signalsCount;
 
   if (selectors) {
     selectors = selectors.slice(0, -1);
@@ -336,6 +347,7 @@ function createFragment(data, params) {
           attribute: targetName,
         });
         element.setAttribute(targetName, binding.value);
+        unprocessedSignals--;
         return;
       }
 
@@ -370,6 +382,7 @@ function createFragment(data, params) {
               bound: new WeakRef(bound),
             });
             element.replaceWith(mark, nested.value, bound);
+            unprocessedSignals--;
             return;
           }
           default:
@@ -389,6 +402,53 @@ function createFragment(data, params) {
       }
     });
   }
+
+  if (unprocessedSignals > 0) {
+    // XXX expect that only style signals left unprocessed
+    const styles = fragment.querySelectorAll("style");
+    let childNodes = [];
+    for (const style of styles) {
+      const html = style.innerHTML;
+      const matches = html.matchAll(nestedSignalNodeRegex);
+      let pointer = 0;
+      for (const match of matches) {
+        const index = match.groups?.index;
+        if (!index) {
+          throw new Error(
+            "index detected in regex, but not found in match group",
+          );
+        }
+        const signalMark = match.groups?.marker;
+        if (!signalMark) {
+          throw new Error(
+            "marker detected in regex, but not found in match group",
+          );
+        }
+        match.input.slice(pointer, match.index);
+        childNodes.push(match.input.slice(pointer, match.index));
+        pointer = match.index + signalMark.length;
+        const signalInstance = params[+index];
+        if (!(signalInstance instanceof Signal)) {
+          throw new Error("expected signal node, got " + signalInstance);
+        }
+        const mark = document.createTextNode("");
+        const bound = document.createTextNode("");
+        subscribeSignalNode({
+          signal: signalInstance,
+          mark: new WeakRef(mark),
+          bound: new WeakRef(bound),
+        });
+        childNodes.push(mark, signalInstance.value, bound);
+      }
+      style.replaceChildren(...childNodes, html.slice(pointer));
+      childNodes.length = 0;
+      unprocessedSignals--;
+      if (unprocessedSignals === 0) {
+        break;
+      }
+    }
+  }
+
   return fragment;
 }
 
