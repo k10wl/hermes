@@ -2,7 +2,7 @@ import { AssertInstance } from "/assets/scripts/lib/assert.mjs";
 import { escapeMarkup } from "/assets/scripts/lib/escape-markup.mjs";
 import { RequestReadChatEvent } from "/assets/scripts/lib/events/client-events-list.mjs";
 import { ServerEvents } from "/assets/scripts/lib/events/server-events.mjs";
-import { Bind, html } from "/assets/scripts/lib/libdim.mjs";
+import { Bind, html, Signal } from "/assets/scripts/lib/libdim.mjs";
 import { LocationControll } from "/assets/scripts/lib/location-control.mjs";
 import { Message } from "/assets/scripts/models.mjs";
 import Prism from "/assets/scripts/third-party/prism.js";
@@ -56,6 +56,8 @@ function clipboardReadSuccess(element) {
 class CodeBlock extends HTMLElement {
   #slot = new Bind((el) => AssertInstance.once(el, HTMLSlotElement));
   #raw = "";
+  #wrapLines = new Signal(false);
+
   constructor() {
     super();
     this.attachShadow({ mode: "closed" }).append(html`
@@ -165,6 +167,7 @@ class CodeBlock extends HTMLElement {
         :host {
           --_spacing: 0.5rem;
           white-space: wrap;
+          overflow: auto;
         }
 
         #container {
@@ -174,7 +177,7 @@ class CodeBlock extends HTMLElement {
           border: 1px solid rgb(from var(--text-0) r g b / 0.25);
         }
 
-        #actions {
+        #tab {
           background: var(--bg-2);
           display: flex;
           align-items: center;
@@ -185,27 +188,52 @@ class CodeBlock extends HTMLElement {
           }
         }
 
-        #copy::part(button) {
+        ::part(button) {
           display: flex;
           align-items: center;
           justify-content: center;
-          --_size: 2ch;
+          --_size: 1rem;
           width: var(--_size);
           height: var(--_size);
+        }
+        #wrap::part(button) {
+          font-size: 0.66rem;
+          padding-top: 0.25rem;
         }
 
         pre {
           padding: var(--_spacing);
           margin: 0;
+          overflow: auto;
+        }
+
+        code[data-wrap="true"] {
+          white-space: pre-wrap;
+        }
+
+        #actions {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.5rem;
         }
       </style>
 
       <div id="container">
-        <div id="actions">
+        <div id="tab">
           <p>${this.getAttribute("data-language")}</p>
-          <div>
+          <div id="actions">
+            <h-button
+              id="wrap"
+              title="Toggle wrap lines"
+              onclick="${() => {
+                this.#wrapLines.value = !this.#wrapLines.value;
+              }}"
+              >↵</h-button
+            >
             <h-button
               id="copy"
+              title="Copy to clipboard"
               onclick="${(event) => {
                 clipboardWriteText(
                   this.#raw,
@@ -219,7 +247,9 @@ class CodeBlock extends HTMLElement {
             >
           </div>
         </div>
-        <pre><code><slot bind="${this.#slot}"></slot></code></pre>
+        <pre><code
+            data-wrap="${this.#wrapLines}"
+        ><slot bind="${this.#slot}"></slot></code></pre>
       </div>
     `);
     const replacement = this.#slot.current.assignedNodes();
@@ -390,7 +420,6 @@ class ChatMessage extends HTMLElement {
         escapedPrefix +
         `<h-message-code-block data-language="${lang}">${res}</h-message-code-block>`;
     }
-    console.log("> content\n", content);
     escapedMessage += escapeMarkup(content.slice(pointer));
 
     return escapedMessage;

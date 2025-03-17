@@ -159,12 +159,13 @@ function prepareData(params) {
     }
 
     if (param instanceof Signal) {
-      const prev = str[i - 1];
+      const index = withOffset.adjust(i);
+      const prev = str[index - 1];
       if (prev) {
-        const attributeRegex = /(?<name>\w+(-\w+)?)="$/;
+        const attributeRegex = /(?<name>\w+(-\w+)?)="$/gm;
         const exec = attributeRegex.exec(prev);
         if (exec?.groups?.name) {
-          str[i - 1] +=
+          str[index - 1] +=
             `${i}" ${PARAMETER_TYPE_ATTRIBUTE}="${NESTED_TYPE.SIGNAL_ATTRIBUTE}${SIGNAL_ATTRIBUTE_DELIMITER}${exec.groups.name}`;
           hasProcessingParameters = true;
           signalsCount++;
