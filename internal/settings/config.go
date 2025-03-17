@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-const Version = "5.5.0"
+const Version = "5.5.1"
 const VersionDate = "2025-03-18"
 
 const DefaultDatabaseName = "main.db"
