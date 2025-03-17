@@ -49,9 +49,7 @@ customElements.define(
       },
     ];
 
-    /**
-     * @param {MouseEvent} e
-     */
+    /** @param {Event} e */
     #openContext = (e) => {
       /** @type {Parameters<typeof ContextMenu.instance.open>[0]} */
       const actions = [];

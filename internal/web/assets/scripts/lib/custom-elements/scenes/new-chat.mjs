@@ -20,6 +20,9 @@ customElements.define(
     constructor() {
       super();
       this.shadow = this.attachShadow({ mode: "closed" });
+    }
+
+    connectedCallback() {
       this.shadow.append(html`
         <style>
           :host {
@@ -83,9 +86,6 @@ customElements.define(
           )}
         </ul>
       `);
-    }
-
-    connectedCallback() {
       const buttons = this.shadow.querySelectorAll("button");
       buttons.forEach((button, index) =>
         button.addEventListener("click", () =>
@@ -99,6 +99,9 @@ customElements.define(
 export class CreateChatScene extends HTMLElement {
   constructor() {
     super();
+  }
+
+  connectedCallback() {
     this.attachShadow({ mode: "closed" }).append(html`
       <style>
         * {
@@ -107,6 +110,12 @@ export class CreateChatScene extends HTMLElement {
 
         main {
           height: 100%;
+          display: grid;
+          place-items: center;
+        }
+
+        div {
+          width: 100%;
           max-width: var(--container-max-width);
           margin: var(--container-margin);
           display: flex;
@@ -122,10 +131,12 @@ export class CreateChatScene extends HTMLElement {
       </style>
 
       <main>
-        <hermes-message-form
-          placeholder="What do you want to know?"
-        ></hermes-message-form>
-        <hermes-new-chat-shortcuts></hermes-new-chat-shortcuts>
+        <div>
+          <hermes-message-form
+            placeholder="What do you want to know?"
+          ></hermes-message-form>
+          <hermes-new-chat-shortcuts></hermes-new-chat-shortcuts>
+        </div>
       </main>
     `);
   }
