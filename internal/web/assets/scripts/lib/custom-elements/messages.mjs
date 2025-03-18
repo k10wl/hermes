@@ -55,8 +55,10 @@ function clipboardReadSuccess(element) {
 
 class CodeBlock extends HTMLElement {
   #slot = new Bind((el) => AssertInstance.once(el, HTMLSlotElement));
+  #scrollable = new Bind((el) => AssertInstance.once(el, HTMLElement));
   #raw = "";
   #wrapLines = new Signal(false);
+  #wrapLinesDisabled = new Signal(false);
 
   constructor() {
     super();
@@ -200,6 +202,9 @@ class CodeBlock extends HTMLElement {
           font-size: 0.66rem;
           padding-top: 0.25rem;
         }
+        *[disabled="true"] {
+          opacity: 0.1;
+        }
 
         pre {
           padding: var(--_spacing);
@@ -226,6 +231,7 @@ class CodeBlock extends HTMLElement {
             <h-button
               id="wrap"
               title="Toggle wrap lines"
+              disabled="${this.#wrapLinesDisabled}"
               onclick="${() => {
                 this.#wrapLines.value = !this.#wrapLines.value;
               }}"
@@ -247,7 +253,7 @@ class CodeBlock extends HTMLElement {
             >
           </div>
         </div>
-        <pre><code
+        <pre bind="${this.#scrollable}"><code
             data-wrap="${this.#wrapLines}"
         ><slot bind="${this.#slot}"></slot></code></pre>
       </div>
@@ -258,6 +264,21 @@ class CodeBlock extends HTMLElement {
       .join("")
       .replace(/\n$/, "");
     this.#slot.current.replaceWith(...replacement);
+    this.#onresize();
+  }
+
+  connectedCallback() {
+    window.addEventListener("resize", this.#onresize);
+  }
+
+  #onresize = () => {
+    this.#wrapLinesDisabled.value =
+      this.#scrollable.current.scrollWidth <=
+      this.#scrollable.current.clientWidth;
+  };
+
+  disconnectedCallback() {
+    window.removeEventListener("resize", this.#onresize);
   }
 }
 customElements.define("h-message-code-block", CodeBlock);
