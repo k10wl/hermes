@@ -98,8 +98,7 @@ export class ServerEvents {
     window.addEventListener("beforeunload", () => {
       ServerEvents.#allowReconnect = false;
     });
-    const url = new URL(addr);
-    ServerEvents.#connection = new WebSocket(url.toString());
+    ServerEvents.#connection = new WebSocket(addr);
     ServerEvents.#addListeners(ServerEvents.#connection);
   }
 
@@ -257,9 +256,11 @@ export class ServerEvents {
       ServerEvents.#warn("connection lost, reconnecting...");
       const res = await fetch(config.server.pathnames.healthCheck);
       if (res.status == 200) {
-        const url = new URL(ServerEvents.#connection.url);
-        url.searchParams.set("reconnect", "true");
-        ServerEvents.#connection = new WebSocket(url.toString());
+        let address = ServerEvents.#connection.url;
+        if (!address.includes("?reconnect=true")) {
+          address += "?reconnect=true";
+        }
+        ServerEvents.#connection = new WebSocket(address);
         ServerEvents.#addListeners(ServerEvents.#connection);
         return;
       }

@@ -12,7 +12,7 @@ export const config = {
   server: {
     pathnames: {
       healthCheck: apiPathnameV1("health-check"),
-      webSocket: apiPathnameV1("ws"),
+      webSocket: apiPathnameV1("ws").replace(/^https?:/, "ws:"),
     },
   },
   chats: {
