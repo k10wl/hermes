@@ -101,10 +101,11 @@ class WithOffset {
  * @typedef {{
  *   raw: string,
  *   listeners: Set<string>,
- *   signalsCount: number,
- *   hasBindings: boolean,
- *   hasEventsListeners: boolean,
- *   hasProcessingParameters: boolean,
+ *   signalNodesCount: number
+ *   signalAttributesCount: number
+ *   bindingCount: number
+ *   eventListenersCount: number
+ *   nestedNodesCount: number
  * }} ProcessingData
  */
 
@@ -120,10 +121,11 @@ function prepareData(params) {
 
   const withOffset = new WithOffset();
 
-  let signalsCount = 0;
-  let hasBindings = false;
-  let hasEventsListeners = false;
-  let hasProcessingParameters = false;
+  let signalNodesCount = 0;
+  let signalAttributesCount = 0;
+  let nestedNodesCount = 0;
+  let bindingCount = 0;
+  let eventListenersCount = 0;
 
   params.forEach((param, i) => {
     if (i === 0) {
@@ -139,7 +141,7 @@ function prepareData(params) {
           /on\w+="$/,
           `${EVENT_ATTRIBUTE_PREFIX}-${name}="${i}"`,
         );
-        hasEventsListeners = true;
+        eventListenersCount++;
         listeners.add(name);
         str[index] = str[index].substring(1);
         return;
@@ -153,7 +155,7 @@ function prepareData(params) {
         str[index]?.startsWith('"')
       ) {
         str[index - 1] += `${i}`;
-        hasBindings = true;
+        bindingCount++;
         return;
       }
     }
@@ -167,8 +169,7 @@ function prepareData(params) {
         if (exec?.groups?.name) {
           str[index - 1] +=
             `${i}" ${PARAMETER_TYPE_ATTRIBUTE}="${NESTED_TYPE.SIGNAL_ATTRIBUTE}${SIGNAL_ATTRIBUTE_DELIMITER}${exec.groups.name}`;
-          hasProcessingParameters = true;
-          signalsCount++;
+          signalAttributesCount++;
           return;
         }
       }
@@ -178,8 +179,7 @@ function prepareData(params) {
         0,
         createNestedElementHolder(NESTED_TYPE.SIGNAL_NODE, i),
       );
-      hasProcessingParameters = true;
-      signalsCount++;
+      signalNodesCount++;
       return;
     }
 
@@ -189,7 +189,7 @@ function prepareData(params) {
         0,
         createNestedElementHolder(NESTED_TYPE.NODE, i),
       );
-      hasProcessingParameters = true;
+      nestedNodesCount++;
       return;
     }
 
@@ -201,7 +201,7 @@ function prepareData(params) {
         0,
         createNestedElementHolder(NESTED_TYPE.NODE, i),
       );
-      hasProcessingParameters = true;
+      nestedNodesCount++;
       return;
     }
 
@@ -212,10 +212,11 @@ function prepareData(params) {
   return {
     raw,
     listeners,
-    signalsCount,
-    hasBindings,
-    hasEventsListeners,
-    hasProcessingParameters,
+    signalNodesCount,
+    signalAttributesCount,
+    bindingCount,
+    eventListenersCount,
+    nestedNodesCount,
   };
 }
 
@@ -269,6 +270,31 @@ const nestedSignalNodeRegex = new RegExp(
   "gm",
 );
 
+/** @param {string} str */
+function libdimPrefix(str) {
+  return `libdim: ${str}`;
+}
+
+/**
+ * This function is a safeguard against bugs in the code
+ * It will throw an error if the unprocessed count is not 0
+ *
+ * @param {string} name
+ * @param {number} preprocessed
+ * @param {number} unprocessed
+ * @returns {never | void}
+ */
+function assertProcessed(name, preprocessed, unprocessed) {
+  if (unprocessed !== 0) {
+    throw new Error(
+      libdimPrefix(`${name} were not processed completely, some data left unprocessed.
+Initial amount: ${preprocessed}
+Unprocessed:    ${unprocessed}`),
+    );
+  }
+  return;
+}
+
 /**
  * @param {ProcessingData} data
  * @param {Parameters<typeof String.raw>} params
@@ -278,9 +304,11 @@ function createFragment(data, params) {
   const {
     raw,
     listeners,
-    hasBindings,
-    hasEventsListeners,
-    hasProcessingParameters,
+    signalNodesCount,
+    signalAttributesCount,
+    bindingCount,
+    eventListenersCount,
+    nestedNodesCount,
   } = data;
 
   const fragment = document.createDocumentFragment();
@@ -288,25 +316,33 @@ function createFragment(data, params) {
   dummy.innerHTML = raw;
   fragment.append(...dummy.childNodes); // chrome does not work without dummy
 
+  let unprocessedSignalNodes = signalNodesCount;
+  let unprocessedSignalAttributes = signalAttributesCount;
+  let unprocessedNestedNodes = nestedNodesCount;
+  let unprocessedBindings = bindingCount;
+  let unprocessedEventListeners = eventListenersCount;
+
   let selectors = "";
-  if (hasEventsListeners) {
+  if (unprocessedEventListeners > 0) {
     listeners.forEach((name) => {
       selectors += `[${EVENT_ATTRIBUTE_PREFIX}-${name}],`;
     });
   }
-  if (hasProcessingParameters) {
+  if (
+    unprocessedSignalAttributes > 0 ||
+    unprocessedSignalNodes > 0 ||
+    unprocessedNestedNodes > 0
+  ) {
     selectors += `[${PARAMETER_TYPE_ATTRIBUTE}],`;
   }
-  if (hasBindings) {
+  if (unprocessedBindings > 0) {
     selectors += `[${BIND_ATTRIBUTE}],`;
   }
-
-  let unprocessedSignals = data.signalsCount;
 
   if (selectors) {
     selectors = selectors.slice(0, -1);
     fragment.querySelectorAll(selectors).forEach((element) => {
-      if (hasEventsListeners) {
+      if (unprocessedEventListeners > 0) {
         const eventListenerNames = Array.from(listeners).filter((name) =>
           element.matches(`[${EVENT_ATTRIBUTE_PREFIX}-${name}]`),
         );
@@ -318,28 +354,33 @@ function createFragment(data, params) {
             params[getAttributeIndex(element, attribute)],
           );
           element.removeAttribute(attribute);
+          unprocessedEventListeners--;
         }
       }
 
       if (
-        hasProcessingParameters &&
+        unprocessedSignalAttributes > 0 &&
         element.matches(
           `[${PARAMETER_TYPE_ATTRIBUTE}^="${NESTED_TYPE.SIGNAL_ATTRIBUTE}"]`,
         )
       ) {
         const attr = element.getAttribute(PARAMETER_TYPE_ATTRIBUTE);
         if (!attr) {
-          throw new Error(`unexpected attribute: ${PARAMETER_TYPE_ATTRIBUTE}`);
+          throw new Error(
+            libdimPrefix(`unexpected attribute: ${PARAMETER_TYPE_ATTRIBUTE}`),
+          );
         }
         const [, targetName] = attr.split(SIGNAL_ATTRIBUTE_DELIMITER);
         if (!targetName) {
           throw new Error(
-            `target name missuse, expected: ${PARAMETER_TYPE_ATTRIBUTE}${SIGNAL_ATTRIBUTE_DELIMITER}attribute-name`,
+            libdimPrefix(
+              `target name missuse, expected: ${PARAMETER_TYPE_ATTRIBUTE}${SIGNAL_ATTRIBUTE_DELIMITER}attribute-name`,
+            ),
           );
         }
         const binding = params[getAttributeIndex(element, targetName)];
         if (!(binding instanceof Signal)) {
-          throw new Error(`expected signal node, got ${binding}`);
+          throw new Error(libdimPrefix(`expected signal node, got ${binding}`));
         }
         element.removeAttribute(PARAMETER_TYPE_ATTRIBUTE);
         subscribeSignalAttribute({
@@ -348,11 +389,11 @@ function createFragment(data, params) {
           attribute: targetName,
         });
         element.setAttribute(targetName, binding.value);
-        unprocessedSignals--;
+        unprocessedSignalAttributes--;
       }
 
       if (
-        hasProcessingParameters &&
+        (unprocessedNestedNodes > 0 || unprocessedSignalNodes > 0) &&
         element.matches(`[${PARAMETER_TYPE_ATTRIBUTE}]`) &&
         element instanceof HTMLSlotElement
       ) {
@@ -365,14 +406,19 @@ function createFragment(data, params) {
             /** @type {Node[]} */
             if (Array.isArray(nested)) {
               element.replaceWith(...nested.map((element) => element));
+              unprocessedNestedNodes--;
               break;
             }
             element.replaceWith(nested);
+            unprocessedNestedNodes--;
             break;
           }
+
           case NESTED_TYPE.SIGNAL_NODE: {
             if (!(nested instanceof Signal)) {
-              throw new Error(`expected signal node, got ${nested}`);
+              throw new Error(
+                libdimPrefix(`expected signal node, got ${nested}`),
+              );
             }
             const mark = document.createTextNode("");
             const bound = document.createTextNode("");
@@ -382,28 +428,29 @@ function createFragment(data, params) {
               bound: new WeakRef(bound),
             });
             element.replaceWith(mark, nested.value, bound);
-            unprocessedSignals--;
+            unprocessedSignalNodes--;
             break;
           }
           default:
-            throw new Error(`unexpected nested type: ${type}`);
+            throw new Error(libdimPrefix(`unexpected nested type: ${type}`));
         }
       }
 
-      if (hasBindings && element.hasAttribute(BIND_ATTRIBUTE)) {
+      if (unprocessedBindings > 0 && element.hasAttribute(BIND_ATTRIBUTE)) {
         const binding = params[getAttributeIndex(element, BIND_ATTRIBUTE)];
         if (!(binding instanceof Bind)) {
           console.trace();
           console.error(binding);
-          throw new Error("binding is expected to be a function");
+          throw new Error(libdimPrefix("binding is expected to be a function"));
         }
         binding.current = element;
         element.removeAttribute(BIND_ATTRIBUTE);
+        unprocessedBindings--;
       }
     });
   }
 
-  if (unprocessedSignals > 0) {
+  if (unprocessedSignalNodes > 0) {
     // XXX expect that only style signals left unprocessed
     const styles = fragment.querySelectorAll("style");
     let childNodes = [];
@@ -415,13 +462,17 @@ function createFragment(data, params) {
         const index = match.groups?.index;
         if (!index) {
           throw new Error(
-            "index detected in regex, but not found in match group",
+            libdimPrefix(
+              "index detected in regex, but not found in match group",
+            ),
           );
         }
         const signalMark = match.groups?.marker;
         if (!signalMark) {
           throw new Error(
-            "marker detected in regex, but not found in match group",
+            libdimPrefix(
+              "marker detected in regex, but not found in match group",
+            ),
           );
         }
         match.input.slice(pointer, match.index);
@@ -429,7 +480,9 @@ function createFragment(data, params) {
         pointer = match.index + signalMark.length;
         const signalInstance = params[+index];
         if (!(signalInstance instanceof Signal)) {
-          throw new Error("expected signal node, got " + signalInstance);
+          throw new Error(
+            libdimPrefix("expected signal node, got " + signalInstance),
+          );
         }
         const mark = document.createTextNode("");
         const bound = document.createTextNode("");
@@ -442,12 +495,26 @@ function createFragment(data, params) {
       }
       style.replaceChildren(...childNodes, html.slice(pointer));
       childNodes.length = 0;
-      unprocessedSignals--;
-      if (unprocessedSignals === 0) {
+      unprocessedSignalNodes--;
+      if (unprocessedSignalNodes === 0) {
         break;
       }
     }
   }
+
+  assertProcessed("signal nodes", signalNodesCount, unprocessedSignalNodes);
+  assertProcessed(
+    "signal attributes",
+    signalAttributesCount,
+    unprocessedSignalAttributes,
+  );
+  assertProcessed("nested nodes", nestedNodesCount, unprocessedNestedNodes);
+  assertProcessed("bindings", bindingCount, unprocessedBindings);
+  assertProcessed(
+    "event listeners",
+    eventListenersCount,
+    unprocessedEventListeners,
+  );
 
   return fragment;
 }
