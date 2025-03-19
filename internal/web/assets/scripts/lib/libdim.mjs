@@ -349,7 +349,6 @@ function createFragment(data, params) {
         });
         element.setAttribute(targetName, binding.value);
         unprocessedSignals--;
-        return;
       }
 
       if (
@@ -366,10 +365,10 @@ function createFragment(data, params) {
             /** @type {Node[]} */
             if (Array.isArray(nested)) {
               element.replaceWith(...nested.map((element) => element));
-              return;
+              break;
             }
             element.replaceWith(nested);
-            return;
+            break;
           }
           case NESTED_TYPE.SIGNAL_NODE: {
             if (!(nested instanceof Signal)) {
@@ -384,7 +383,7 @@ function createFragment(data, params) {
             });
             element.replaceWith(mark, nested.value, bound);
             unprocessedSignals--;
-            return;
+            break;
           }
           default:
             throw new Error(`unexpected nested type: ${type}`);
