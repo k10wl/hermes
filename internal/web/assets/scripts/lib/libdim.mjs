@@ -641,9 +641,13 @@ export class Signal {
     return this.#value;
   }
 
-  /** @param {(value: T) => void} trigger */
+  /**
+   * @param {(value: T) => void} trigger
+   * @returns {() => void}
+   */
   subscribe(trigger) {
     this.#subscribers.push(trigger);
+    return () => this.unsubscribe(trigger);
   }
 
   /** @param {(value: T) => void} trigger */

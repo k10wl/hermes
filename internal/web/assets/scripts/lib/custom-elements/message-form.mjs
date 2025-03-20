@@ -1,68 +1,71 @@
-import { html } from "/assets/scripts/lib/libdim.mjs";
+import { Bind, html, Signal } from "/assets/scripts/lib/libdim.mjs";
 
-import { AssertInstance, AssertNumber, AssertString } from "../assert.mjs";
+import { AssertInstance, AssertNumber } from "../assert.mjs";
 import { CreateCompletionMessageEvent } from "../events/client-events-list.mjs";
 import { ServerEvents } from "../events/server-events.mjs";
 import {
   ChatCreatedEvent,
   ServerErrorEvent,
 } from "../events/server-events-list.mjs";
+import { FocusOnKeydown } from "../focus-on-keydown.mjs";
 import { LocationControll } from "../location-control.mjs";
+import { ResizableTextInput } from "./content-editable-plain-text.mjs";
+import { AlertDialog } from "./dialog.mjs";
 
 export class MessageForm extends HTMLElement {
+  #form = new Bind((el) => AssertInstance.once(el, HTMLFormElement));
+  #content = new Bind((el) => AssertInstance.once(el, ResizableTextInput));
+  #focusOnInput = new FocusOnKeydown();
+  #empty = new Signal(true);
+
   constructor() {
     super();
-    this.shadow = this.attachShadow({ mode: "open" });
   }
+
+  #submit = (/** @type {Event} */ e) => {
+    e.preventDefault();
+    const content = this.#content.current.value;
+    if (content.trim() === "") {
+      return;
+    }
+    const message = new CreateCompletionMessageEvent({
+      chat_id: AssertNumber.check(
+        LocationControll.chatId ? +LocationControll.chatId : -1,
+      ),
+      content: content,
+      parameters: {
+        model: "openai/gpt-4o-mini",
+        max_tokens: undefined,
+        temperature: undefined,
+      },
+    });
+    ServerEvents.send(message);
+    const off = ServerEvents.on(
+      ["chat-created", "message-created", "server-error"],
+      (event) => {
+        if (event.id !== message.id) {
+          return;
+        }
+        off();
+        if (event instanceof ChatCreatedEvent) {
+          LocationControll.navigate(`/chats/${event.payload.chat.id}`);
+          return;
+        }
+        if (event instanceof ServerErrorEvent) {
+          AlertDialog.instance.alert({
+            title: "Failed to send message",
+            description: event.payload,
+          });
+          return;
+        }
+        this.#content.current.value = "";
+        this.#empty.value = true;
+      },
+    );
+  };
 
   connectedCallback() {
-    this.#render();
-
-    const form = AssertInstance.once(
-      this.shadow.querySelector("form"),
-      HTMLFormElement,
-    );
-
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      /** @type {string | number | undefined} */
-      let chat_id = LocationControll.pathname.split("/").at(-1);
-      chat_id = AssertNumber.check(chat_id ? +chat_id : -1);
-      const content = AssertString.check(new FormData(form).get("content"));
-      if (content.trim() === "") {
-        return;
-      }
-      const message = new CreateCompletionMessageEvent({
-        chat_id,
-        content: content,
-        parameters: {
-          model: "openai/gpt-4o-mini",
-          max_tokens: undefined,
-          temperature: undefined,
-        },
-      });
-      ServerEvents.send(message);
-      const off = ServerEvents.on(
-        ["chat-created", "message-created", "server-error"],
-        (event) => {
-          if (event.id !== message.id) {
-            return;
-          }
-          off();
-          if (event instanceof ChatCreatedEvent) {
-            LocationControll.navigate(`/chats/${event.payload.chat.id}`);
-          }
-          if (event instanceof ServerErrorEvent) {
-            return;
-          }
-          form.reset();
-        },
-      );
-    });
-  }
-
-  #render() {
-    this.shadow.append(html`
+    this.attachShadow({ mode: "open" }).append(html`
       <style>
         :host {
           --bg: var(--bg-2);
@@ -77,27 +80,14 @@ export class MessageForm extends HTMLElement {
           gap: 0.5rem;
         }
 
-        textarea {
-          max-height: 50vh;
-          width: 100%;
-          background: var(--bg);
-          color: var(--text);
-          padding: 0.5rem 1rem 0;
-          margin: 0;
-          border-radius: 1.25rem;
-          resize: none;
-          outline: none;
-          border: none;
-        }
-
-        form:has(textarea:invalid) button[type="submit"] {
+        form:has([data-empty="true"]) button[type="submit"] {
           background: var(--bg);
           color: rgb(from var(--text) r g b / 0.25);
           cursor: auto;
         }
 
         button {
-          --_size: 2rem;
+          --_size: calc(2rem + 2px);
           transition: all var(--color-transition-duration);
           flex-shrink: 0;
           background: var(--primary);
@@ -110,22 +100,60 @@ export class MessageForm extends HTMLElement {
           height: var(--_size);
           cursor: pointer;
         }
+
+        h-resizable-text-input {
+          --padding: 0.5rem 1rem;
+          --border-color: var(--bg);
+          --border: 1px solid var(--border-color);
+          width: 100%;
+
+          &:focus-within {
+            --border-color: var(--primary);
+          }
+
+          &::part(wrapper) {
+            border: var(--border);
+            border-radius: 1.25rem;
+            overflow: hidden;
+            color: var(--text);
+          }
+
+          &::part(content) {
+            padding: var(--padding);
+            max-height: max(50vh);
+          }
+
+          &::part(placeholder) {
+            padding: var(--padding);
+          }
+        }
       </style>
 
-      <form is="hermes-form">
-        <textarea
-          id="message-content-input"
-          is="hermes-textarea-autoresize"
-          focus-on-input="true"
-          max-rows="12"
-          name="content"
-          placeholder="${this.getAttribute("placeholder") ?? "Message..."}"
-          autofocus
-          required
-        ></textarea>
+      <form
+        bind="${this.#form}"
+        onsubmit="${this.#submit}"
+        onkeydown="${(e) => {
+          const event = AssertInstance.once(e, KeyboardEvent);
+          if (event.key === "Enter" && !event.shiftKey) {
+            this.#form.current.requestSubmit();
+            event.preventDefault();
+          }
+        }}"
+      >
+        <h-resizable-text-input
+          id="content"
+          placeholder="${this.getAttribute("placeholder") ?? "Message"}"
+          bind="${this.#content}"
+        ></h-resizable-text-input>
+
         <button id="submit-message" type="submit">↑</button>
       </form>
     `);
+    this.#focusOnInput.attach(this.#content.current.content);
+  }
+
+  disconnectedCallback() {
+    this.#focusOnInput.detach();
   }
 }
 

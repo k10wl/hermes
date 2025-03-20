@@ -1,6 +1,7 @@
 import "./button.mjs";
 import "./card.mjs";
 import "./chats.mjs";
+import "./content-editable-plain-text.mjs";
 import "./context-menu.mjs";
 import "./dialog.mjs";
 import "./form.mjs";

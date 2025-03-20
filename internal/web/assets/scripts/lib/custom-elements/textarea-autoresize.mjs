@@ -1,5 +1,6 @@
 import { ShortcutManager } from "../shortcut-manager.mjs";
 
+/** @deprecated - use content-editable-plain-text instead */
 export class TextAreaAutoresize extends HTMLTextAreaElement {
   /** @type {(()=>void)[]}*/
   #textAreaAutoresizeCleanup = [];
