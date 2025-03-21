@@ -45,7 +45,6 @@ export class ResizableTextInput extends HTMLElement {
           contenteditable="plaintext-only"
           bind="${this.#content}"
           oninput="${() => {
-            // XXX why this is innerTextand set value is textContent?
             this.#value = this.#content.current.innerText;
             this.#updateEmptyState();
             this.#dispatchChangeEvent();
@@ -82,7 +81,7 @@ export class ResizableTextInput extends HTMLElement {
 
   set value(value) {
     this.#value = value;
-    this.#content.current.textContent = value;
+    this.#content.current.innerText = value;
     this.#updateEmptyState();
     this.#dispatchChangeEvent();
   }

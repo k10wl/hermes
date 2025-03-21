@@ -1,4 +1,4 @@
-import { html } from "/assets/scripts/lib/libdim.mjs";
+import { Bind, html } from "/assets/scripts/lib/libdim.mjs";
 
 import { AssertInstance } from "../assert.mjs";
 import { LocationControll } from "../location-control.mjs";
@@ -7,8 +7,8 @@ import { Publisher } from "../publisher.mjs";
 import { ShortcutManager } from "../shortcut-manager.mjs";
 import { stringMatching } from "../string-matching.mjs";
 import { withCache } from "../with-cache.mjs";
+import { ResizableTextInput } from "./content-editable-plain-text.mjs";
 import { HermesDialog } from "./dialog.mjs";
-import { TextAreaAutoresize } from "./textarea-autoresize.mjs";
 
 export class Action {
   /**
@@ -21,8 +21,6 @@ export class Action {
   }
 }
 
-const assertInput = new AssertInstance(TextAreaAutoresize);
-
 export const controlPalanelVisibility = new Publisher(false);
 
 const stringMatchingWithCache = withCache(stringMatching);
@@ -32,12 +30,12 @@ export class ControlPanel extends HTMLElement {
   #cleanup = [];
   #visible = controlPalanelVisibility;
   #movableList;
+  #input = new Bind((el) => AssertInstance.once(el, ResizableTextInput));
 
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: "open" });
     this.shadow.replaceChildren(this.#content);
-    this.input = assertInput.check(this.shadow.querySelector("#input"));
     this.matchesContainer = AssertInstance.once(
       this.shadow.querySelector("#matches"),
       HTMLDivElement,
@@ -69,7 +67,7 @@ export class ControlPanel extends HTMLElement {
         ...el.name.split("").map((char, i) => {
           const { ok, matches } = stringMatchingWithCache(
             el.name,
-            this.input.value,
+            this.#input.current.value.trim(),
           );
           if (!ok || !matches[i]) {
             return char;
@@ -94,8 +92,8 @@ export class ControlPanel extends HTMLElement {
       this.#visible.subscribe({
         notify: () => {
           this.#updateMatchList(ActionStore.search(""));
-          this.input.focus();
-          this.input.value = "";
+          this.#input.current.content.focus();
+          this.#input.current.value = "";
         },
       }),
       this.#visible.subscribe({
@@ -115,8 +113,8 @@ export class ControlPanel extends HTMLElement {
     );
 
     this.#hotkeys();
-    this.input.addEventListener("input", () => {
-      this.#updateMatchList(ActionStore.search(this.input.value));
+    this.#input.current.addEventListener("change", () => {
+      this.#updateMatchList(ActionStore.search(this.#input.current.value.trim()));
     });
   }
 
@@ -142,7 +140,7 @@ export class ControlPanel extends HTMLElement {
               (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                const match = ActionStore.search(this.input.value).at(
+                const match = ActionStore.search(this.#input.current.value.trim()).at(
                   this.#movableList.cursor,
                 );
                 if (match) {
@@ -156,10 +154,10 @@ export class ControlPanel extends HTMLElement {
             ShortcutManager.keydown(
               "<*>",
               (event) => {
-                if (document.activeElement === this.input) {
+                if (document.activeElement === this.#input.current) {
                   return;
                 }
-                this.input.focus();
+                this.#input.current.content.focus();
                 event.stopPropagation();
               },
               { priority: 990 },
@@ -238,15 +236,19 @@ export class ControlPanel extends HTMLElement {
         width: min(80ch, 80vw);
       }
 
-      #input {
-        padding: 1rem;
-        width: 100%;
-        margin: 0;
-        color: var(--text-0);
-        resize: none;
-        outline: none;
-        background: transparent;
-        border: none;
+      h-resizable-text-input {
+        --padding: 1rem;
+        &::part(wrapper) {
+          padding: var(--padding);
+          color: var(--text-0);
+        }
+        &::part(placeholder) {
+          padding: var(--padding);
+        }
+        &::part(content) {
+          outline: none;
+          border: none;
+        }
       }
 
       #matches {
@@ -290,15 +292,10 @@ export class ControlPanel extends HTMLElement {
     <h-dialog dialog-style="margin-top: 10vh;">
       <h-dialog-card section-style="max-width: unset">
         <div id="content">
-          <textarea
-            id="input"
-            is="hermes-textarea-autoresize"
-            focus-on-input="true"
-            max-rows="1"
+          <h-resizable-text-input
+            bind="${this.#input}"
             placeholder="Control Panel"
-            autofocus
-            required
-          ></textarea>
+          ></h-resizable-text-input>
           <div id="matches"></div>
         </div>
       </h-dialog-card>

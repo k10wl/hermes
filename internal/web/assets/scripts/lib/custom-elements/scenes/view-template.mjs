@@ -9,8 +9,10 @@ import {
 } from "../../events/client-events-list.mjs";
 import { ServerEvents } from "../../events/server-events.mjs";
 import { ServerErrorEvent } from "../../events/server-events-list.mjs";
+import { FocusOnKeydown } from "../../focus-on-keydown.mjs";
 import { LocationControll } from "../../location-control.mjs";
 import { ShortcutManager } from "../../shortcut-manager.mjs";
+import { ResizableTextInput } from "../content-editable-plain-text.mjs";
 import { Action, ActionStore } from "../control-panel.mjs";
 import { AlertDialog, ConfirmDialog, HermesDialog } from "../dialog.mjs";
 
@@ -250,7 +252,8 @@ export class HermesViewTemplateScene extends HTMLElement {
     AssertInstance.once(el, TemplateUpdatedDialog),
   );
   form = new Bind((el) => AssertInstance.once(el, HTMLFormElement));
-  #textarea = new Bind((el) => AssertInstance.once(el, HTMLTextAreaElement));
+  #content = new Bind((el) => AssertInstance.once(el, ResizableTextInput));
+  #focus = new FocusOnKeydown();
 
   constructor() {
     super();
@@ -270,8 +273,8 @@ export class HermesViewTemplateScene extends HTMLElement {
       ),
       ServerEvents.on(["template-changed"], (event) => {
         if (
-          !this.#textarea ||
-          this.#textarea.current.value === event.payload.template.content
+          !this.#content ||
+          this.#content.current.value === event.payload.template.content
         ) {
           return;
         }
@@ -306,14 +309,11 @@ export class HermesViewTemplateScene extends HTMLElement {
       this.#template = event.payload.template;
       this.#setDelayedContent(html`
         <form bind="${this.form}" onsubmit="${this.submit}">
-          <textarea
-            bind="${this.#textarea}"
+          <h-resizable-text-input
+            bind="${this.#content}"
             name="content"
             placeholder='--{{define "name"}} dynamic value => --{{.}} --{{end}}'
-            is="hermes-textarea-autoresize"
-          >
-${event.payload.template.content.trim()}</textarea
-          >
+          ></h-resizable-text-input>
           <input
             type="hidden"
             name="initial name"
@@ -327,10 +327,11 @@ ${event.payload.template.content.trim()}</textarea
         </form>
       `);
       this.#processForm();
-      this.#textarea.current.focus();
-      this.#textarea.current.setSelectionRange(
-        this.#textarea.current.value.length,
-        this.#textarea.current.value.length,
+      this.#content.current.content.focus();
+      this.#content.current.value = event.payload.template.content.trim();
+      this.#focus.attach(this.#content.current.content);
+      this.#cleanup.push(
+        () => this.#focus.detach(),
       );
     });
     this.#cleanup.push(off);
@@ -366,7 +367,7 @@ ${event.payload.template.content.trim()}</textarea
   /** @param {boolean} clone */
   #save = (clone) => {
     const template = AssertInstance.once(this.#template, Template);
-    const content = AssertString.check(this.#textarea.current.value);
+    const content = AssertString.check(this.#content.current.value);
     if (template.content === content) {
       return;
     }
@@ -388,7 +389,7 @@ ${event.payload.template.content.trim()}</textarea
           });
           return;
         }
-        this.#textarea.current.value = edit.payload.content;
+        this.#content.current.value = edit.payload.content;
         this.#template = event.payload.template;
         this.nameCollisionDialog.current.close();
         this.#savedIndicator();
@@ -420,7 +421,7 @@ ${event.payload.template.content.trim()}</textarea
   submit = () => {
     const newName = /"(?<name>.*?)"/.exec(
       AssertString.check(
-        this.#textarea.current.value,
+        this.#content.current.value,
         "expected text input to have string value",
       ),
     );
@@ -488,17 +489,30 @@ ${event.payload.template.content.trim()}</textarea
         }
       }
 
-      textarea {
-        margin: 0 auto;
+      h-resizable-text-input {
+        --padding: 0.5rem 1rem;
+        --border-color: var(--bg-2);
+        --border: 1px solid var(--border-color);
         width: 100%;
-        padding: 0.5rem 1rem 0rem;
-        border-radius: 1rem;
-        border: none;
-        outline: none;
-        background: transparent;
-        color: var(--text-0);
-        resize: none;
-        background-color: var(--bg-2);
+
+        &:focus-within {
+          --border-color: var(--primary);
+        }
+
+        &::part(wrapper) {
+          border: var(--border);
+          border-radius: 1.25rem;
+          overflow: hidden;
+          color: var(--text);
+        }
+
+        &::part(content) {
+          padding: var(--padding);
+        }
+
+        &::part(placeholder) {
+          padding: var(--padding);
+        }
       }
     </style>
 
@@ -516,7 +530,7 @@ ${event.payload.template.content.trim()}</textarea
     <h-teplate-updated-dialog
       oncancel="${() => this.templateUpdatedDialog.current.close()}"
       onconfirm="${() => {
-        this.#textarea.current.value = AssertString.check(
+        this.#content.current.value = AssertString.check(
           this.templateUpdatedDialog.current.template?.content,
           "expected update value to be string",
         );
