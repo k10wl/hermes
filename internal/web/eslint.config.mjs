@@ -36,7 +36,7 @@ export default [
     },
   },
   {
-    files: ["**/*test.mjs"],
+    files: ["**/*test.mjs", "./test-setup.mjs"],
     rules: {
       "no-restricted-imports": "off",
     },

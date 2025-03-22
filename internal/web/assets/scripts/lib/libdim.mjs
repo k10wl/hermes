@@ -233,6 +233,10 @@ function subscribeSignalAttribute(args) {
     if (!elRef) {
       return;
     }
+    if (value === false) {
+      elRef.removeAttribute(attribute);
+      return;
+    }
     elRef.setAttribute(attribute, `${value}`);
   });
 }
@@ -388,7 +392,11 @@ function createFragment(data, params) {
           element: new WeakRef(element),
           attribute: targetName,
         });
-        element.setAttribute(targetName, binding.value);
+        if (binding.value === false) {
+          element.removeAttribute(targetName);
+        } else {
+          element.setAttribute(targetName, binding.value);
+        }
         unprocessedSignalAttributes--;
       }
 

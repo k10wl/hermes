@@ -1,130 +1,89 @@
-import { describe, test } from "node:test";
+import { describe, it } from "node:test";
 
 import * as assert from "assert";
-import { readFileSync } from "fs";
-import { JSDOM } from "jsdom";
 
-import { Bind } from "./libdim.mjs";
+import { Bind, html, Signal } from "./libdim.mjs";
 
-/**
- * @param {string} name
- * @returns {string}
- */
-function compileModularScripts(name) {
-  const path = import.meta.dirname + name.replace(/^\./g, "");
-  let text = readFileSync(path, {
-    encoding: "utf8",
-    flag: "r",
-  });
-  text = text.replaceAll(/^export /gm, "");
-
-  const classMatcher = /^class (?<name>\w+)/gm;
-  const classMatches = text.matchAll(classMatcher);
-  classMatches.forEach((match) => {
-    const name = match.groups?.name;
-    if (typeof name !== "string") {
-      throw new Error(
-        `expected class member to have name ${JSON.stringify(match, null, 2)}`,
-      );
-    }
-    text = text.replace(match[0], `window.${name} = ${match[0]}`);
-  });
-
-  return text;
-}
-
-const scriptContents = compileModularScripts("./libdim.mjs");
-
-/**
- * @returns {JSDOM}
- */
-function _prepareJSDOM() {
-  const jsdom = new JSDOM(``, { runScripts: "dangerously" });
-  const scriptElement = jsdom.window.document.createElement("script");
-  scriptElement.textContent = scriptContents;
-  jsdom.window.document.body.appendChild(scriptElement);
-  return jsdom;
-}
-
-/**
- * @param {JSDOM} jsdom
- * @param {DocumentFragment} nodes
- */
-function _asString(jsdom, nodes) {
-  const el = jsdom.window.document.createElement("div");
-  el.append(nodes);
-  return el.innerHTML;
-}
+// html function name allows prettier format. Cool feature, but messes up tests
+const _html = html;
 
 describe("html", () => {
-  const jsdom = _prepareJSDOM();
-
-  assert.equal(
-    _asString(jsdom, jsdom.window.html`<div>test</div>`),
-    "<div>test</div>",
-    "expected to return string",
-  );
-
-  assert.equal(
-    _asString(jsdom, jsdom.window.html`<div>first</div><div>second</div>`),
-    "<div>first</div><div>second</div>",
-    "expected to render multiple elements at same level",
-  );
-
-  assert.equal(
-    _asString(
-      jsdom,
-      jsdom.window.html`<style>.div{color: red;}</style><div>second</div>`,
-    ),
-    "<style>.div{color: red;}</style><div>second</div>",
-    "expected to return style elemetn",
-  );
-
-  test("common primitives with template input", () => {
+  it("should return string", () => {
+    const testsContainer = document.createElement("div");
+    testsContainer.replaceChildren(_html`<div>test</div>`);
     assert.equal(
-      _asString(jsdom, jsdom.window.html`<div>${"foo"}</div>`),
+      testsContainer.innerHTML,
+      "<div>test</div>",
+      "expected to return string",
+    );
+
+    testsContainer.replaceChildren(_html`<div>first</div><div>second</div>`);
+    assert.equal(
+      testsContainer.innerHTML,
+      "<div>first</div><div>second</div>",
+      "expected to render multiple elements at same level",
+    );
+
+    testsContainer.replaceChildren(
+      _html`<style>.div{color: red;}</style><div>second</div>`,
+    );
+    assert.equal(
+      testsContainer.innerHTML,
+      "<style>.div{color: red;}</style><div>second</div>",
+      "expected to return style elemetn",
+    );
+  });
+
+  it("common primitives with template input", () => {
+    const testsContainer = document.createElement("div");
+    testsContainer.replaceChildren(_html`<div>${"foo"}</div>`);
+    assert.equal(
+      testsContainer.innerHTML,
       "<div>foo</div>",
       "expected to insert string value",
     );
 
+    testsContainer.replaceChildren(_html`<div>${null}</div>`);
     assert.equal(
-      _asString(jsdom, jsdom.window.html`<div>${null}</div>`),
+      testsContainer.innerHTML,
       "<div></div>",
       "expected empty on null value",
     );
 
+    testsContainer.replaceChildren(_html`<div>${42}</div>`);
     assert.equal(
-      _asString(jsdom, jsdom.window.html`<div>${42}</div>`),
+      testsContainer.innerHTML,
       "<div>42</div>",
       "expected string interpritation of number on number",
     );
 
+    testsContainer.replaceChildren(_html`<div>${true}</div>`);
     assert.equal(
-      _asString(jsdom, jsdom.window.html`<div>${true}</div>`),
+      testsContainer.innerHTML,
       "<div>true</div>",
       "expected true to be in final",
     );
 
+    testsContainer.replaceChildren(_html`<div>${false}</div>`);
     assert.equal(
-      _asString(jsdom, jsdom.window.html`<div>${false}</div>`),
+      testsContainer.innerHTML,
       "<div>false</div>",
       "expected false to be in final",
     );
 
+    testsContainer.replaceChildren(_html`foo`);
     assert.equal(
-      _asString(jsdom, jsdom.window.html`foo`),
+      testsContainer.innerHTML,
       "foo",
       "expected to render plain string",
     );
   });
 
-  test("should be able to render nested collecections", () => {
-    const jsdom = _prepareJSDOM();
-    const el = jsdom.window.document.createElement("div");
-    jsdom.window.document.body.append(el);
+  it("should be able to render nested collecections", () => {
+    const el = document.createElement("div");
+    document.body.append(el);
     el.append(
-      jsdom.window
-        .html`<div id="wrapper">${jsdom.window.html`<div>${jsdom.window.html`<span>nested</span>`}</div>`}</div>`,
+      _html`<div id="wrapper">${_html`<div>${_html`<span>nested</span>`}</div>`}</div>`,
     );
 
     assert.equal(
@@ -134,28 +93,25 @@ describe("html", () => {
     );
   });
 
-  test("should render maps", () => {
-    const jsdom = _prepareJSDOM();
+  it("should render maps", () => {
     const content = ["foo", "bar", "baz"];
-    const el = jsdom.window.document.createElement("div");
-    jsdom.window.document.body.append(el);
+    const el = document.createElement("div");
+    document.body.append(el);
     el.append(
-      jsdom.window
-        .html`<div>${content.map((data) => jsdom.window.html`<span>${data}</span>`)}</div>`,
+      _html`<div>${content.map((data) => _html`<span>${data}</span>`)}</div>`,
     );
 
     assert.equal(
       el.innerHTML,
       `<div><span>foo</span><span>bar</span><span>baz</span></div>`,
-      "nested html calls should be correctly placed in DOM",
+      "nested(_html calls should be correctly placed in DOM",
     );
   });
 
-  test("should allow element binding", () => {
-    const jsdom = _prepareJSDOM();
-    const el = jsdom.window.document.createElement("div");
-    const div = new jsdom.window.Bind();
-    el.append(jsdom.window.html`<div id="target" bind="${div}"></div>`);
+  it("should allow element binding", () => {
+    const el = document.createElement("div");
+    const div = new Bind();
+    el.append(_html`<div id="target" bind="${div}"></div>`);
     const target = el.querySelector("#target");
     assert.equal(target !== null, true, "target should be rendered");
     assert.equal(
@@ -165,29 +121,30 @@ describe("html", () => {
     );
   });
 
-  test("should handle empty template input", () => {
+  it("should handle empty template input", () => {
+    const testsContainer = document.createElement("div");
+    testsContainer.replaceChildren(_html``);
     assert.equal(
-      _asString(jsdom, jsdom.window.html``),
+      testsContainer.innerHTML,
       "",
       "expected to return empty string for empty template",
     );
   });
 
-  test("should handle undefined values in template", () => {
+  it("should handle undefined values in template", () => {
+    const testsContainer = document.createElement("div");
+    testsContainer.replaceChildren(_html`<div>${undefined}</div>`);
     assert.equal(
-      _asString(jsdom, jsdom.window.html`<div>${undefined}</div>`),
+      testsContainer.innerHTML,
       "<div></div>",
       "expected empty on undefined value",
     );
   });
 
-  test("should handle nested templates with different types", () => {
-    const el = jsdom.window.document.createElement("div");
-    jsdom.window.document.body.append(el);
-    el.append(
-      jsdom.window
-        .html`<div>${jsdom.window.html`<span>${"nested"}</span>`}</div>`,
-    );
+  it("should handle nested templates with different types", () => {
+    const el = document.createElement("div");
+    document.body.append(el);
+    el.append(_html`<div>${_html`<span>${"nested"}</span>`}</div>`);
 
     assert.equal(
       el.innerHTML,
@@ -196,17 +153,14 @@ describe("html", () => {
     );
   });
 
-  test("should remain rendering order in complex cases", () => {
-    const jsdom = _prepareJSDOM();
+  it("should remain rendering order in complex cases", () => {
+    const el = document.createElement("div");
 
-    const el = jsdom.window.document.createElement("div");
+    const fragment1 = _html`<div>1</div>`;
+    const fragment3 = _html`<div>3</div>`;
+    const fragment5 = _html`<div>5</div>`;
 
-    const fragment1 = jsdom.window.html`<div>1</div>`;
-    const fragment3 = jsdom.window.html`<div>3</div>`;
-    const fragment5 = jsdom.window.html`<div>5</div>`;
-
-    const main = jsdom.window
-      .html`<div>${fragment1}<div>2</div>${fragment3}<div>4</div>${fragment5}</div>`;
+    const main = _html`<div>${fragment1}<div>2</div>${fragment3}<div>4</div>${fragment5}</div>`;
 
     el.append(main);
 
@@ -217,19 +171,14 @@ describe("html", () => {
     );
   });
 
-  test("should handle deeply nested structures", () => {
-    const jsdom = _prepareJSDOM();
+  it("should handle deeply nested structures", () => {
+    const el = document.createElement("div");
 
-    const el = jsdom.window.document.createElement("div");
+    const fragment1 = _html`<div><span>1</span></div>`;
+    const fragment2 = _html`<div><span>2</span><span>2.1</span></div>`;
+    const fragment3 = _html`<div><span>3</span><div><span>3.1</span></div></div>`;
 
-    const fragment1 = jsdom.window.html`<div><span>1</span></div>`;
-    const fragment2 = jsdom.window
-      .html`<div><span>2</span><span>2.1</span></div>`;
-    const fragment3 = jsdom.window
-      .html`<div><span>3</span><div><span>3.1</span></div></div>`;
-
-    const main = jsdom.window
-      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+    const main = _html`<div>${fragment1}${fragment2}${fragment3}</div>`;
 
     el.append(main);
 
@@ -240,17 +189,14 @@ describe("html", () => {
     );
   });
 
-  test("should handle mixed content types", () => {
-    const jsdom = _prepareJSDOM();
+  it("should handle mixed content types", () => {
+    const el = document.createElement("div");
 
-    const el = jsdom.window.document.createElement("div");
+    const fragment1 = _html`<div>Text</div>`;
+    const fragment2 = _html`<div><span>Element</span></div>`;
+    const fragment3 = _html`<div>${42}</div>`;
 
-    const fragment1 = jsdom.window.html`<div>Text</div>`;
-    const fragment2 = jsdom.window.html`<div><span>Element</span></div>`;
-    const fragment3 = jsdom.window.html`<div>${42}</div>`;
-
-    const main = jsdom.window
-      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+    const main = _html`<div>${fragment1}${fragment2}${fragment3}</div>`;
 
     el.append(main);
 
@@ -261,14 +207,12 @@ describe("html", () => {
     );
   });
 
-  test("should handle fragments without parent elements", () => {
-    const jsdom = _prepareJSDOM();
+  it("should handle fragments without parent elements", () => {
+    const el = document.createElement("div");
 
-    const el = jsdom.window.document.createElement("div");
-
-    const fragment1 = jsdom.window.html`<span>Fragment 1</span>`;
-    const fragment2 = jsdom.window.html`<span>Fragment 2</span>`;
-    const fragment3 = jsdom.window.html`<span>Fragment 3</span>`;
+    const fragment1 = _html`<span>Fragment 1</span>`;
+    const fragment2 = _html`<span>Fragment 2</span>`;
+    const fragment3 = _html`<span>Fragment 3</span>`;
 
     el.append(fragment1, fragment2, fragment3);
 
@@ -279,16 +223,14 @@ describe("html", () => {
     );
   });
 
-  test("should handle inline elements", () => {
-    const jsdom = _prepareJSDOM();
+  it("should handle inline elements", () => {
+    const el = document.createElement("div");
 
-    const el = jsdom.window.document.createElement("div");
+    const fragment1 = _html`<span>Inline 1</span>`;
+    const fragment2 = _html`<span>Inline 2</span>`;
+    const fragment3 = _html`<span>Inline 3</span>`;
 
-    const fragment1 = jsdom.window.html`<span>Inline 1</span>`;
-    const fragment2 = jsdom.window.html`<span>Inline 2</span>`;
-    const fragment3 = jsdom.window.html`<span>Inline 3</span>`;
-
-    el.append(jsdom.window.html`${fragment1}${fragment2}${fragment3}`);
+    el.append(_html`${fragment1}${fragment2}${fragment3}`);
 
     assert.equal(
       el.innerHTML,
@@ -297,18 +239,14 @@ describe("html", () => {
     );
   });
 
-  test("should handle complex nested and inline structures", () => {
-    const jsdom = _prepareJSDOM();
+  it("should handle complex nested and inline structures", () => {
+    const el = document.createElement("div");
 
-    const el = jsdom.window.document.createElement("div");
+    const fragment1 = _html`<div><span>Nested 1</span></div>`;
+    const fragment2 = _html`<span>Inline 2</span>`;
+    const fragment3 = _html`<div><span>Nested 3</span><span>Inline 3.1</span></div>`;
 
-    const fragment1 = jsdom.window.html`<div><span>Nested 1</span></div>`;
-    const fragment2 = jsdom.window.html`<span>Inline 2</span>`;
-    const fragment3 = jsdom.window
-      .html`<div><span>Nested 3</span><span>Inline 3.1</span></div>`;
-
-    const main = jsdom.window
-      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+    const main = _html`<div>${fragment1}${fragment2}${fragment3}</div>`;
 
     el.append(main);
 
@@ -319,17 +257,14 @@ describe("html", () => {
     );
   });
 
-  test("should handle elements with attributes", () => {
-    const jsdom = _prepareJSDOM();
+  it("should handle elements with attributes", () => {
+    const el = document.createElement("div");
 
-    const el = jsdom.window.document.createElement("div");
+    const fragment1 = _html`<div class="class1">1</div>`;
+    const fragment2 = _html`<div id="id2">2</div>`;
+    const fragment3 = _html`<div data-test="test3">3</div>`;
 
-    const fragment1 = jsdom.window.html`<div class="class1">1</div>`;
-    const fragment2 = jsdom.window.html`<div id="id2">2</div>`;
-    const fragment3 = jsdom.window.html`<div data-test="test3">3</div>`;
-
-    const main = jsdom.window
-      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+    const main = _html`<div>${fragment1}${fragment2}${fragment3}</div>`;
 
     el.append(main);
 
@@ -340,17 +275,14 @@ describe("html", () => {
     );
   });
 
-  test("should handle empty elements", () => {
-    const jsdom = _prepareJSDOM();
+  it("should handle empty elements", () => {
+    const el = document.createElement("div");
 
-    const el = jsdom.window.document.createElement("div");
+    const fragment1 = _html`<div></div>`;
+    const fragment2 = _html`<span></span>`;
+    const fragment3 = _html`<p></p>`;
 
-    const fragment1 = jsdom.window.html`<div></div>`;
-    const fragment2 = jsdom.window.html`<span></span>`;
-    const fragment3 = jsdom.window.html`<p></p>`;
-
-    const main = jsdom.window
-      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+    const main = _html`<div>${fragment1}${fragment2}${fragment3}</div>`;
 
     el.append(main);
 
@@ -361,17 +293,14 @@ describe("html", () => {
     );
   });
 
-  test("should handle elements with text and children", () => {
-    const jsdom = _prepareJSDOM();
+  it("should handle elements with text and children", () => {
+    const el = document.createElement("div");
 
-    const el = jsdom.window.document.createElement("div");
+    const fragment1 = _html`<div>Text<div>Child</div></div>`;
+    const fragment2 = _html`<span>Text<span>Child</span></span>`;
+    const fragment3 = _html`<div>Text<div>Child</div></div>`;
 
-    const fragment1 = jsdom.window.html`<div>Text<div>Child</div></div>`;
-    const fragment2 = jsdom.window.html`<span>Text<span>Child</span></span>`;
-    const fragment3 = jsdom.window.html`<div>Text<div>Child</div></div>`;
-
-    const main = jsdom.window
-      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+    const main = _html`<div>${fragment1}${fragment2}${fragment3}</div>`;
 
     el.append(main);
 
@@ -382,20 +311,14 @@ describe("html", () => {
     );
   });
 
-  test("should handle elements with mixed content and attributes", () => {
-    const jsdom = _prepareJSDOM();
+  it("should handle elements with mixed content and attributes", () => {
+    const el = document.createElement("div");
 
-    const el = jsdom.window.document.createElement("div");
+    const fragment1 = _html`<div class="class1">Text<div>Child</div></div>`;
+    const fragment2 = _html`<span id="id2">Text<span>Child</span></span>`;
+    const fragment3 = _html`<div data-test="test3">Text<div>Child</div></div>`;
 
-    const fragment1 = jsdom.window
-      .html`<div class="class1">Text<div>Child</div></div>`;
-    const fragment2 = jsdom.window
-      .html`<span id="id2">Text<span>Child</span></span>`;
-    const fragment3 = jsdom.window
-      .html`<div data-test="test3">Text<div>Child</div></div>`;
-
-    const main = jsdom.window
-      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+    const main = _html`<div>${fragment1}${fragment2}${fragment3}</div>`;
 
     el.append(main);
 
@@ -406,17 +329,14 @@ describe("html", () => {
     );
   });
 
-  test("should handle complex inline and block elements", () => {
-    const jsdom = _prepareJSDOM();
+  it("should handle complex inline and block elements", () => {
+    const el = document.createElement("div");
 
-    const el = jsdom.window.document.createElement("div");
+    const fragment1 = _html`<span>Inline 1</span>`;
+    const fragment2 = _html`<div>Block 2</div>`;
+    const fragment3 = _html`<span>Inline 3</span>`;
 
-    const fragment1 = jsdom.window.html`<span>Inline 1</span>`;
-    const fragment2 = jsdom.window.html`<div>Block 2</div>`;
-    const fragment3 = jsdom.window.html`<span>Inline 3</span>`;
-
-    const main = jsdom.window
-      .html`<div>${fragment1}${fragment2}${fragment3}</div>`;
+    const main = _html`<div>${fragment1}${fragment2}${fragment3}</div>`;
 
     el.append(main);
 
@@ -427,16 +347,13 @@ describe("html", () => {
     );
   });
 
-  test("should handle rendering fragment within another fragment", () => {
-    const jsdom = _prepareJSDOM();
+  it("should handle rendering fragment within another fragment", () => {
+    const el = document.createElement("div");
 
-    const el = jsdom.window.document.createElement("div");
+    const fragment3 = _html`<div>3</div>`;
+    const fragment5 = _html`${fragment3}`;
 
-    const fragment3 = jsdom.window.html`<div>3</div>`;
-    const fragment5 = jsdom.window.html`${fragment3}`;
-
-    const main = jsdom.window
-      .html`<div><div>1</div><div>2</div>${fragment5}<div>4</div><div>5</div></div>`;
+    const main = _html`<div><div>1</div><div>2</div>${fragment5}<div>4</div><div>5</div></div>`;
 
     el.append(main);
 
@@ -460,7 +377,7 @@ describe("Bind", () => {
     new Blob(),
   ];
 
-  test("should allow any bindings if no assertion is provided", () => {
+  it("should allow any bindings if no assertion is provided", () => {
     const binding = new Bind();
     tries.forEach((value) => {
       binding.current = value;
@@ -468,7 +385,7 @@ describe("Bind", () => {
     });
   });
 
-  test("should allow any bindings if assertion is provided", () => {
+  it("should allow any bindings if assertion is provided", () => {
     const binding = new Bind((el) => {
       if (el instanceof ArrayBuffer) {
         return el;
@@ -484,7 +401,7 @@ describe("Bind", () => {
     );
   });
 
-  test("should throw if binding does not match assertion", () => {
+  it("should throw if binding does not match assertion", () => {
     const binding = new Bind((el) => {
       if (el instanceof Node) {
         return el;
@@ -497,5 +414,84 @@ describe("Bind", () => {
         binding.current = value;
       }, "should throw if binding does not match assertion");
     });
+  });
+});
+
+describe("Signal", () => {
+  it("should be able to subscribe to signal", () => {
+    const signal = new Signal(0);
+    const testContainer = document.createElement("div");
+    const fragment = _html`<div>${signal}</div>`;
+    testContainer.replaceChildren(fragment);
+    assert.equal(testContainer.innerHTML, "<div>0</div>");
+    signal.value = 1;
+    assert.equal(testContainer.innerHTML, "<div>1</div>");
+  });
+
+  it("should be able to subscribe and unsubscribe from signal", () => {
+    const signal = new Signal(0);
+    const testContainer = document.createElement("div");
+    const fragment = _html`<div>${signal}</div>`;
+    testContainer.replaceChildren(fragment);
+    assert.equal(testContainer.innerHTML, "<div>0</div>");
+    let subscription = null;
+    const teardown = signal.subscribe((value) => {
+      subscription = value;
+    });
+    signal.value = 1;
+    teardown();
+    assert.equal(testContainer.innerHTML, "<div>1</div>");
+    assert.equal(subscription, 1);
+    signal.value = 2;
+    assert.equal(testContainer.innerHTML, "<div>2</div>");
+    assert.equal(subscription, 1);
+  });
+
+  it("should be able to change attributes", () => {
+    const signal = new Signal(0);
+    const fragment = _html`<div data-value="${signal}"></div>`;
+    const holder = fragment.querySelector("[data-value]");
+    if (!holder) {
+      throw new Error("expected to find element");
+    }
+    assert.equal(holder.getAttribute("data-value"), "0");
+    signal.value = 1;
+    assert.equal(holder.getAttribute("data-value"), "1");
+  });
+
+  it("should render signals in the middle of contents", () => {
+    const signal = new Signal(0);
+    const fragment = _html`<div>${signal}foo${signal}</div>`;
+    const testContainer = document.createElement("div");
+    testContainer.replaceChildren(fragment);
+    assert.equal(testContainer.innerHTML, "<div>0foo0</div>");
+    signal.value = 1;
+    assert.equal(testContainer.innerHTML, "<div>1foo1</div>");
+  });
+
+  it("should be able to signal into css", () => {
+    const signal = new Signal("red");
+    const fragment = _html`<style>.foo{color: ${signal}}</style><div class="foo">foo</div>`;
+    const testContainer = document.createElement("div");
+    testContainer.replaceChildren(fragment);
+    assert.equal(
+      testContainer.innerHTML,
+      '<style>.foo{color: red}</style><div class="foo">foo</div>',
+    );
+    signal.value = "blue";
+    assert.equal(
+      testContainer.innerHTML,
+      '<style>.foo{color: blue}</style><div class="foo">foo</div>',
+    );
+  });
+
+  it("should remove falsy attributes to omit boolean attribute passing", () => {
+    const signal = new Signal(false);
+    const fragment = _html`<div disabled="${signal}">foo</div>`;
+    const testContainer = document.createElement("div");
+    testContainer.replaceChildren(fragment);
+    assert.equal(testContainer.innerHTML, "<div>foo</div>");
+    signal.value = true;
+    assert.equal(testContainer.innerHTML, '<div disabled="true">foo</div>');
   });
 });
