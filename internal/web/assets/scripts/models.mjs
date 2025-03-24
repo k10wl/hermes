@@ -1,8 +1,4 @@
-import {
-  AssertNumber,
-  AssertObject,
-  AssertString,
-} from "/assets/scripts/lib/assert.mjs";
+import { AssertNumber, AssertObject, AssertString } from "./lib/assert.mjs";
 
 export class Chat {
   static validator = new AssertObject({

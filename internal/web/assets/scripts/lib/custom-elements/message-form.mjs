@@ -1,6 +1,4 @@
-import { Bind, html, Signal } from "/assets/scripts/lib/libdim.mjs";
-
-import { AssertInstance, AssertNumber } from "../assert.mjs";
+import { AssertInstance, AssertNumber, AssertString } from "../assert.mjs";
 import { CreateCompletionMessageEvent } from "../events/client-events-list.mjs";
 import { ServerEvents } from "../events/server-events.mjs";
 import {
@@ -8,60 +6,38 @@ import {
   ServerErrorEvent,
 } from "../events/server-events-list.mjs";
 import { FocusOnKeydown } from "../focus-on-keydown.mjs";
+import { Bind, html } from "../libdim.mjs";
 import { LocationControll } from "../location-control.mjs";
 import { ResizableTextInput } from "./content-editable-plain-text.mjs";
 import { AlertDialog } from "./dialog.mjs";
 
+/**
+ * @typedef Provider
+ * @property {(param: { content: string }) => Promise<void>} submit
+ */
+
 export class MessageForm extends HTMLElement {
-  #form = new Bind((el) => AssertInstance.once(el, HTMLFormElement));
   #content = new Bind((el) => AssertInstance.once(el, ResizableTextInput));
   #focusOnInput = new FocusOnKeydown();
-  #empty = new Signal(true);
 
-  constructor() {
+  /** @param {Provider} provider */
+  constructor(provider) {
     super();
+    this.provider = provider;
   }
 
-  #submit = (/** @type {Event} */ e) => {
+  #submit = async (/** @type {Event} */ e) => {
     e.preventDefault();
-    const content = this.#content.current.value;
+    const content = AssertString.check(this.#content.current.value);
     if (content.trim() === "") {
       return;
     }
-    const message = new CreateCompletionMessageEvent({
-      chat_id: AssertNumber.check(
-        LocationControll.chatId ? +LocationControll.chatId : -1,
-      ),
-      content: content,
-      parameters: {
-        model: "openai/gpt-4o-mini",
-        max_tokens: undefined,
-        temperature: undefined,
-      },
-    });
-    ServerEvents.send(message);
-    const off = ServerEvents.on(
-      ["chat-created", "message-created", "server-error"],
-      (event) => {
-        if (event.id !== message.id) {
-          return;
-        }
-        off();
-        if (event instanceof ChatCreatedEvent) {
-          LocationControll.navigate(`/chats/${event.payload.chat.id}`);
-          return;
-        }
-        if (event instanceof ServerErrorEvent) {
-          AlertDialog.instance.alert({
-            title: "Failed to send message",
-            description: event.payload,
-          });
-          return;
-        }
-        this.#content.current.value = "";
-        this.#empty.value = true;
-      },
-    );
+    try {
+      await this.provider.submit({ content });
+      this.#content.current.value = "";
+    } catch (error) {
+      console.error("caught error, not reseting content", error);
+    }
   };
 
   connectedCallback() {
@@ -130,12 +106,12 @@ export class MessageForm extends HTMLElement {
       </style>
 
       <form
-        bind="${this.#form}"
         onsubmit="${this.#submit}"
         onkeydown="${(e) => {
           const event = AssertInstance.once(e, KeyboardEvent);
+          const form = AssertInstance.once(e.currentTarget, HTMLFormElement);
           if (event.key === "Enter" && !event.shiftKey) {
-            this.#form.current.requestSubmit();
+            form.requestSubmit();
             event.preventDefault();
           }
         }}"
@@ -146,7 +122,7 @@ export class MessageForm extends HTMLElement {
           bind="${this.#content}"
         ></h-resizable-text-input>
 
-        <button id="submit-message" type="submit">↑</button>
+        <button type="submit">↑</button>
       </form>
     `);
     this.#focusOnInput.attach(this.#content.current.content);
@@ -157,4 +133,66 @@ export class MessageForm extends HTMLElement {
   }
 }
 
-customElements.define("hermes-message-form", MessageForm);
+class BusinessLogic {
+  /**
+   * @param {object} message
+   * @param {string} message.content
+   * @returns {Promise<void>}
+   */
+  static submit(message) {
+    const { content } = message;
+    const { resolve, reject, promise } =
+      /** @type {PromiseWithResolvers<void>} */
+      (Promise.withResolvers());
+    const createChatCompletionMessageEvent = new CreateCompletionMessageEvent({
+      chat_id: AssertNumber.check(
+        LocationControll.chatId ? +LocationControll.chatId : -1,
+      ),
+      content: content,
+      parameters: {
+        model: "openai/gpt-4o-mini",
+        max_tokens: undefined,
+        temperature: undefined,
+      },
+    });
+    ServerEvents.send(createChatCompletionMessageEvent);
+    const off = ServerEvents.on(
+      ["chat-created", "message-created", "server-error"],
+      (event) => {
+        if (event.id !== createChatCompletionMessageEvent.id) {
+          resolve();
+          return;
+        }
+        off();
+        if (event instanceof ChatCreatedEvent) {
+          LocationControll.navigate(`/chats/${event.payload.chat.id}`);
+          resolve();
+          return;
+        }
+        if (event instanceof ServerErrorEvent) {
+          AlertDialog.instance.alert({
+            title: "Failed to send message",
+            description: event.payload,
+          });
+          reject(event.payload);
+          return;
+        }
+      },
+    );
+    return promise;
+  }
+}
+
+/**
+ * @param {Provider} provider
+ * @returns {typeof MessageForm}
+ */
+export function creator(provider) {
+  return class extends MessageForm {
+    constructor() {
+      super(provider);
+    }
+  };
+}
+
+customElements.define("hermes-message-form", creator(BusinessLogic));

@@ -1,10 +1,9 @@
-import { AssertInstance } from "/assets/scripts/lib/assert.mjs";
-import { Bind, html, Signal } from "/assets/scripts/lib/libdim.mjs";
+import { AssertInstance } from "../assert.mjs";
+import { Bind, html } from "../libdim.mjs";
 
 export class ResizableTextInput extends HTMLElement {
   #value = "";
   #content = new Bind((el) => AssertInstance.once(el, HTMLDivElement));
-  #empty = new Signal(true);
 
   constructor() {
     super();
@@ -31,13 +30,13 @@ export class ResizableTextInput extends HTMLElement {
           top: 0;
           opacity: 0.5;
         }
-        #wrapper[data-empty="true"] #placeholder {
+        :host([data-empty]) #placeholder {
             display: block;
           }
         }
       </style>
 
-      <div id="wrapper" part="wrapper" data-empty="${this.#empty}">
+      <div id="wrapper" part="wrapper">
         <div
           id="content"
           part="content"
@@ -61,8 +60,12 @@ export class ResizableTextInput extends HTMLElement {
   }
 
   #updateEmptyState() {
-    this.#empty.value = this.#value === "" || this.#value === "\n";
-    this.setAttribute("data-empty", `${this.#empty.value}`);
+    const empty = this.#value === "" || this.#value === "\n";
+    if (empty) {
+      this.setAttribute("data-empty", "true");
+      return;
+    }
+    this.removeAttribute("data-empty");
   }
 
   #dispatchChangeEvent() {

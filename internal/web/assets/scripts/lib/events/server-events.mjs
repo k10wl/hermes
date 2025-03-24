@@ -1,10 +1,9 @@
-import { config } from "/assets/scripts/config.mjs";
-import { AssertInstance, AssertString } from "/assets/scripts/lib/assert.mjs";
-import { backoff, exponent } from "/assets/scripts/lib/backoff.mjs";
-import { CallbackTracker } from "/assets/scripts/lib/callback-tracker.mjs";
-import { Queue } from "/assets/scripts/lib/queue.mjs";
-import { sleep } from "/assets/scripts/lib/sleep.mjs";
-
+import { config } from "../../config.mjs";
+import { AssertInstance, AssertString } from "../assert.mjs";
+import { backoff, exponent } from "../backoff.mjs";
+import { CallbackTracker } from "../callback-tracker.mjs";
+import { Queue } from "../queue.mjs";
+import { sleep } from "../sleep.mjs";
 import * as clientEventsList from "./client-events-list.mjs";
 import * as serverEventsList from "./server-events-list.mjs";
 
@@ -296,6 +295,3 @@ class EmittedServerEventFactory {
     return _registeredEvents[res].parse(data);
   }
 }
-
-ServerEvents.__init(config.server.pathnames.webSocket);
-Reflect.set(window, "ServerEvents", ServerEvents);

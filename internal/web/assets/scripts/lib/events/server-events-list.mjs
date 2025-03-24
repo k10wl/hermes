@@ -1,3 +1,4 @@
+import { Chat, Message, Template } from "../../models.mjs";
 import {
   AssertArray,
   AssertBoolean,
@@ -6,8 +7,7 @@ import {
   AssertObject,
   AssertOptional,
   AssertString,
-} from "/assets/scripts/lib/assert.mjs";
-import { Chat, Message, Template } from "/assets/scripts/models.mjs";
+} from "../assert.mjs";
 
 export class ServerEvent {
   static #eventValidation = new AssertObject({

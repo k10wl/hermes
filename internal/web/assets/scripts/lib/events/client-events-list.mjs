@@ -4,8 +4,7 @@ import {
   AssertObject,
   AssertOptional,
   AssertString,
-} from "/assets/scripts/lib/assert.mjs";
-
+} from "../assert.mjs";
 import { ServerEvent } from "./server-events-list.mjs";
 
 class ClientEvent extends ServerEvent {

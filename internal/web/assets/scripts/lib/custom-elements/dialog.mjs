@@ -1,10 +1,6 @@
-import {
-  AssertInstance,
-  AssertObject,
-  AssertString,
-} from "/assets/scripts/lib/assert.mjs";
-import { Bind, html } from "/assets/scripts/lib/libdim.mjs";
-import { ShortcutManager } from "/assets/scripts/lib/shortcut-manager.mjs";
+import { AssertInstance, AssertObject, AssertString } from "../assert.mjs";
+import { Bind, html } from "../libdim.mjs";
+import { ShortcutManager } from "../shortcut-manager.mjs";
 
 export class HermesDialog extends HTMLElement {
   constructor() {
