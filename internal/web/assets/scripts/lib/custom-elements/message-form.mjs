@@ -11,19 +11,19 @@ import { LocationControll } from "../location-control.mjs";
 import { ResizableTextInput } from "./content-editable-plain-text.mjs";
 import { AlertDialog } from "./dialog.mjs";
 
-/**
- * @typedef Provider
- * @property {(param: { content: string }) => Promise<void>} submit
- */
-
 export class MessageForm extends HTMLElement {
-  #content = new Bind((el) => AssertInstance.once(el, ResizableTextInput));
+  /** @type {Provider} */
+  #provider;
   #focusOnInput = new FocusOnKeydown();
+  #content = new Bind((el) => AssertInstance.once(el, ResizableTextInput));
+  #temperature = new Bind((el) => AssertInstance.once(el, HTMLInputElement));
+  #max_tokens = new Bind((el) => AssertInstance.once(el, HTMLInputElement));
+  #model = new Bind((el) => AssertInstance.once(el, HTMLInputElement));
 
   /** @param {Provider} provider */
   constructor(provider) {
     super();
-    this.provider = provider;
+    this.#provider = provider;
   }
 
   #submit = async (/** @type {Event} */ e) => {
@@ -33,7 +33,15 @@ export class MessageForm extends HTMLElement {
       return;
     }
     try {
-      await this.provider.submit({ content });
+      const params = {
+        model: this.#model.current.value,
+        max_tokens: +this.#max_tokens.current.value || undefined,
+        temperature: +this.#temperature.current.value || undefined,
+      };
+      await this.#provider.submit({
+        content,
+        params,
+      });
       this.#content.current.value = "";
     } catch (error) {
       console.error("caught error, not reseting content", error);
@@ -116,6 +124,25 @@ export class MessageForm extends HTMLElement {
           }
         }}"
       >
+        <input
+          id="temperature"
+          type="range"
+          min="0"
+          value="0.8"
+          max="1"
+          step="0.01"
+          bind="${this.#temperature}"
+        />
+        <input
+          id="max_tokens"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          value="0"
+          bind="${this.#max_tokens}"
+        />
+        <input id="model" value="openai/gpt-4o-mini" bind="${this.#model}" />
+
         <h-resizable-text-input
           id="content"
           placeholder="${this.getAttribute("placeholder") ?? "Message"}"
@@ -134,11 +161,7 @@ export class MessageForm extends HTMLElement {
 }
 
 class BusinessLogic {
-  /**
-   * @param {object} message
-   * @param {string} message.content
-   * @returns {Promise<void>}
-   */
+  /** @type {Provider['submit']} */
   static submit(message) {
     const { content } = message;
     const { resolve, reject, promise } =
@@ -177,11 +200,24 @@ class BusinessLogic {
           reject(event.payload);
           return;
         }
+        resolve();
       },
     );
     return promise;
   }
 }
+
+/**
+ * @typedef Params
+ * @property {string} model
+ * @property {number | undefined} [temperature]
+ * @property {number | undefined} [max_tokens]
+ */
+
+/**
+ * @typedef Provider
+ * @property {(param: { content: string, params: Params }) => Promise<void>} submit
+ */
 
 /**
  * @param {Provider} provider

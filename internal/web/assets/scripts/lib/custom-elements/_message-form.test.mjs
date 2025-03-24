@@ -5,9 +5,7 @@ import { creator } from "./message-form.mjs";
 
 describe("hermes-message-form", () => {
   const provider = {
-    submit: mock.fn(
-      (/** @type {{content: string}} */ _) => new Promise(() => {}),
-    ),
+    submit: mock.fn(() => new Promise(() => {})),
   };
 
   const subjectName = "hermes-message-form-test";
@@ -17,6 +15,12 @@ describe("hermes-message-form", () => {
   let content = null;
   /** @type {HTMLElement | null} */
   let form = null;
+  /** @type {HTMLInputElement | null} */
+  let max_tokens = null;
+  /** @type {HTMLInputElement | null} */
+  let model = null;
+  /** @type {HTMLInputElement | null} */
+  let temperature = null;
 
   before(() => {
     customElements.define(subjectName, creator(provider));
@@ -33,6 +37,9 @@ describe("hermes-message-form", () => {
     submit = subject.shadowRoot.querySelector('button[type="submit"]');
     content = subject.shadowRoot.querySelector("#content");
     form = subject.shadowRoot.querySelector("form");
+    max_tokens = subject.shadowRoot.querySelector("#max_tokens");
+    model = subject.shadowRoot.querySelector("#model");
+    temperature = subject.shadowRoot.querySelector("#temperature");
   });
   after(() => {
     document.body.innerHTML = "";
@@ -41,14 +48,33 @@ describe("hermes-message-form", () => {
   const expired = new Error("setup submit promise, but it never resolved");
 
   it("should submit message with arguments", async () => {
-    const args = { content: "foo bar baz" };
+    const args = {
+      content: "foo bar baz",
+      params: {
+        model: "openai/o3-mini",
+        max_tokens: 1000,
+        temperature: 0.5,
+      },
+    };
     if (content === null) {
       throw new Error("content element is null, please check structure");
     }
     content.value = args.content;
+    if (max_tokens === null) {
+      throw new Error("max_tokens element is null, please check structure");
+    }
+    max_tokens.value = args.params.max_tokens.toString();
+    if (model === null) {
+      throw new Error("model element is null, please check structure");
+    }
+    model.value = args.params.model;
+    if (temperature === null) {
+      throw new Error("temperature element is null, please check structure");
+    }
+    temperature.value = args.params.temperature.toString();
     const { promise, resolve, reject } = Promise.withResolvers();
     provider.submit.mock.mockImplementationOnce(async () => resolve(undefined));
-    const id = setTimeout(() => reject(expired), 1000);
+    const id = setTimeout(() => reject(expired), 100);
     submit?.click();
     await promise;
     clearTimeout(id);

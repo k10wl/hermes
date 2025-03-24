@@ -21,6 +21,8 @@ export class FocusOnKeydown {
       target === null ||
       document.activeElement?.tagName === "TEXTAREA" ||
       document.activeElement?.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.tagName === "INPUT" ||
       e.altKey ||
       e.metaKey ||
       (e.shiftKey && e.code.startsWith("Shift")) ||
